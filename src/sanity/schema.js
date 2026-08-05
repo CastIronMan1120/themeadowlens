@@ -29,6 +29,21 @@ const artwork = {
       validation: Rule => Rule.required()
     },
     {
+      name: 'category',
+      title: 'Category',
+      type: 'string',
+      options: {
+        list: [
+          {title: 'Birds', value: 'birds'},
+          {title: 'Collages and Compilations', value: 'collages'},
+          {title: 'Captioned Series', value: 'captioned'},
+          {title: 'Nature', value: 'nature'},
+          {title: 'Featured', value: 'featured'}
+        ],
+        layout: 'radio'
+      }
+    },
+    {
       name: 'location',
       title: 'Location / Setting',
       type: 'string',
@@ -37,20 +52,20 @@ const artwork = {
     {
       name: 'year',
       title: 'Year Captured',
-      type: 'number'
+      type: 'string'
     },
     {
       name: 'story',
       title: 'The Story (Narrative)',
       type: 'array',
-      of: [{type: 'block'}],
-      description: 'The story behind the lens for Focus Mode.'
+      description: 'The story behind the lens for Focus Mode.',
+      of: [{type: 'block'}]
     },
     {
       name: 'price',
       title: 'Base Price (USD)',
       type: 'number',
-      validation: Rule => Rule.required().min(0)
+      description: 'Internal reference. This will not be displayed on the gallery front.'
     }
   ],
 }
