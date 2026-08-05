@@ -40,6 +40,12 @@ export default async function ArtworkPage({ params }) {
   const inquiryBody = encodeURIComponent(`Hello David,\n\nI am interested in learning more about "${artwork.title}". Please let me know about its availability and sizing options.\n\nThank you,`)
   const mailtoLink = `mailto:dmc1120@themeadowlens.com?subject=${inquirySubject}&body=${inquiryBody}`
 
+  // Status Logic
+  const status = artwork.status || 'available'
+  const isAvailable = status === 'available'
+  const isReserved = status === 'reserved'
+  const isAcquired = status === 'acquired'
+
   // Social Share URLs
   // Note: We use window.location.href dynamically in client, but since this is server component, we use relative or the assumed domain.
   // Assuming standard domain is themeadowlens.vercel.app for now.
@@ -77,11 +83,18 @@ export default async function ArtworkPage({ params }) {
           
           <div>
             <h1 className="text-5xl md:text-6xl font-light tracking-wide mb-4">{artwork.title}</h1>
-            {artwork.location && (
-              <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
-                {artwork.location} {artwork.year && `• ${artwork.year}`}
-              </p>
-            )}
+            <div className="flex items-center space-x-4">
+              {artwork.location && (
+                <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
+                  {artwork.location} {artwork.year && `• ${artwork.year}`}
+                </p>
+              )}
+              {artwork.edition && (
+                <p className="text-neutral-500 text-xs font-mono uppercase tracking-widest border border-neutral-700 px-2 py-1 rounded-sm">
+                  {artwork.edition}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* The Story is entirely optional. If blank, this disappears. */}
@@ -93,15 +106,35 @@ export default async function ArtworkPage({ params }) {
 
           {/* The Prestige Inquiry CTA */}
           <div className="pt-10 border-t border-white/10">
-            <p className="text-neutral-400 text-sm mb-6 italic leading-relaxed">
-              This piece is available for acquisition. To discuss dimensions, archival framing, or provenance, please leave a private inquiry.
-            </p>
-            <a 
-              href={mailtoLink}
-              className="inline-block bg-white text-black px-10 py-5 uppercase tracking-widest text-sm font-semibold hover:bg-neutral-200 transition-colors"
-            >
-              Inquire About This Piece
-            </a>
+            {isAcquired ? (
+              <div className="inline-block bg-neutral-900 border border-neutral-800 text-neutral-500 px-10 py-5 uppercase tracking-widest text-sm font-semibold cursor-not-allowed">
+                Acquired by Private Collector
+              </div>
+            ) : isReserved ? (
+              <>
+                <p className="text-neutral-400 text-sm mb-6 italic leading-relaxed">
+                  This piece is currently reserved. You may leave an inquiry to join the waitlist.
+                </p>
+                <a 
+                  href={mailtoLink}
+                  className="inline-block border border-white text-white px-10 py-5 uppercase tracking-widest text-sm font-semibold hover:bg-white hover:text-black transition-colors"
+                >
+                  Join Waitlist
+                </a>
+              </>
+            ) : (
+              <>
+                <p className="text-neutral-400 text-sm mb-6 italic leading-relaxed">
+                  This piece is available for acquisition. To discuss dimensions, archival framing, or provenance, please leave a private inquiry.
+                </p>
+                <a 
+                  href={mailtoLink}
+                  className="inline-block bg-white text-black px-10 py-5 uppercase tracking-widest text-sm font-semibold hover:bg-neutral-200 transition-colors"
+                >
+                  Inquire About This Piece
+                </a>
+              </>
+            )}
           </div>
 
           {/* Social Proof Sharing */}

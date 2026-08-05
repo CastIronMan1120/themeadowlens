@@ -70,6 +70,27 @@ const artwork = {
       type: 'string'
     },
     {
+      name: 'status',
+      title: 'Artwork Status',
+      type: 'string',
+      description: 'Is this piece currently available for acquisition?',
+      options: {
+        list: [
+          {title: 'Available', value: 'available'},
+          {title: 'Reserved', value: 'reserved'},
+          {title: 'Acquired (Sold)', value: 'acquired'}
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'available'
+    },
+    {
+      name: 'edition',
+      title: 'Limited Edition Tracking',
+      type: 'string',
+      description: 'e.g., "Edition 3 of 50" (Leave blank for open editions)'
+    },
+    {
       name: 'story',
       title: 'The Story (Narrative)',
       type: 'array',
