@@ -44,6 +44,21 @@ const artwork = {
       }
     },
     {
+      name: 'roomSetting',
+      title: 'Exhibition Room Setting',
+      type: 'string',
+      description: 'Select the virtual room where this artwork will hang on the homepage.',
+      options: {
+        list: [
+          {title: 'Modern Living Room (Bright, Lifestyle)', value: 'living-room'},
+          {title: 'Dark Gallery Wall (Moody, Dramatic)', value: 'dark-gallery'},
+          {title: 'Minimalist Office (Sleek, Professional)', value: 'office'}
+        ],
+        layout: 'radio'
+      },
+      initialValue: 'living-room'
+    },
+    {
       name: 'location',
       title: 'Location / Setting',
       type: 'string',
