@@ -35,7 +35,7 @@ export default function ArtworkCard({ artwork }) {
         <div className="absolute inset-0 bg-black/40 transition-opacity duration-700 group-hover:bg-black/70"></div>
 
         {/* The Composited Artwork on the Wall */}
-        <div className="absolute inset-0 flex items-center justify-center p-12">
+        <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16">
           <img
             src={urlForImage(artwork.image).width(1200).auto('format').url()}
             alt={artwork.title}
