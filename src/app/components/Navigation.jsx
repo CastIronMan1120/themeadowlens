@@ -72,23 +72,36 @@ export default function Navigation({ categories = [] }) {
 
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-16 mt-16 md:mt-0">
           
-          {/* Left Side: Standard Links */}
+          {/* Left Side: Standard Links & Socials */}
           <nav className="flex flex-col space-y-8 md:space-y-12">
             <h2 className="text-neutral-500 text-sm tracking-[0.3em] uppercase mb-4">Navigation</h2>
             <Link href="/#exhibition" onClick={() => setIsOpen(false)} className="text-3xl md:text-5xl font-light text-white/70 hover:text-white transition-colors">
-              The Exhibition
+              Venues
             </Link>
             <Link href="/" onClick={() => setIsOpen(false)} className="text-3xl md:text-5xl font-light text-white/70 hover:text-white transition-colors">
               The Artist
             </Link>
             <a href="mailto:dmc1120@themeadowlens.com" className="text-3xl md:text-5xl font-light text-white/70 hover:text-white transition-colors">
-              Private Inquiries
+              Inquiries & Comments
             </a>
+            <Link href="/" onClick={() => setIsOpen(false)} className="text-3xl md:text-5xl font-light text-white/70 hover:text-white transition-colors">
+              What's New
+            </Link>
+
+            {/* Social Media */}
+            <div className="pt-8 flex space-x-8">
+              <a href="https://www.facebook.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors uppercase tracking-widest text-sm font-mono">
+                Facebook
+              </a>
+              <a href="https://www.instagram.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors uppercase tracking-widest text-sm font-mono">
+                Instagram
+              </a>
+            </div>
           </nav>
 
           {/* Right Side: Category Mega Menu */}
           <div className="flex flex-col">
-            <h2 className="text-neutral-500 text-sm tracking-[0.3em] uppercase mb-8">Curated Collections</h2>
+            <h2 className="text-neutral-500 text-sm tracking-[0.3em] uppercase mb-8">Venues</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
               {sortedCategories.length > 0 ? (
                 sortedCategories.map(cat => (
