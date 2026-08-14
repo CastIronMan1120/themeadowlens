@@ -33,13 +33,24 @@ export default function Navigation() {
 
   return (
     <>
-      {/* The Floating Minimalist Trigger */}
-      <button 
-        onClick={() => setIsOpen(true)}
-        className={`fixed top-8 right-8 z-40 text-white/70 hover:text-white transition-all duration-500 uppercase tracking-widest text-xs font-semibold ${scrolled && !isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-      >
-        Menu
-      </button>
+      {/* The Global Top Navigation */}
+      <div className={`fixed top-0 left-0 w-full p-8 z-40 flex justify-between items-center transition-all duration-500 ${scrolled && !isOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <Link 
+          href="/" 
+          className="text-2xl md:text-3xl font-normal tracking-wide text-white mix-blend-difference" 
+          style={{ fontFamily: 'var(--font-logo)' }}
+        >
+          The Meadow Lens
+        </Link>
+        
+        {/* The Floating Minimalist Trigger */}
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="text-white/70 hover:text-white transition-all duration-500 uppercase tracking-widest text-xs font-semibold mix-blend-difference"
+        >
+          Menu
+        </button>
+      </div>
 
       {/* The Glassmorphism Full-Screen Overlay */}
       <div 
@@ -53,6 +64,7 @@ export default function Navigation() {
         </button>
 
         <nav className="flex flex-col items-center space-y-8 md:space-y-12">
+          {/* Overlay Links */}
           <Link href="/" onClick={() => setIsOpen(false)} className="text-3xl md:text-5xl font-light text-white/70 hover:text-white transition-colors">
             The Exhibition
           </Link>
