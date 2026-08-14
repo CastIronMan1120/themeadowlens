@@ -64,26 +64,26 @@ export default function ArtworkCard({ artwork }) {
         </div>
       </Link>
 
-      {/* Floating Typography Context (Moves up to make room for Action Bar) */}
+      {/* Floating Typography Context */}
       <div 
-        className={`absolute bottom-20 left-0 w-full p-8 flex flex-col justify-end pointer-events-none transition-all duration-700 z-10 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+        className={`absolute bottom-[80px] lg:bottom-20 left-0 w-full p-6 lg:p-8 flex flex-col justify-end pointer-events-none transition-all duration-700 z-10 opacity-100 translate-y-0 lg:opacity-0 lg:translate-y-4 lg:group-hover:opacity-100 lg:group-hover:translate-y-0`}
       >
-        <h3 className="text-white text-3xl font-light mb-2 drop-shadow-lg">{artwork.title}</h3>
-        {artwork.location && <p className="text-neutral-300 text-sm font-mono uppercase tracking-widest drop-shadow-md">{artwork.location}</p>}
+        <h3 className="text-white text-2xl lg:text-3xl font-light mb-1 lg:mb-2 drop-shadow-lg">{artwork.title}</h3>
+        {artwork.location && <p className="text-neutral-300 text-xs lg:text-sm font-mono uppercase tracking-widest drop-shadow-md">{artwork.location}</p>}
       </div>
 
-      {/* The Passive Commerce Action Bar (Slides up from bottom) */}
+      {/* The Passive Commerce Action Bar */}
       <div 
-        className={`absolute bottom-0 left-0 w-full p-6 flex items-center justify-between bg-black/60 backdrop-blur-md border-t border-white/10 transition-transform duration-700 z-20 ${isHovered ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`absolute bottom-0 left-0 w-full p-4 lg:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between bg-black/80 lg:bg-black/60 backdrop-blur-md border-t border-white/10 transition-transform duration-700 z-20 translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0 gap-4 lg:gap-0`}
       >
         <Link 
           href={artworkUrl}
-          className="px-6 py-2 bg-white text-black font-semibold text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors"
+          className="px-6 py-2 bg-white text-black font-semibold text-xs lg:text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors w-full lg:w-auto text-center"
         >
           Purchase / Inquire
         </Link>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-6 w-full lg:w-auto justify-between lg:justify-end px-2 lg:px-0">
           <button onClick={handleLike} className="flex items-center text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
             <span className="mr-2">{liked ? '♥' : '♡'}</span>
             {liked ? 'Loved' : 'Like'}
