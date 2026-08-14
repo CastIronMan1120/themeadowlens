@@ -30,18 +30,36 @@ const artwork = {
     },
     {
       name: 'category',
-      title: 'Category',
+      title: 'Main Category',
+      type: 'reference',
+      to: [{ type: 'category' }],
+      description: 'Select the primary category for this piece (e.g., Birds, Cityscape)',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'subcategory',
+      title: 'Subcategory (Optional)',
+      type: 'reference',
+      to: [{ type: 'category' }],
+      description: 'Select an optional subcategory (e.g., Owls, Sunsets)'
+    },
+    {
+      name: 'species',
+      title: 'Species',
       type: 'string',
-      options: {
-        list: [
-          {title: 'Birds', value: 'birds'},
-          {title: 'Collages and Compilations', value: 'collages'},
-          {title: 'Captioned Series', value: 'captioned'},
-          {title: 'Nature', value: 'nature'},
-          {title: 'Featured', value: 'featured'}
-        ],
-        layout: 'radio'
-      }
+      description: 'e.g., Great Blue Heron, Monarch Butterfly'
+    },
+    {
+      name: 'dominantColor',
+      title: 'Dominant Color',
+      type: 'string',
+      description: 'e.g., Blue, Gold, Monochrome'
+    },
+    {
+      name: 'size',
+      title: 'Dimensions / Size Format',
+      type: 'string',
+      description: 'e.g., Panorama, Square, Standard 4:3'
     },
     {
       name: 'roomSetting',
@@ -106,4 +124,35 @@ const artwork = {
   ],
 }
 
-export const schemaTypes = [artwork]
+const category = {
+  name: 'category',
+  title: 'Category',
+  type: 'document',
+  fields: [
+    {
+      name: 'title',
+      title: 'Category Title',
+      type: 'string',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'slug',
+      title: 'Slug',
+      type: 'slug',
+      options: {
+        source: 'title',
+        maxLength: 96,
+      },
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'parentCategory',
+      title: 'Parent Category',
+      type: 'reference',
+      to: [{ type: 'category' }],
+      description: 'Select a parent if this is a subcategory (e.g., Owls under Birds). Leave blank if this is a Main Category.'
+    }
+  ],
+}
+
+export const schemaTypes = [artwork, category]
