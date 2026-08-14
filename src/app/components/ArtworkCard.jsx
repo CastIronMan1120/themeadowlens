@@ -12,19 +12,38 @@ const ROOM_TEMPLATES = {
 
 export default function ArtworkCard({ artwork }) {
   const [isHovered, setIsHovered] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [shared, setShared] = useState(false)
 
   if (!artwork.image || !artwork.slug?.current) return null
 
-  // Determine which room to use (default to dark gallery if not set)
   const roomBg = ROOM_TEMPLATES[artwork.roomSetting] || ROOM_TEMPLATES['dark-gallery']
+  const artworkUrl = `/art/${artwork.slug.current}`
+
+  const handleShare = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // In a real app, this would use window.location.origin, but since this is a relative path, we fake it for the demo
+    navigator.clipboard.writeText(`https://themeadowlens.com${artworkUrl}`)
+    setShared(true)
+    setTimeout(() => setShared(false), 2000)
+  }
+
+  const handleLike = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setLiked(!liked)
+  }
 
   return (
-    <Link href={`/art/${artwork.slug.current}`}>
-      <div 
-        className="group relative cursor-pointer overflow-hidden rounded-sm mb-12 break-inside-avoid aspect-[4/3] bg-neutral-900"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+    <div 
+      className="group relative overflow-hidden rounded-sm mb-12 break-inside-avoid aspect-[4/3] bg-neutral-900"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* The Main Clickable Area (Routes to Product Page) */}
+      <Link href={artworkUrl} className="absolute inset-0 z-0">
+        
         {/* The Room Background */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-105 group-hover:blur-[2px] opacity-80"
@@ -39,19 +58,44 @@ export default function ArtworkCard({ artwork }) {
           <img
             src={urlForImage(artwork.image).width(1200).auto('format').url()}
             alt={artwork.title}
-            className="max-w-full max-h-full object-contain shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-all duration-[1s] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-[1.15] group-hover:-translate-y-4 group-hover:shadow-[0_40px_80px_rgba(0,0,0,0.9)] z-10"
+            className="max-w-full max-h-full object-contain shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-all duration-[1s] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-[1.15] group-hover:-translate-y-8 group-hover:shadow-[0_40px_80px_rgba(0,0,0,0.9)]"
             loading="lazy"
           />
         </div>
+      </Link>
 
-        {/* Floating Typography Context */}
-        <div 
-          className={`absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end bg-gradient-to-t from-black/90 to-transparent transition-opacity duration-700 z-20 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+      {/* Floating Typography Context (Moves up to make room for Action Bar) */}
+      <div 
+        className={`absolute bottom-20 left-0 w-full p-8 flex flex-col justify-end pointer-events-none transition-all duration-700 z-10 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+      >
+        <h3 className="text-white text-3xl font-light mb-2 drop-shadow-lg">{artwork.title}</h3>
+        {artwork.location && <p className="text-neutral-300 text-sm font-mono uppercase tracking-widest drop-shadow-md">{artwork.location}</p>}
+      </div>
+
+      {/* The Passive Commerce Action Bar (Slides up from bottom) */}
+      <div 
+        className={`absolute bottom-0 left-0 w-full p-6 flex items-center justify-between bg-black/60 backdrop-blur-md border-t border-white/10 transition-transform duration-700 z-20 ${isHovered ? 'translate-y-0' : 'translate-y-full'}`}
+      >
+        <Link 
+          href={artworkUrl}
+          className="px-6 py-2 bg-white text-black font-semibold text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors"
         >
-          <h3 className="text-white text-3xl font-light mb-2">{artwork.title}</h3>
-          {artwork.location && <p className="text-neutral-300 text-sm font-mono uppercase tracking-widest">{artwork.location}</p>}
+          Purchase / Inquire
+        </Link>
+
+        <div className="flex items-center space-x-6">
+          <button onClick={handleLike} className="flex items-center text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
+            <span className="mr-2">{liked ? '♥' : '♡'}</span>
+            {liked ? 'Loved' : 'Like'}
+          </button>
+          
+          <button onClick={handleShare} className="flex items-center text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
+            <span className="mr-2">↗</span>
+            {shared ? 'Copied' : 'Share'}
+          </button>
         </div>
       </div>
-    </Link>
+      
+    </div>
   )
 }

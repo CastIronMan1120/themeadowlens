@@ -17,9 +17,6 @@ export default async function Home() {
           
           {/* Left Column: Branding & Lens */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-            <h1 className="text-5xl md:text-7xl lg:text-8xl text-white" style={{ fontFamily: 'var(--font-logo)' }}>
-              The Meadow Lens
-            </h1>
             <p className="text-lg md:text-xl text-neutral-300 italic max-w-lg">
               Inspiring nature photography captured in the NJ Meadowlands and beyond!
             </p>
