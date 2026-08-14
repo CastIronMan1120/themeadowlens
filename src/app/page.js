@@ -27,7 +27,7 @@ export default async function Home() {
             <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden border-8 border-neutral-900 shadow-2xl relative aspect-square">
               {/* Replace with actual circular lens image path */}
               <img 
-                src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=800" 
+                src="/images/lens-composite.jpg" 
                 alt="The Meadow Lens Composite" 
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -39,7 +39,7 @@ export default async function Home() {
             <div className="w-full aspect-[4/3] relative overflow-hidden rounded-md shadow-2xl">
                {/* Replace with actual cardinal image path */}
                <img 
-                src="https://images.unsplash.com/photo-1552728089-571ed928663f?auto=format&fit=crop&q=80&w=800" 
+                src="/images/cardinal-placeholder.png" 
                 alt="Cardinal in the Meadowlands" 
                 className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-700"
               />
