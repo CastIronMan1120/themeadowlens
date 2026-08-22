@@ -8,6 +8,8 @@ export const metadata = {
   description: "Experience the story behind the lens. High-end fine art photography of the Meadowlands and beyond by David.",
 };
 
+export const revalidate = 0;
+
 export default async function RootLayout({ children }) {
   const categoriesQuery = `*[_type == "category" && !defined(parentCategory)] | order(title asc)`
   const categories = await client.fetch(categoriesQuery)
