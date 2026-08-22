@@ -3,6 +3,7 @@ import { urlForImage } from '../../../sanity/lib/image'
 import { PortableText } from '@portabletext/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import RoomSettingViewer from '../../components/RoomSettingViewer'
 
 export const revalidate = 0
 
@@ -27,8 +28,11 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function ArtworkPage({ params }) {
+export default async function ArtworkPage({ params, searchParams }) {
   const { slug } = await params
+  const resolvedSearchParams = await searchParams
+  const isRoomView = resolvedSearchParams?.view === 'room'
+
   const artwork = await client.fetch(`*[_type == "artwork" && slug.current == $slug][0]`, { slug })
 
   if (!artwork) {
@@ -47,8 +51,6 @@ export default async function ArtworkPage({ params }) {
   const isAcquired = status === 'acquired'
 
   // Social Share URLs
-  // Note: We use window.location.href dynamically in client, but since this is server component, we use relative or the assumed domain.
-  // Assuming standard domain is themeadowlens.vercel.app for now.
   const pageUrl = encodeURIComponent(`https://themeadowlens.vercel.app/art/${slug}`)
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`
   const xShareUrl = `https://twitter.com/intent/tweet?url=${pageUrl}&text=Experience%20this%20stunning%20piece%20by%20The%20Meadow%20Lens.`
@@ -66,23 +68,33 @@ export default async function ArtworkPage({ params }) {
         <span className="text-white">{artwork.title}</span>
       </nav>
 
-      {/* 2. Cinematic Focus Mode Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
-        
-        {/* Left: The Uninterrupted Image */}
-        <div className="w-full flex justify-center sticky top-24">
-          <img
-            src={urlForImage(artwork.image).width(2000).auto('format').url()}
-            alt={artwork.title}
-            className="w-full max-h-[80vh] object-contain shadow-2xl"
+      {/* Conditional Rendering: Room View vs Focus Mode */}
+      {isRoomView ? (
+        <div className="mb-24">
+          <h1 className="text-4xl md:text-5xl font-light tracking-wide mb-8 text-white text-center">Virtual Exhibition</h1>
+          <RoomSettingViewer 
+            artworkUrl={urlForImage(artwork.image).width(1200).auto('format').url()}
+            title={artwork.title}
+            returnPath={`/art/${slug}`}
           />
         </div>
-
-        {/* Right: The Title, Optional Story, and Inquiry Guestbook */}
-        <div className="flex flex-col justify-center space-y-10 text-white lg:py-12">
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
           
-          <div>
-            <h1 className="text-5xl md:text-6xl font-light tracking-wide mb-4">{artwork.title}</h1>
+          {/* Left: The Uninterrupted Image */}
+          <div className="w-full flex justify-center sticky top-24">
+            <img
+              src={urlForImage(artwork.image).width(2000).auto('format').url()}
+              alt={artwork.title}
+              className="w-full max-h-[80vh] object-contain shadow-2xl"
+            />
+          </div>
+
+          {/* Right: The Title, Optional Story, and Inquiry Guestbook */}
+          <div className="flex flex-col justify-center space-y-10 text-white lg:py-12">
+            
+            <div>
+              <h1 className="text-5xl md:text-6xl font-light tracking-wide mb-4">{artwork.title}</h1>
             <div className="flex items-center space-x-4">
               {artwork.location && (
                 <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
@@ -148,7 +160,8 @@ export default async function ArtworkPage({ params }) {
           </div>
 
         </div>
-      </div>
+        </div>
+      )}
     </main>
   )
 }

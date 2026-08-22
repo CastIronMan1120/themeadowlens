@@ -42,26 +42,20 @@ export default function ArtworkCard({ artwork }) {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* The Main Clickable Area (Routes to Product Page) */}
-      <Link href={artworkUrl} className="absolute inset-0 z-0">
+      <Link href={artworkUrl} className="absolute inset-0 z-0 block">
         
-        {/* The Room Background */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-105 group-hover:blur-[2px] opacity-80"
-          style={{ backgroundImage: `url('${roomBg}')` }}
-        ></div>
-
-        {/* The Dark Overlay for mood */}
-        <div className="absolute inset-0 bg-black/40 transition-opacity duration-700 group-hover:bg-black/70"></div>
-
-        {/* The Composited Artwork on the Wall */}
-        <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-8 md:p-12 lg:p-16">
+        {/* The Clean Photograph (No Room Setting) */}
+        <div className="absolute inset-0 bg-neutral-900">
           <img
             src={urlForImage(artwork.image).width(1200).auto('format').url()}
             alt={artwork.title}
-            className="max-w-full max-h-full object-contain shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-all duration-[1s] ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:scale-[1.15] group-hover:-translate-y-8 group-hover:shadow-[0_40px_80px_rgba(0,0,0,0.9)]"
+            className="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-90 group-hover:opacity-60"
             loading="lazy"
           />
         </div>
+
+        {/* The Dark Overlay for text readability on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100 lg:opacity-0 transition-opacity duration-700 lg:group-hover:opacity-100"></div>
       </Link>
 
       {/* Floating Typography Context */}
@@ -76,12 +70,20 @@ export default function ArtworkCard({ artwork }) {
       <div 
         className={`absolute bottom-0 left-0 w-full p-4 lg:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between bg-black/80 lg:bg-black/60 backdrop-blur-md border-t border-white/10 transition-transform duration-700 z-20 translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0 gap-4 lg:gap-0`}
       >
-        <Link 
-          href={artworkUrl}
-          className="px-6 py-2 bg-white text-black font-semibold text-xs lg:text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors w-full lg:w-auto text-center"
-        >
-          Purchase / Inquire
-        </Link>
+        <div className="flex space-x-4 w-full lg:w-auto">
+          <Link 
+            href={artworkUrl}
+            className="px-6 py-2 bg-white text-black font-semibold text-xs lg:text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors text-center"
+          >
+            Inquire
+          </Link>
+          <Link 
+            href={`${artworkUrl}?view=room`}
+            className="px-4 py-2 border border-white/30 text-white font-semibold text-xs lg:text-sm uppercase tracking-widest hover:border-white transition-colors text-center"
+          >
+            Room Settings
+          </Link>
+        </div>
 
         <div className="flex items-center space-x-6 w-full lg:w-auto justify-between lg:justify-end px-2 lg:px-0">
           <button onClick={handleLike} className="flex items-center text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
