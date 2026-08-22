@@ -8,20 +8,17 @@ export default function Navigation({ categories = [] }) {
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // Hardcoded fallback categories until Sanity is populated
   const displayCategories = categories.length > 0 ? categories : [
     { _id: '1', title: 'Birds', slug: { current: 'birds' } },
-    { _id: '2', title: 'Cityscape', slug: { current: 'cityscape' } },
-    { _id: '3', title: 'Reptiles', slug: { current: 'reptiles' } },
-    { _id: '4', title: 'Insects', slug: { current: 'insects' } },
-    { _id: '5', title: 'Plants', slug: { current: 'plants' } },
-    { _id: '6', title: 'Mammals', slug: { current: 'mammals' } },
-    { _id: '7', title: 'Moon & Stars', slug: { current: 'moon-stars' } },
-    { _id: '8', title: 'Collages', slug: { current: 'collages' } },
-    { _id: '9', title: 'Fun with Captions', slug: { current: 'fun-with-captions' } },
-    { _id: '10', title: 'Planes, Trains & Automobiles', slug: { current: 'planes-trains-automobiles' } },
-    { _id: '11', title: 'Landscapes', slug: { current: 'landscapes' } },
-    { _id: '12', title: 'Other', slug: { current: 'other' } }
+    { _id: '2', title: 'Vistas', slug: { current: 'vistas' } },
+    { _id: '3', title: 'Collages', slug: { current: 'collages' } },
+    { _id: '4', title: 'Fun with Captions', slug: { current: 'fun-with-captions' } },
+    { _id: '5', title: 'Nature', slug: { current: 'nature' } },
+    { _id: '6', title: 'Aquatic Life', slug: { current: 'aquatic-life' } },
+    { _id: '7', title: 'Mammals & Reptiles', slug: { current: 'mammals-reptiles' } },
+    { _id: '8', title: 'The Heavens', slug: { current: 'the-heavens' } },
+    { _id: '9', title: 'Other', slug: { current: 'other' } },
+    { _id: '10', title: 'Planes, Trains & Automobiles', slug: { current: 'planes-trains-automobiles' } }
   ]
 
   // Sort categories: Birds first, then alphabetical
