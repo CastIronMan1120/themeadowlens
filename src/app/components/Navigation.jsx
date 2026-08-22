@@ -72,25 +72,59 @@ export default function Navigation({ categories = [] }) {
 
               {/* The Dropdown Panel */}
               <div 
-                className={`absolute top-full left-1/2 -translate-x-1/2 w-[800px] pt-8 transition-all duration-500 origin-top ${
+                className={`absolute top-full left-1/2 -translate-x-1/2 w-[1100px] pt-8 transition-all duration-500 origin-top ${
                   megaMenuOpen ? 'opacity-100 scale-y-100 pointer-events-auto' : 'opacity-0 scale-y-95 pointer-events-none'
                 }`}
               >
-                <div className="bg-black/95 backdrop-blur-3xl border border-white/10 rounded-sm shadow-2xl p-12 flex flex-col">
-                  <h2 className="text-neutral-500 text-sm tracking-[0.3em] uppercase mb-8 border-b border-white/10 pb-4">
-                    Explore Venues
-                  </h2>
-                  <div className="grid grid-cols-3 gap-x-12 gap-y-6">
-                    {sortedCategories.map(cat => (
-                      <Link 
-                        key={cat._id}
-                        href={`/category/${cat.slug?.current}`} 
-                        className="text-neutral-300 hover:text-white transition-colors font-light text-lg"
-                      >
-                        {cat.title}
-                      </Link>
-                    ))}
+                <div className="bg-black/95 backdrop-blur-3xl border border-white/10 rounded-sm shadow-2xl overflow-hidden flex">
+                  
+                  {/* Featured Column */}
+                  <div className="w-1/3 relative hidden md:block group/feature cursor-pointer">
+                    <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover/feature:scale-105 opacity-50" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555621458-1c4b81c2f94c?q=80&w=800&auto=format&fit=crop')" }}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-8">
+                      <p className="text-neutral-400 text-xs tracking-[0.3em] uppercase mb-2">Featured Exhibition</p>
+                      <h3 className="text-white text-2xl font-light">Great Blue Heron</h3>
+                    </div>
                   </div>
+
+                  {/* Venues Column */}
+                  <div className="flex-1 p-12">
+                    <h2 className="text-neutral-500 text-sm tracking-[0.3em] uppercase mb-8 border-b border-white/10 pb-4">
+                      Explore Venues
+                    </h2>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                      {sortedCategories.map(cat => (
+                        <Link 
+                          key={cat._id}
+                          href={`/category/${cat.slug?.current}`} 
+                          className="text-neutral-300 hover:text-white hover:translate-x-2 transition-all duration-300 font-light text-lg flex items-center"
+                        >
+                          <span className="w-4 h-[1px] bg-white/20 mr-4 opacity-0 transition-opacity"></span>
+                          {cat.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Connect Column */}
+                  <div className="w-1/4 bg-neutral-900/50 p-12 border-l border-white/5">
+                    <h2 className="text-neutral-500 text-sm tracking-[0.3em] uppercase mb-8 border-b border-white/10 pb-4">
+                      Connect
+                    </h2>
+                    <div className="flex flex-col space-y-6">
+                      <a href="https://www.facebook.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors text-sm uppercase tracking-widest font-mono flex items-center group/social">
+                        <span className="mr-3 text-neutral-500 group-hover/social:text-white transition-colors">fb</span> Facebook
+                      </a>
+                      <a href="https://www.instagram.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors text-sm uppercase tracking-widest font-mono flex items-center group/social">
+                        <span className="mr-3 text-neutral-500 group-hover/social:text-white transition-colors">ig</span> Instagram
+                      </a>
+                      <a href="mailto:dmc1120@themeadowlens.com" className="text-neutral-300 hover:text-white transition-colors text-sm uppercase tracking-widest font-mono flex items-center group/social pt-4 border-t border-white/10">
+                        <span className="mr-3 text-neutral-500 group-hover/social:text-white transition-colors">✉</span> Email
+                      </a>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
