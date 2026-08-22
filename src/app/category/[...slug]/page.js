@@ -1,5 +1,6 @@
 import { client } from '../../../sanity/lib/client'
 import Gallery from '../../components/Gallery'
+import FilterBar from '../../components/FilterBar'
 import Link from 'next/link'
 
 export const revalidate = 0 
@@ -8,7 +9,7 @@ export const revalidate = 0
 export async function generateMetadata({ params }) {
   const { slug } = await params
   const categorySlug = slug[0]
-  const subcategorySlug = slug[1] // Might be undefined
+  const subcategorySlug = slug[1]
 
   let title = "Gallery"
   
@@ -28,10 +29,16 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function CategoryPage({ params }) {
+export default async function CategoryPage({ params, searchParams }) {
   const { slug } = await params
+  const resolvedSearchParams = await searchParams
+  
   const categorySlug = slug[0]
   const subcategorySlug = slug[1]
+
+  const species = resolvedSearchParams?.species || ''
+  const color = resolvedSearchParams?.color || ''
+  const size = resolvedSearchParams?.size || ''
 
   // Fetch the current category (or subcategory) to get its title
   const currentSlug = subcategorySlug || categorySlug
@@ -39,18 +46,36 @@ export default async function CategoryPage({ params }) {
   const category = await client.fetch(categoryQuery, { currentSlug })
 
   // Fetch sibling subcategories for the Filter Menu
-  // If we are on a main category, fetch its children.
-  // If we are on a subcategory, fetch its siblings (children of its parent).
   const parentSlugToQuery = subcategorySlug ? categorySlug : categorySlug
   const subcategoriesQuery = `*[_type == "category" && parentCategory->slug.current == $parentSlugToQuery] | order(title asc)`
   const subcategories = await client.fetch(subcategoriesQuery, { parentSlugToQuery })
 
-  // Fetch artworks
+  // Build the dynamic GROQ query based on URL parameters
+  let groqConditions = `_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)`
+  if (species) groqConditions += ` && species == $species`
+  if (color) groqConditions += ` && dominantColor == $color`
+  if (size) groqConditions += ` && size == $size`
+
+  const artworksQuery = `*[${groqConditions}] | order(_createdAt desc) {
+    ...,
+    "imageUrl": image.asset->url
+  }`
+  
   let artworks = []
+  let allCategoryArtworks = [] // Unfiltered list to extract available filter options
+
   if (category) {
-    const artworksQuery = `*[_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)] | order(_createdAt desc)`
-    artworks = await client.fetch(artworksQuery, { currentSlug })
+    artworks = await client.fetch(artworksQuery, { currentSlug, species, color, size })
+    
+    // Fetch all artworks in this category to get the available filter options
+    const allArtworksQuery = `*[_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)]`
+    allCategoryArtworks = await client.fetch(allArtworksQuery, { currentSlug })
   }
+
+  // Extract unique filter options from the unfiltered artworks list
+  const availableSpecies = [...new Set(allCategoryArtworks.map(a => a.species).filter(Boolean))].sort()
+  const availableColors = [...new Set(allCategoryArtworks.map(a => a.dominantColor).filter(Boolean))].sort()
+  const availableSizes = [...new Set(allCategoryArtworks.map(a => a.size).filter(Boolean))].sort()
 
   // FALLBACK TEMPLATE: If the category doesn't exist in Sanity, show the stunning placeholder!
   if (!category) {
@@ -138,7 +163,7 @@ export default async function CategoryPage({ params }) {
 
       {/* Subcategory Filter Menu */}
       {subcategories.length > 0 && (
-        <div className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 md:px-16 mb-12 border-b border-white/10 pb-8">
+        <div className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 md:px-16 mb-4 border-b border-white/10 pb-8">
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
             
             <Link 
@@ -169,6 +194,13 @@ export default async function CategoryPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* Dynamic Metadata Filters (Species, Color, Size) */}
+      <FilterBar 
+        availableSpecies={availableSpecies} 
+        availableColors={availableColors} 
+        availableSizes={availableSizes} 
+      />
 
       {/* The Gallery */}
       <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20">
