@@ -175,9 +175,34 @@ export default async function CategoryPage({ params }) {
         {artworks.length > 0 ? (
           <Gallery artworks={artworks} />
         ) : (
-          <div className="text-center text-neutral-500 mt-24">
-            <p>No artworks found in this category.</p>
-            <p className="text-sm mt-2">Upload your first artwork to this category in the Sanity Dashboard.</p>
+          <div className="columns-1 md:columns-2 lg:columns-3 gap-12 space-y-12 mt-12">
+            {[
+              { id: 1, title: "Legacy Photograph 1", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg" },
+              { id: 2, title: "Legacy Photograph 2", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVizHNoqjVGKBfhUP58mXRnMzJf0jqt1SUen0BLgI3pE92_gRXVg-6LuoU7ytliAZ0MakIbKhUR5YqEvrdqExp4pvWSfBw-lyLdR8Rkw3gs6dRsUeF3XNpGs4k8D_awBPQVsnmE08y6oKQQw.jpg" },
+              { id: 3, title: "Legacy Photograph 3", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5PZkKTYNfOLU-ZWDVc-MHRGSVpSY148ocDAqLBRu8Ywuwrm6kcGFR-q-H9EuD3zGMO2rO1c7bxEkwO4AjjbLN8-cVmSCfJxe5yLbk3VANnmtfbCI9aRDffuDQNi9SuSggzbekm6glrBuYOr0xHO97_vMhy-UDxctCtn6KlE1Vjrc-SXIQ.jpg" },
+              { id: 4, title: "Legacy Photograph 4", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVi3KOYOmUxCvYx9J1cDfA3d8cuEmqd1QU_GqQOcb3Nk5zrtTDEoj-7i6QbqwlTJPg_KxcPPpZRVY8Rvib_cpqc5uSGyKifU1foUkAkIvw5fJHo9LRCeJ_DRf2I35XyFsCQjubf2j8jXRQoT4o-hBPA.jpg" },
+              { id: 5, title: "Legacy Photograph 5", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SJSzKNoCoUUqHKjNZ49HnFix3JKZ5sdpVU_-pTewcwYdnw-kYDBJz7qSoSaaklyFWi-m2bL-gHFQh6UvubbpjqZIlWifSibFyf4clEQhh153PAp0QDzSU8GINzIf_EkxsCqKJ8TV1jKcI2es-mAz9Y4av.jpg" },
+              { id: 6, title: "Legacy Photograph 6", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5nbnTAftHkGk-JfRFT8MyOHydie-Emqd9WVPKvRu0Y3MMnzrtTDEoj-7i6QbqwlTJPg" },
+            ].map((art) => (
+              <div key={art.id} className="group relative overflow-hidden rounded-sm mb-12 break-inside-avoid aspect-[4/3] bg-neutral-900 cursor-pointer border border-neutral-800">
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-60 group-hover:opacity-40"
+                  style={{ backgroundImage: `url('${art.img}')` }}
+                ></div>
+                
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                   <p className="text-white/20 font-bold tracking-[0.5em] uppercase text-4xl -rotate-45">Preview</p>
+                </div>
+
+                <div className="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end transition-all duration-700 z-10 opacity-100 bg-gradient-to-t from-black/90 to-transparent">
+                  <h3 className="text-white text-3xl font-light mb-2 drop-shadow-lg">{art.title}</h3>
+                  <p className="text-neutral-300 text-sm font-mono uppercase tracking-widest drop-shadow-md">{art.loc}</p>
+                </div>
+              </div>
+            ))}
+            <div className="col-span-full text-center text-neutral-500 mt-12 border-t border-white/5 pt-12">
+              <p>These are preview images. Upload real artworks to this category in the Sanity Dashboard to replace them.</p>
+            </div>
           </div>
         )}
       </section>
