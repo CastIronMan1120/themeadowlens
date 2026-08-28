@@ -1,34 +1,40 @@
 import Link from 'next/link'
+import { client } from '../../sanity/lib/client'
+import { PortableText } from '@portabletext/react'
+
+export const revalidate = 0
 
 export const metadata = {
   title: "What's New | The Meadow Lens",
   description: 'The latest updates, exhibitions, and news from David McClure.',
 }
 
-export default function NewsPage() {
-  const newsItems = [
+export default async function NewsPage() {
+  const query = `*[_type == "news"] | order(date desc)`
+  const sanityNews = await client.fetch(query)
+
+  const defaultNewsItems = [
     {
-      id: 1,
-      date: 'August 14, 2026',
+      _id: '1',
+      date: '2026-08-14T12:00:00.000Z',
       title: 'The New Meadow Lens Gallery is Live',
-      description: 'Welcome to the complete digital overhaul of The Meadow Lens. I have rebuilt the entire gallery from the ground up to provide a more immersive, high-resolution viewing experience for my collectors. The new platform features expansive "Exhibition Rooms", advanced sorting by species and color, and a seamless interface for private inquiries.',
-      tag: 'Announcement'
+      content: [{style: 'normal', _type: 'block', children: [{_type: 'span', text: 'Welcome to the complete digital overhaul of The Meadow Lens. I have rebuilt the entire gallery from the ground up to provide a more immersive, high-resolution viewing experience for my collectors. The new platform features expansive "Exhibition Rooms", advanced sorting by species and color, and a seamless interface for private inquiries.'}]}],
     },
     {
-      id: 2,
-      date: 'August 2, 2026',
+      _id: '2',
+      date: '2026-08-02T12:00:00.000Z',
       title: 'Tracking the Atlantic Flyway',
-      description: 'This past weekend I spent 14 hours stationed near Exit 16W, documenting the early migratory patterns of the local raptor population. The atmospheric haze from the city provided an incredible backdrop for the shots. I am currently editing this series and will be adding the first few limited editions to the "Birds" collection next week.',
-      tag: 'Field Notes'
+      content: [{style: 'normal', _type: 'block', children: [{_type: 'span', text: 'This past weekend I spent 14 hours stationed near Exit 16W, documenting the early migratory patterns of the local raptor population. The atmospheric haze from the city provided an incredible backdrop for the shots. I am currently editing this series and will be adding the first few limited editions to the "Birds" collection next week.'}]}],
     },
     {
-      id: 3,
-      date: 'July 15, 2026',
+      _id: '3',
+      date: '2026-07-15T12:00:00.000Z',
       title: 'Meadowlands Macro Series',
-      description: 'While I am known primarily for avian photography, I have been turning my macro lens toward the fascinating insect life thriving in the protected lands. The "Insects" category has just been updated with several new high-contrast studies of local pollinators.',
-      tag: 'New Art'
+      content: [{style: 'normal', _type: 'block', children: [{_type: 'span', text: 'While I am known primarily for avian photography, I have been turning my macro lens toward the fascinating insect life thriving in the protected lands. The "Flora and Fauna" categories have just been updated with several new high-contrast studies.'}]}],
     }
   ]
+
+  const newsItemsToDisplay = sanityNews.length > 0 ? sanityNews : defaultNewsItems
 
   return (
     <main className="min-h-screen bg-black">
@@ -45,8 +51,10 @@ export default function NewsPage() {
 
         <div className="space-y-16 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-800 before:to-transparent">
           
-          {newsItems.map((item, index) => (
-            <div key={item.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+          {newsItemsToDisplay.map((item, index) => {
+            const formattedDate = new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            return (
+            <div key={item._id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
               
               {/* Timeline Dot */}
               <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-black bg-neutral-700 group-hover:bg-white text-neutral-500 group-hover:text-black shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors duration-500 z-10">
@@ -56,17 +64,17 @@ export default function NewsPage() {
               {/* Content Card */}
               <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-8 rounded-sm bg-neutral-900 border border-neutral-800 hover:border-neutral-600 transition-colors duration-500 shadow-2xl">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-neutral-400 font-mono text-sm tracking-widest">{item.date}</span>
-                  <span className="px-3 py-1 bg-white text-black text-xs font-bold uppercase tracking-wider">{item.tag}</span>
+                  <span className="text-neutral-400 font-mono text-sm tracking-widest">{formattedDate}</span>
+                  <span className="px-3 py-1 bg-white text-black text-xs font-bold uppercase tracking-wider">Update</span>
                 </div>
                 <h3 className="text-2xl text-white font-light mb-4">{item.title}</h3>
-                <p className="text-neutral-400 leading-relaxed">
-                  {item.description}
-                </p>
+                <div className="text-neutral-400 leading-relaxed prose prose-invert prose-p:text-neutral-400 prose-a:text-white">
+                  {item.content ? <PortableText value={item.content} /> : null}
+                </div>
               </div>
 
             </div>
-          ))}
+          )})}
 
         </div>
 

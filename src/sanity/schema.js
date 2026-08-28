@@ -155,4 +155,84 @@ const category = {
   ],
 }
 
-export const schemaTypes = [artwork, category]
+const artist = {
+  name: 'artist',
+  title: 'Artist Profile',
+  type: 'document',
+  fields: [
+    {
+      name: 'name',
+      title: 'Name',
+      type: 'string',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'portrait',
+      title: 'Portrait Photograph',
+      type: 'image',
+      options: { hotspot: true }
+    },
+    {
+      name: 'bio',
+      title: 'Biography / Statement',
+      type: 'array',
+      of: [{type: 'block'}],
+      description: 'The main text for the /artist page.'
+    },
+    {
+      name: 'tagline',
+      title: 'Tagline / Quote',
+      type: 'string',
+      description: 'e.g., "After all, this is The Meadowlands, and I am The Meadow LENS!"'
+    }
+  ],
+}
+
+const news = {
+  name: 'news',
+  title: 'News & Announcements',
+  type: 'document',
+  fields: [
+    {
+      name: 'title',
+      title: 'Headline',
+      type: 'string',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'slug',
+      title: 'Slug',
+      type: 'slug',
+      options: { source: 'title' },
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'date',
+      title: 'Date',
+      type: 'datetime',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'image',
+      title: 'Cover Image (Optional)',
+      type: 'image',
+      options: { hotspot: true }
+    },
+    {
+      name: 'content',
+      title: 'Content',
+      type: 'array',
+      of: [{type: 'block'}],
+      validation: Rule => Rule.required()
+    }
+  ],
+  preview: {
+    select: {
+      title: 'title',
+      subtitle: 'date',
+      media: 'image'
+    }
+  }
+}
+
+export const schemaTypes = [artwork, category, artist, news]
