@@ -8,6 +8,12 @@ export const revalidate = 0
 export const metadata = {
   title: 'The Artist | The Meadow Lens',
   description: 'Learn more about photographer and Northern NJ native David McClure.',
+  keywords: ["David McClure", "Photographer", "Biography", "Fine Art", "The Meadowlands", "Nature Photographer", "NJ Native"],
+  openGraph: {
+    title: 'The Artist | The Meadow Lens',
+    description: 'Learn more about photographer and Northern NJ native David McClure.',
+    type: 'profile',
+  }
 }
 
 export default async function ArtistPage() {

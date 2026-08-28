@@ -7,6 +7,12 @@ export const revalidate = 0
 export const metadata = {
   title: "What's New | The Meadow Lens",
   description: 'The latest updates, exhibitions, and news from David McClure.',
+  keywords: ["News", "Updates", "Exhibitions", "Photography Blog", "David McClure", "The Meadow Lens", "Fine Art"],
+  openGraph: {
+    title: "What's New | The Meadow Lens",
+    description: 'The latest updates, exhibitions, and news from David McClure.',
+    type: 'website',
+  }
 }
 
 export default async function NewsPage() {

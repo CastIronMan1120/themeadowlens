@@ -26,6 +26,12 @@ export async function generateMetadata({ params }) {
   return {
     title: `${title} | The Meadow Lens`,
     description: `Explore the ${title} fine art photography collection by David McClure.`,
+    keywords: [title, "Fine Art Photography", "The Meadowlands", "Nature Photography", "David McClure", "Gallery", "Exhibition"],
+    openGraph: {
+      title: `${title} | The Meadow Lens`,
+      description: `Explore the ${title} fine art photography collection by David McClure.`,
+      type: 'website',
+    },
   }
 }
 

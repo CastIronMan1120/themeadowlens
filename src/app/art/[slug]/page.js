@@ -15,13 +15,15 @@ export async function generateMetadata({ params }) {
   if (!artwork) return {}
 
   const imageUrl = artwork.image ? urlForImage(artwork.image).width(1200).height(630).url() : ''
+  const dynamicKeywords = [artwork.title, artwork.species, artwork.dominantColor, artwork.location, 'Fine Art Photography', 'The Meadow Lens'].filter(Boolean)
 
   return {
     title: `${artwork.title} | The Meadow Lens`,
-    description: `Experience the story behind "${artwork.title}" by David. High-end fine art photography.`,
+    description: `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`,
+    keywords: dynamicKeywords,
     openGraph: {
       title: `${artwork.title} | The Meadow Lens`,
-      description: `Experience the story behind "${artwork.title}" by David. High-end fine art photography.`,
+      description: `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`,
       images: [{ url: imageUrl }],
       type: 'website',
     },
