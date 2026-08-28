@@ -1,12 +1,57 @@
+const seo = {
+  name: 'seo',
+  title: 'Search Engine Optimization (SEO)',
+  type: 'object',
+  options: {
+    collapsible: true,
+    collapsed: true,
+  },
+  fields: [
+    {
+      name: 'metaTitle',
+      title: 'Custom Meta Title',
+      type: 'string',
+      description: 'Override the default generated title. Keep under 60 characters.'
+    },
+    {
+      name: 'metaDescription',
+      title: 'Custom Meta Description',
+      type: 'text',
+      rows: 3,
+      description: 'Override the default description. Keep between 150-160 characters for best Google ranking.'
+    },
+    {
+      name: 'keywords',
+      title: 'Custom Keywords',
+      type: 'array',
+      of: [{type: 'string'}],
+      options: {
+        layout: 'tags'
+      },
+      description: 'Add specific SEO keywords. Press Enter to add each tag.'
+    }
+  ]
+}
+
 const artwork = {
   name: 'artwork',
   title: 'Artwork',
   type: 'document',
+  groups: [
+    { name: 'content', title: 'Artwork Details', default: true },
+    { name: 'seo', title: 'SEO & Metadata' }
+  ],
   fields: [
+    {
+      name: 'seo',
+      type: 'seo',
+      group: 'seo'
+    },
     {
       name: 'title',
       title: 'Title',
       type: 'string',
+      group: 'content',
       validation: Rule => Rule.required()
     },
     {
@@ -128,17 +173,28 @@ const category = {
   name: 'category',
   title: 'Category',
   type: 'document',
+  groups: [
+    { name: 'content', title: 'Content', default: true },
+    { name: 'seo', title: 'SEO & Metadata' }
+  ],
   fields: [
+    {
+      name: 'seo',
+      type: 'seo',
+      group: 'seo'
+    },
     {
       name: 'title',
       title: 'Category Title',
       type: 'string',
+      group: 'content',
       validation: Rule => Rule.required()
     },
     {
       name: 'slug',
       title: 'Slug',
       type: 'slug',
+      group: 'content',
       options: {
         source: 'title',
         maxLength: 96,
@@ -150,6 +206,7 @@ const category = {
       title: 'Parent Category',
       type: 'reference',
       to: [{ type: 'category' }],
+      group: 'content',
       description: 'Select a parent if this is a subcategory (e.g., Owls under Birds). Leave blank if this is a Main Category.'
     }
   ],
@@ -247,4 +304,4 @@ const news = {
   }
 }
 
-export const schemaTypes = [artwork, category, artist, news]
+export const schemaTypes = [seo, artwork, category, artist, news]

@@ -12,24 +12,31 @@ export async function generateMetadata({ params }) {
   const subcategorySlug = slug[1]
 
   let title = "Gallery"
+  let seo = null
   
   if (subcategorySlug) {
     const query = `*[_type == "category" && slug.current == $subcategorySlug][0]`
     const data = await client.fetch(query, { subcategorySlug })
     if (data?.title) title = data.title
+    if (data?.seo) seo = data.seo
   } else {
     const query = `*[_type == "category" && slug.current == $categorySlug][0]`
     const data = await client.fetch(query, { categorySlug })
     if (data?.title) title = data.title
+    if (data?.seo) seo = data.seo
   }
 
+  const metaTitle = seo?.metaTitle || `${title} | The Meadow Lens`
+  const metaDesc = seo?.metaDescription || `Explore the ${title} fine art photography collection by David McClure.`
+  const keywords = seo?.keywords?.length > 0 ? seo.keywords : [title, "Fine Art Photography", "The Meadowlands", "Nature Photography", "David McClure", "Gallery", "Exhibition"]
+
   return {
-    title: `${title} | The Meadow Lens`,
-    description: `Explore the ${title} fine art photography collection by David McClure.`,
-    keywords: [title, "Fine Art Photography", "The Meadowlands", "Nature Photography", "David McClure", "Gallery", "Exhibition"],
+    title: metaTitle,
+    description: metaDesc,
+    keywords: keywords,
     openGraph: {
-      title: `${title} | The Meadow Lens`,
-      description: `Explore the ${title} fine art photography collection by David McClure.`,
+      title: metaTitle,
+      description: metaDesc,
       type: 'website',
     },
   }

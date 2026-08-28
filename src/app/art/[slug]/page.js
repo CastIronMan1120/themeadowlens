@@ -17,13 +17,17 @@ export async function generateMetadata({ params }) {
   const imageUrl = artwork.image ? urlForImage(artwork.image).width(1200).height(630).url() : ''
   const dynamicKeywords = [artwork.title, artwork.species, artwork.dominantColor, artwork.location, 'Fine Art Photography', 'The Meadow Lens'].filter(Boolean)
 
+  const metaTitle = artwork.seo?.metaTitle || `${artwork.title} | The Meadow Lens`
+  const metaDesc = artwork.seo?.metaDescription || `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`
+  const keywords = artwork.seo?.keywords?.length > 0 ? artwork.seo.keywords : dynamicKeywords
+
   return {
-    title: `${artwork.title} | The Meadow Lens`,
-    description: `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`,
-    keywords: dynamicKeywords,
+    title: metaTitle,
+    description: metaDesc,
+    keywords: keywords,
     openGraph: {
-      title: `${artwork.title} | The Meadow Lens`,
-      description: `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`,
+      title: metaTitle,
+      description: metaDesc,
       images: [{ url: imageUrl }],
       type: 'website',
     },
