@@ -153,6 +153,18 @@ const category = {
       description: 'Select a parent if this is a subcategory (e.g., Owls under Birds). Leave blank if this is a Main Category.'
     }
   ],
+  preview: {
+    select: {
+      title: 'title',
+      parentTitle: 'parentCategory.title'
+    },
+    prepare({ title, parentTitle }) {
+      return {
+        title: title,
+        subtitle: parentTitle ? `↳ Subcategory of ${parentTitle}` : '⭐ Root Venue'
+      }
+    }
+  }
 }
 
 const artist = {
