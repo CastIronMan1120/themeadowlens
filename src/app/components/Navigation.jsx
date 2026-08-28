@@ -10,23 +10,35 @@ export default function Navigation({ categories = [] }) {
 
   const displayCategories = categories.length > 0 ? categories : [
     { _id: '1', title: 'Birds', slug: { current: 'birds' } },
-    { _id: '2', title: 'Vistas', slug: { current: 'vistas' } },
-    { _id: '3', title: 'Collages', slug: { current: 'collages' } },
-    { _id: '4', title: 'Fun with Captions', slug: { current: 'fun-with-captions' } },
-    { _id: '5', title: 'Nature', slug: { current: 'nature' } },
-    { _id: '6', title: 'Aquatic Life', slug: { current: 'aquatic-life' } },
-    { _id: '7', title: 'Mammals & Reptiles', slug: { current: 'mammals-reptiles' } },
-    { _id: '8', title: 'The Heavens', slug: { current: 'the-heavens' } },
-    { _id: '9', title: 'Other', slug: { current: 'other' } },
-    { _id: '10', title: 'Planes, Trains & Automobiles', slug: { current: 'planes-trains-automobiles' } }
+    { _id: '2', title: 'Flora', slug: { current: 'flora' } },
+    { _id: '3', title: 'Fauna', slug: { current: 'fauna' } },
+    { _id: '4', title: 'Vistas', slug: { current: 'vistas' } },
+    { _id: '5', title: 'The Heavens', slug: { current: 'the-heavens' } },
+    { _id: '6', title: 'Captioned Works', slug: { current: 'captioned-works' } },
+    { _id: '7', title: 'Compilations', slug: { current: 'compilations' } },
+    { _id: '8', title: 'Other', slug: { current: 'other' } }
+  ]
+  // Enforce the strict Master Branding Order from the /learn rules
+  const VENUE_ORDER = [
+    'Birds',
+    'Flora',
+    'Fauna',
+    'Vistas',
+    'The Heavens',
+    'Captioned Works',
+    'Compilations',
+    'Other'
   ]
 
-  // Sort categories: Birds first, then alphabetical
   const sortedCategories = [...displayCategories].sort((a, b) => {
-    if (a.title.toLowerCase() === 'birds') return -1
-    if (b.title.toLowerCase() === 'birds') return 1
-    return a.title.localeCompare(b.title)
+    const indexA = VENUE_ORDER.indexOf(a.title)
+    const indexB = VENUE_ORDER.indexOf(b.title)
+    // If a category isn't in the explicit order list, push it to the end
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
   })
+
 
   useEffect(() => {
     let lastScrollY = window.scrollY
@@ -94,14 +106,14 @@ export default function Navigation({ categories = [] }) {
                       Explore Venues
                     </h2>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                      {sortedCategories.map(cat => (
+                      {sortedCategories.map((category) => (
                         <Link 
-                          key={cat._id}
-                          href={`/category/${cat.slug?.current}`} 
-                          className="text-neutral-300 hover:text-white hover:translate-x-2 transition-all duration-300 font-light text-lg flex items-center"
+                          key={category._id}
+                          href={`/category/${category.slug.current}`} 
+                          className="text-lg md:text-xl font-light text-neutral-400 hover:text-white hover:pl-2 transition-all uppercase tracking-widest font-mono"
+                          onClick={() => setMegaMenuOpen(false)}
                         >
-                          <span className="w-4 h-[1px] bg-white/20 mr-4 opacity-0 transition-opacity"></span>
-                          {cat.title}
+                          {category.title}
                         </Link>
                       ))}
                     </div>
@@ -168,7 +180,7 @@ export default function Navigation({ categories = [] }) {
             <h2 className="text-neutral-500 text-xs tracking-[0.3em] uppercase">Venues</h2>
             <div className="grid grid-cols-2 gap-4">
               {sortedCategories.map(cat => (
-                <Link key={cat._id} href={`/category/${cat.slug?.current}`} onClick={() => setMobileMenuOpen(false)} className="text-lg font-light text-neutral-300">
+                <Link key={cat._id} href={`/category/${cat.slug.current}`} onClick={() => setMobileMenuOpen(false)} className="text-lg font-light text-neutral-300">
                   {cat.title}
                 </Link>
               ))}
