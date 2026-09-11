@@ -10,24 +10,28 @@ export default function Navigation({ categories = [] }) {
 
   const displayCategories = categories.length > 0 ? categories : [
     { _id: '1', title: 'Birds', slug: { current: 'birds' } },
-    { _id: '2', title: 'Flora', slug: { current: 'flora' } },
-    { _id: '3', title: 'Fauna', slug: { current: 'fauna' } },
-    { _id: '4', title: 'Vistas', slug: { current: 'vistas' } },
-    { _id: '5', title: 'The Heavens', slug: { current: 'the-heavens' } },
+    { _id: '2', title: 'Fauna', slug: { current: 'fauna' } },
+    { _id: '3', title: 'Flora', slug: { current: 'flora' } },
+    { _id: '4', title: 'Sky & Heavens', slug: { current: 'sky-heavens' } },
+    { _id: '5', title: 'Vistas & Scenery', slug: { current: 'vistas-scenery' } },
     { _id: '6', title: 'Captioned Works', slug: { current: 'captioned-works' } },
     { _id: '7', title: 'Compilations', slug: { current: 'compilations' } },
-    { _id: '8', title: 'Other', slug: { current: 'other' } }
+    { _id: '8', title: 'Air Traffic & Steel Rails', slug: { current: 'air-traffic-steel-rails' } },
+    { _id: '9', title: 'Everything', slug: { current: 'everything' } },
+    { _id: '10', title: 'Guest Photos', slug: { current: 'guest-photos' } }
   ]
   // Enforce the strict Master Branding Order from the /learn rules
   const VENUE_ORDER = [
     'Birds',
-    'Flora',
     'Fauna',
-    'Vistas',
-    'The Heavens',
+    'Flora',
+    'Sky & Heavens',
+    'Vistas & Scenery',
     'Captioned Works',
     'Compilations',
-    'Other'
+    'Air Traffic & Steel Rails',
+    'Everything',
+    'Guest Photos'
   ]
 
   const sortedCategories = [...displayCategories].sort((a, b) => {

@@ -1,6 +1,7 @@
 import { client } from '../../../sanity/lib/client'
 import Gallery from '../../components/Gallery'
 import FilterBar from '../../components/FilterBar'
+import SubcategoryDropdown from '../../components/SubcategoryDropdown'
 import Link from 'next/link'
 
 export const revalidate = 0 
@@ -106,25 +107,14 @@ export default async function CategoryPage({ params, searchParams }) {
         </section>
 
         {/* Placeholder Subcategory Filter Bar */}
-        <div className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 md:px-16 mb-12 border-b border-white/10 pb-8">
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
-            <Link 
-              href={`/category/${categorySlug}`}
-              className={`px-6 py-2 rounded-full border text-sm uppercase tracking-widest font-mono transition-colors ${!subcategorySlug ? 'bg-white text-black border-white' : 'bg-transparent text-neutral-400 border-neutral-700 hover:border-white hover:text-white'}`}
-            >
-              All
-            </Link>
-            <button className="px-6 py-2 rounded-full border border-neutral-700 bg-transparent text-neutral-400 text-sm uppercase tracking-widest font-mono opacity-50 cursor-not-allowed">
-              Subcategory 1
-            </button>
-            <button className="px-6 py-2 rounded-full border border-neutral-700 bg-transparent text-neutral-400 text-sm uppercase tracking-widest font-mono opacity-50 cursor-not-allowed">
-              Subcategory 2
-            </button>
-          </div>
-          <p className="text-center text-neutral-500 text-xs mt-6 font-mono">
-            [ Subcategories will populate here once added to Sanity ]
-          </p>
-        </div>
+        <SubcategoryDropdown 
+          subcategories={[{ id: 'dummy1', title: 'Subcategory 1', slug: 'sub1' }, { id: 'dummy2', title: 'Subcategory 2', slug: 'sub2' }]} 
+          categorySlug={categorySlug} 
+          currentSubcategorySlug={subcategorySlug} 
+        />
+        <p className="text-center text-neutral-500 text-xs mt-2 mb-12 font-mono">
+          [ Subcategories will populate here once added to Sanity ]
+        </p>
 
         {/* Placeholder Gallery */}
         <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20">
@@ -176,36 +166,11 @@ export default async function CategoryPage({ params, searchParams }) {
 
       {/* Subcategory Filter Menu */}
       {subcategories.length > 0 && (
-        <div className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 md:px-16 mb-4 border-b border-white/10 pb-8">
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6">
-            
-            <Link 
-              href={`/category/${categorySlug}`}
-              className={`px-6 py-2 rounded-full border text-sm uppercase tracking-widest font-mono transition-colors ${
-                !subcategorySlug 
-                  ? 'bg-white text-black border-white' 
-                  : 'bg-transparent text-neutral-400 border-neutral-700 hover:border-white hover:text-white'
-              }`}
-            >
-              All {categorySlug.replace(/-/g, ' ')}
-            </Link>
-
-            {subcategories.map((subcat) => (
-              <Link
-                key={subcat._id}
-                href={`/category/${categorySlug}/${subcat.slug?.current}`}
-                className={`px-6 py-2 rounded-full border text-sm uppercase tracking-widest font-mono transition-colors ${
-                  subcategorySlug === subcat.slug?.current
-                    ? 'bg-white text-black border-white'
-                    : 'bg-transparent text-neutral-400 border-neutral-700 hover:border-white hover:text-white'
-                }`}
-              >
-                {subcat.title}
-              </Link>
-            ))}
-            
-          </div>
-        </div>
+        <SubcategoryDropdown 
+          subcategories={subcategories} 
+          categorySlug={categorySlug} 
+          currentSubcategorySlug={subcategorySlug} 
+        />
       )}
 
       {/* Dynamic Metadata Filters (Species, Color, Size) */}
