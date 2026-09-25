@@ -1,6 +1,5 @@
 import { client } from '../../../sanity/lib/client'
 import Gallery from '../../components/Gallery'
-import FilterBar from '../../components/FilterBar'
 import SubcategoryDropdown from '../../components/SubcategoryDropdown'
 import Link from 'next/link'
 
@@ -76,20 +75,10 @@ export default async function CategoryPage({ params, searchParams }) {
   }`
   
   let artworks = []
-  let allCategoryArtworks = [] // Unfiltered list to extract available filter options
 
   if (category) {
     artworks = await client.fetch(artworksQuery, { currentSlug, species, color, size })
-    
-    // Fetch all artworks in this category to get the available filter options
-    const allArtworksQuery = `*[_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)]`
-    allCategoryArtworks = await client.fetch(allArtworksQuery, { currentSlug })
   }
-
-  // Extract unique filter options from the unfiltered artworks list
-  const availableSpecies = [...new Set(allCategoryArtworks.map(a => a.species).filter(Boolean))].sort()
-  const availableColors = [...new Set(allCategoryArtworks.map(a => a.dominantColor).filter(Boolean))].sort()
-  const availableSizes = [...new Set(allCategoryArtworks.map(a => a.size).filter(Boolean))].sort()
 
   // FALLBACK TEMPLATE: If the category doesn't exist in Sanity, show the stunning placeholder!
   if (!category) {
@@ -172,13 +161,6 @@ export default async function CategoryPage({ params, searchParams }) {
           currentSubcategorySlug={subcategorySlug} 
         />
       )}
-
-      {/* Dynamic Metadata Filters (Species, Color, Size) */}
-      <FilterBar 
-        availableSpecies={availableSpecies} 
-        availableColors={availableColors} 
-        availableSizes={availableSizes} 
-      />
 
       {/* The Gallery */}
       <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20">

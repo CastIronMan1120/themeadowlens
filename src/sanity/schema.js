@@ -202,6 +202,16 @@ const category = {
       validation: Rule => Rule.required()
     },
     {
+      name: 'menuImage',
+      title: 'Menu Hover Image (Root Venues Only)',
+      type: 'image',
+      group: 'content',
+      options: {
+        hotspot: true,
+      },
+      description: 'The image that appears in the Mega Menu when a user hovers over this Venue. Leave blank to use the default.'
+    },
+    {
       name: 'parentCategory',
       title: 'Parent Category',
       type: 'reference',

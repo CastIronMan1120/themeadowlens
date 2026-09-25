@@ -20,7 +20,10 @@ export const metadata = {
 export const revalidate = 0;
 
 export default async function RootLayout({ children }) {
-  const categoriesQuery = `*[_type == "category" && !defined(parentCategory)] | order(title asc)`
+  const categoriesQuery = `*[_type == "category" && !defined(parentCategory)] | order(title asc) {
+    ...,
+    "menuImageUrl": menuImage.asset->url
+  }`
   const categories = await client.fetch(categoriesQuery)
 
   return (

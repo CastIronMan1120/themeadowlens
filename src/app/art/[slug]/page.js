@@ -4,6 +4,7 @@ import { PortableText } from '@portabletext/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import RoomSettingViewer from '../../components/RoomSettingViewer'
+import WallPreviewButton from '../../components/WallPreviewButton'
 
 export const revalidate = 0
 
@@ -153,6 +154,11 @@ export default async function ArtworkPage({ params, searchParams }) {
                 </a>
               </>
             )}
+            
+            <WallPreviewButton 
+              imageUrl={urlForImage(artwork.image).url()} 
+              artworkTitle={artwork.title} 
+            />
           </div>
 
           {/* Social Proof Sharing */}

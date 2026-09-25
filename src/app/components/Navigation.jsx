@@ -7,18 +7,20 @@ export default function Navigation({ categories = [] }) {
   const [scrolled, setScrolled] = useState(false)
   const [megaMenuOpen, setMegaMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [hoveredCategory, setHoveredCategory] = useState(null)
 
   const displayCategories = categories.length > 0 ? categories : [
     { _id: '1', title: 'Birds', slug: { current: 'birds' } },
     { _id: '2', title: 'Fauna', slug: { current: 'fauna' } },
     { _id: '3', title: 'Flora', slug: { current: 'flora' } },
     { _id: '4', title: 'Sky & Heavens', slug: { current: 'sky-heavens' } },
-    { _id: '5', title: 'Vistas & Scenery', slug: { current: 'vistas-scenery' } },
+    { _id: '5', title: 'Vistas, Landscapes and Scenes', slug: { current: 'vistas-scenery' } },
     { _id: '6', title: 'Captioned Works', slug: { current: 'captioned-works' } },
     { _id: '7', title: 'Compilations', slug: { current: 'compilations' } },
     { _id: '8', title: 'Air Traffic & Steel Rails', slug: { current: 'air-traffic-steel-rails' } },
     { _id: '9', title: 'Everything', slug: { current: 'everything' } },
-    { _id: '10', title: 'Guest Photos', slug: { current: 'guest-photos' } }
+    { _id: '10', title: 'Guest Photos', slug: { current: 'guest-photos' } },
+    { _id: '11', title: 'Video', slug: { current: 'video' } }
   ]
   // Enforce the strict Master Branding Order from the /learn rules
   const VENUE_ORDER = [
@@ -26,12 +28,13 @@ export default function Navigation({ categories = [] }) {
     'Fauna',
     'Flora',
     'Sky & Heavens',
-    'Vistas & Scenery',
+    'Vistas, Landscapes and Scenes',
     'Captioned Works',
     'Compilations',
     'Air Traffic & Steel Rails',
     'Everything',
-    'Guest Photos'
+    'Guest Photos',
+    'Video'
   ]
 
   const sortedCategories = [...displayCategories].sort((a, b) => {
@@ -95,12 +98,19 @@ export default function Navigation({ categories = [] }) {
                 <div className="bg-black/95 backdrop-blur-3xl border border-white/10 rounded-sm shadow-2xl overflow-hidden flex">
                   
                   {/* Featured Column */}
-                  <div className="w-1/3 relative hidden md:block group/feature cursor-pointer">
-                    <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover/feature:scale-105 opacity-50" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1555621458-1c4b81c2f94c?q=80&w=800&auto=format&fit=crop')" }}></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-8">
-                      <p className="text-neutral-400 text-xs tracking-[0.3em] uppercase mb-2">Featured Exhibition</p>
-                      <h3 className="text-white text-2xl font-light">Great Blue Heron</h3>
+                  <div className="w-1/3 relative hidden md:block group/feature cursor-pointer overflow-hidden bg-neutral-900">
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center transition-all duration-700 ease-out group-hover/feature:scale-105 opacity-50" 
+                      style={{ backgroundImage: `url('${hoveredCategory?.menuImageUrl || "https://images.unsplash.com/photo-1555621458-1c4b81c2f94c?q=80&w=800&auto=format&fit=crop"}')` }}
+                    ></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-8 transition-all duration-500">
+                      <p className="text-neutral-400 text-xs tracking-[0.3em] uppercase mb-2">
+                        {hoveredCategory ? "Explore Venue" : "Featured Exhibition"}
+                      </p>
+                      <h3 className="text-white text-2xl font-light">
+                        {hoveredCategory ? hoveredCategory.title : "Great Blue Heron"}
+                      </h3>
                     </div>
                   </div>
 
@@ -114,8 +124,10 @@ export default function Navigation({ categories = [] }) {
                         <Link 
                           key={category._id}
                           href={`/category/${category.slug.current}`} 
-                          className="text-lg md:text-xl font-light text-neutral-400 hover:text-white hover:pl-2 transition-all uppercase tracking-widest font-mono"
+                          className={`text-lg md:text-xl font-light transition-all uppercase tracking-widest font-mono ${hoveredCategory?._id === category._id ? 'text-white pl-2' : 'text-neutral-400 hover:text-white hover:pl-2'}`}
                           onClick={() => setMegaMenuOpen(false)}
+                          onMouseEnter={() => setHoveredCategory(category)}
+                          onMouseLeave={() => setHoveredCategory(null)}
                         >
                           {category.title}
                         </Link>
