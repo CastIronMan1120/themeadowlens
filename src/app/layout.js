@@ -4,6 +4,13 @@ import Footer from "./components/Footer";
 import { client } from "../sanity/lib/client";
 import { Suspense } from "react";
 import GlobalInquiryModal from "./components/GlobalInquiryModal";
+import localFont from 'next/font/local';
+
+const modernLove = localFont({
+  src: './fonts/modern-love-grunge.ttf',
+  variable: '--font-logo',
+  display: 'swap',
+});
 
 export const metadata = {
   title: "The Meadow Lens | Fine Art Photography by David McClure",
@@ -31,7 +38,7 @@ export default async function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`h-full antialiased`}
+      className={`h-full antialiased ${modernLove.variable}`}
     >
       <body className="min-h-full flex flex-col bg-black text-white">
         <Navigation categories={categories} />
