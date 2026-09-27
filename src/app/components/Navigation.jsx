@@ -118,7 +118,7 @@ export default function Navigation({ categories = [] }) {
                   <div className="w-1/3 relative hidden md:block group/feature cursor-pointer overflow-hidden bg-black">
                     <div 
                       className="absolute inset-0 bg-cover bg-center transition-all duration-[2000ms] ease-out group-hover/feature:scale-110 opacity-40 group-hover/feature:opacity-70" 
-                      style={{ backgroundImage: `url('${hoveredCategory?.menuImageUrl || "https://images.unsplash.com/photo-1555621458-1c4b81c2f94c?q=80&w=800&auto=format&fit=crop"}')` }}
+                      style={{ backgroundImage: `url('${hoveredCategory?.menuImageUrl || "/room-preview.jpg"}')` }}
                     ></div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 p-8 transition-all duration-700 transform translate-y-4 group-hover/feature:translate-y-0">
