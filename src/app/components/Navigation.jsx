@@ -87,7 +87,7 @@ export default function Navigation({ categories = [] }) {
           {/* Brand Logo */}
           <Link 
             href="/" 
-            className="text-2xl md:text-3xl font-normal tracking-wide text-white transition-opacity hover:opacity-80" 
+            className="text-4xl md:text-5xl lg:text-6xl font-normal tracking-wider text-white transition-opacity hover:opacity-80 drop-shadow-md" 
             style={{ fontFamily: 'var(--font-logo)' }}
           >
             The Meadow Lens
@@ -213,7 +213,7 @@ export default function Navigation({ categories = [] }) {
         }`}
       >
         <div className="flex justify-between items-center mb-16">
-          <Link href="/" className="text-2xl text-white" style={{ fontFamily: 'var(--font-logo)' }}>The Meadow Lens</Link>
+          <Link href="/" className="text-4xl text-white drop-shadow-md" style={{ fontFamily: 'var(--font-logo)' }}>The Meadow Lens</Link>
           <button onClick={() => setMobileMenuOpen(false)} className="text-white/50 hover:text-white text-3xl font-light">&times;</button>
         </div>
 
