@@ -78,7 +78,7 @@ export default function ArtworkCard({ artwork }) {
             Inquire
           </Link>
           <Link 
-            href={`${artworkUrl}?view=room`}
+            href={artworkUrl}
             className="px-4 py-2 border border-white/30 text-white font-semibold text-xs lg:text-sm uppercase tracking-widest hover:border-white transition-colors text-center"
           >
             Room Settings

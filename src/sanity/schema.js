@@ -314,4 +314,54 @@ const news = {
   }
 }
 
-export const schemaTypes = [seo, artwork, category, artist, news]
+const lead = {
+  name: 'lead',
+  title: 'Inquiry Leads',
+  type: 'document',
+  fields: [
+    {
+      name: 'name',
+      title: 'Name',
+      type: 'string',
+      readOnly: true,
+    },
+    {
+      name: 'email',
+      title: 'Email',
+      type: 'string',
+      readOnly: true,
+    },
+    {
+      name: 'phone',
+      title: 'Phone',
+      type: 'string',
+      readOnly: true,
+    },
+    {
+      name: 'interest',
+      title: 'Artwork Interest / Subject',
+      type: 'string',
+      readOnly: true,
+    },
+    {
+      name: 'message',
+      title: 'Message',
+      type: 'text',
+      readOnly: true,
+    },
+    {
+      name: 'submittedAt',
+      title: 'Submitted At',
+      type: 'datetime',
+      readOnly: true,
+    }
+  ],
+  preview: {
+    select: {
+      title: 'name',
+      subtitle: 'interest',
+    }
+  }
+}
+
+export const schemaTypes = [seo, artwork, category, artist, news, lead]

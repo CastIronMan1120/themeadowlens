@@ -2,6 +2,8 @@ import "./globals.css";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
 import { client } from "../sanity/lib/client";
+import { Suspense } from "react";
+import GlobalInquiryModal from "./components/GlobalInquiryModal";
 
 export const metadata = {
   title: "The Meadow Lens | Fine Art Photography by David McClure",
@@ -35,6 +37,9 @@ export default async function RootLayout({ children }) {
         <Navigation categories={categories} />
         {children}
         <Footer />
+        <Suspense fallback={null}>
+          <GlobalInquiryModal />
+        </Suspense>
       </body>
     </html>
   );

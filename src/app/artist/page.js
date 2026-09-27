@@ -65,9 +65,9 @@ export default async function ArtistPage() {
             </div>
 
             <div className="pt-12">
-              <a href="mailto:dmc1120@themeadowlens.com" className="inline-block border border-white text-white px-8 py-4 uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-black transition-colors">
+              <Link href="?inquire=true" scroll={false} className="inline-block border border-white text-white px-8 py-4 uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-black transition-colors">
                 Private Inquiry
-              </a>
+              </Link>
             </div>
           </div>
 

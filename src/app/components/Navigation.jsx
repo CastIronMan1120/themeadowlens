@@ -57,6 +57,23 @@ export default function Navigation({ categories = [] }) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Exotic Color Mapping for the Mega Menu Gradient Wash
+  const VENUE_COLORS = {
+    'Birds': 'from-red-900/60',
+    'Fauna': 'from-amber-900/50',
+    'Flora': 'from-emerald-900/50',
+    'Sky & Heavens': 'from-sky-900/50',
+    'Vistas, Landscapes and Scenes': 'from-purple-900/50',
+    'Captioned Works': 'from-neutral-800/50',
+    'Compilations': 'from-indigo-900/50',
+    'Air Traffic & Steel Rails': 'from-orange-900/40',
+    'Everything': 'from-white/10',
+    'Guest Photos': 'from-pink-900/40',
+    'Video': 'from-cyan-900/50'
+  }
+
+  const activeColor = hoveredCategory ? VENUE_COLORS[hoveredCategory.title] || 'from-black/0' : 'from-black/0'
+
   return (
     <>
       {/* --- DESKTOP MEGA MENU NAVIGATION --- */}
@@ -95,20 +112,20 @@ export default function Navigation({ categories = [] }) {
                   megaMenuOpen ? 'opacity-100 scale-y-100 pointer-events-auto' : 'opacity-0 scale-y-95 pointer-events-none'
                 }`}
               >
-                <div className="bg-black/95 backdrop-blur-3xl border border-white/10 rounded-sm shadow-2xl overflow-hidden flex">
+                <div className={`bg-black/95 backdrop-blur-3xl border border-white/10 rounded-sm shadow-2xl overflow-hidden flex bg-gradient-to-br to-black/90 transition-colors duration-700 ${activeColor}`}>
                   
-                  {/* Featured Column */}
-                  <div className="w-1/3 relative hidden md:block group/feature cursor-pointer overflow-hidden bg-neutral-900">
+                  {/* Featured Column with Ken Burns Effect */}
+                  <div className="w-1/3 relative hidden md:block group/feature cursor-pointer overflow-hidden bg-black">
                     <div 
-                      className="absolute inset-0 bg-cover bg-center transition-all duration-700 ease-out group-hover/feature:scale-105 opacity-50" 
+                      className="absolute inset-0 bg-cover bg-center transition-all duration-[2000ms] ease-out group-hover/feature:scale-110 opacity-40 group-hover/feature:opacity-70" 
                       style={{ backgroundImage: `url('${hoveredCategory?.menuImageUrl || "https://images.unsplash.com/photo-1555621458-1c4b81c2f94c?q=80&w=800&auto=format&fit=crop"}')` }}
                     ></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 p-8 transition-all duration-500">
-                      <p className="text-neutral-400 text-xs tracking-[0.3em] uppercase mb-2">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 p-8 transition-all duration-700 transform translate-y-4 group-hover/feature:translate-y-0">
+                      <p className="text-neutral-400 text-xs tracking-[0.3em] uppercase mb-2 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-700 delay-100">
                         {hoveredCategory ? "Explore Venue" : "Featured Exhibition"}
                       </p>
-                      <h3 className="text-white text-2xl font-light">
+                      <h3 className="text-white text-3xl font-light tracking-wide shadow-black drop-shadow-2xl">
                         {hoveredCategory ? hoveredCategory.title : "Great Blue Heron"}
                       </h3>
                     </div>
@@ -120,16 +137,25 @@ export default function Navigation({ categories = [] }) {
                       Explore Venues
                     </h2>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                      {sortedCategories.map((category) => (
+                      {sortedCategories.map((category, index) => (
                         <Link 
                           key={category._id}
                           href={`/category/${category.slug.current}`} 
-                          className={`text-lg md:text-xl font-light transition-all uppercase tracking-widest font-mono ${hoveredCategory?._id === category._id ? 'text-white pl-2' : 'text-neutral-400 hover:text-white hover:pl-2'}`}
+                          className="group relative inline-block text-lg md:text-xl font-light transition-all uppercase tracking-widest font-mono text-neutral-400 hover:text-white"
+                          style={{
+                            opacity: megaMenuOpen ? 1 : 0,
+                            transform: megaMenuOpen ? 'translateY(0)' : 'translateY(10px)',
+                            transition: `all 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${0.1 + (index * 0.05)}s`
+                          }}
                           onClick={() => setMegaMenuOpen(false)}
                           onMouseEnter={() => setHoveredCategory(category)}
                           onMouseLeave={() => setHoveredCategory(null)}
                         >
-                          {category.title}
+                          <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-2 inline-block">
+                            {category.title}
+                          </span>
+                          {/* Glowing Underline Bell & Whistle */}
+                          <span className="absolute left-0 -bottom-1 w-0 h-[1px] bg-white/50 transition-all duration-500 group-hover:w-full group-hover:bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></span>
                         </Link>
                       ))}
                     </div>
@@ -147,9 +173,9 @@ export default function Navigation({ categories = [] }) {
                       <a href="https://www.instagram.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="text-neutral-300 hover:text-white transition-colors text-sm uppercase tracking-widest font-mono flex items-center group/social">
                         <span className="mr-3 text-neutral-500 group-hover/social:text-white transition-colors">ig</span> Instagram
                       </a>
-                      <a href="mailto:dmc1120@themeadowlens.com" className="text-neutral-300 hover:text-white transition-colors text-sm uppercase tracking-widest font-mono flex items-center group/social pt-4 border-t border-white/10">
+                      <Link href="?inquire=true" scroll={false} className="text-neutral-300 hover:text-white transition-colors text-sm uppercase tracking-widest font-mono flex items-center group/social pt-4 border-t border-white/10">
                         <span className="mr-3 text-neutral-500 group-hover/social:text-white transition-colors">✉</span> Email
-                      </a>
+                      </Link>
                     </div>
                   </div>
 
@@ -164,9 +190,9 @@ export default function Navigation({ categories = [] }) {
             <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
               What's New
             </Link>
-            <a href="mailto:dmc1120@themeadowlens.com" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+            <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
               Inquiries & Comments
-            </a>
+            </Link>
 
           </div>
 
@@ -205,7 +231,7 @@ export default function Navigation({ categories = [] }) {
           
           <Link href="/artist" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-light text-white/80">The Artist</Link>
           <Link href="/news" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-light text-white/80">What's New</Link>
-          <a href="mailto:dmc1120@themeadowlens.com" className="text-3xl font-light text-white/80">Inquiries & Comments</a>
+          <Link href="?inquire=true" scroll={false} className="text-3xl font-light text-white/80">Inquiries & Comments</Link>
           
           <div className="pt-8 flex space-x-8 border-t border-white/10">
             <a href="https://www.facebook.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="text-white/50 uppercase tracking-widest text-xs font-mono">Facebook</a>

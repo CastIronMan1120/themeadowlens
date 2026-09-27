@@ -3,7 +3,6 @@ import { urlForImage } from '../../../sanity/lib/image'
 import { PortableText } from '@portabletext/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import RoomSettingViewer from '../../components/RoomSettingViewer'
 import WallPreviewButton from '../../components/WallPreviewButton'
 
 export const revalidate = 0
@@ -35,10 +34,8 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function ArtworkPage({ params, searchParams }) {
+export default async function ArtworkPage({ params }) {
   const { slug } = await params
-  const resolvedSearchParams = await searchParams
-  const isRoomView = resolvedSearchParams?.view === 'room'
 
   const artwork = await client.fetch(`*[_type == "artwork" && slug.current == $slug][0]`, { slug })
 
@@ -46,10 +43,8 @@ export default async function ArtworkPage({ params, searchParams }) {
     notFound()
   }
 
-  // Inquiry Email Link
-  const inquirySubject = encodeURIComponent(`Private Inquiry: ${artwork.title}`)
-  const inquiryBody = encodeURIComponent(`Hello David,\n\nI am interested in learning more about "${artwork.title}". Please let me know about its availability and sizing options.\n\nThank you,`)
-  const mailtoLink = `mailto:dmc1120@themeadowlens.com?subject=${inquirySubject}&body=${inquiryBody}`
+  // Inquiry Link
+  const inquiryLink = `?inquire=true&interest=${encodeURIComponent(artwork.title)}`
 
   // Status Logic
   const status = artwork.status || 'available'
@@ -75,18 +70,7 @@ export default async function ArtworkPage({ params, searchParams }) {
         <span className="text-white">{artwork.title}</span>
       </nav>
 
-      {/* Conditional Rendering: Room View vs Focus Mode */}
-      {isRoomView ? (
-        <div className="mb-24">
-          <h1 className="text-4xl md:text-5xl font-light tracking-wide mb-8 text-white text-center">Virtual Exhibition</h1>
-          <RoomSettingViewer 
-            artworkUrl={urlForImage(artwork.image).width(1200).auto('format').url()}
-            title={artwork.title}
-            returnPath={`/art/${slug}`}
-          />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
           
           {/* Left: The Uninterrupted Image */}
           <div className="w-full flex justify-center sticky top-24">
@@ -134,24 +118,26 @@ export default async function ArtworkPage({ params, searchParams }) {
                 <p className="text-neutral-400 text-sm mb-6 italic leading-relaxed">
                   This piece is currently reserved. You may leave an inquiry to join the waitlist.
                 </p>
-                <a 
-                  href={mailtoLink}
+                <Link 
+                  href={inquiryLink}
+                  scroll={false}
                   className="inline-block border border-white text-white px-10 py-5 uppercase tracking-widest text-sm font-semibold hover:bg-white hover:text-black transition-colors"
                 >
                   Join Waitlist
-                </a>
+                </Link>
               </>
             ) : (
               <>
                 <p className="text-neutral-400 text-sm mb-6 italic leading-relaxed">
                   This piece is available for acquisition. To discuss dimensions, archival framing, or provenance, please leave a private inquiry.
                 </p>
-                <a 
-                  href={mailtoLink}
+                <Link 
+                  href={inquiryLink}
+                  scroll={false}
                   className="inline-block bg-white text-black px-10 py-5 uppercase tracking-widest text-sm font-semibold hover:bg-neutral-200 transition-colors"
                 >
                   Inquire About This Piece
-                </a>
+                </Link>
               </>
             )}
             
@@ -173,7 +159,6 @@ export default async function ArtworkPage({ params, searchParams }) {
 
         </div>
         </div>
-      )}
     </main>
   )
 }
