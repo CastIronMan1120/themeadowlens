@@ -4,6 +4,7 @@ import { PortableText } from '@portabletext/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import WallPreviewButton from '../../components/WallPreviewButton'
+import ImageZoom from '../../components/ImageZoom'
 
 export const revalidate = 0
 
@@ -73,13 +74,10 @@ export default async function ArtworkPage({ params }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
           
           {/* Left: The Uninterrupted Image */}
-          <div className="w-full flex justify-center sticky top-24">
-            <img
-              src={urlForImage(artwork.image).width(2000).auto('format').url()}
-              alt={artwork.title}
-              className="w-full max-h-[80vh] object-contain shadow-2xl"
-            />
-          </div>
+          <ImageZoom 
+            src={urlForImage(artwork.image).width(2000).auto('format').url()} 
+            alt={artwork.title} 
+          />
 
           {/* Right: The Title, Optional Story, and Inquiry Guestbook */}
           <div className="flex flex-col justify-center space-y-10 text-white lg:py-12">
