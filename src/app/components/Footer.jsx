@@ -7,7 +7,7 @@ export default function Footer() {
         
         {/* The Branding */}
         <div className="flex flex-col">
-          <h2 className="text-2xl md:text-3xl font-light text-white tracking-widest uppercase" style={{ fontFamily: 'var(--font-logo)' }}>
+          <h2 className="text-2xl md:text-3xl font-light text-white tracking-widest uppercase" style={{ fontFamily: 'var(--font-geist-sans)' }}>
             The Meadow Lens
           </h2>
           <p className="text-xs uppercase tracking-[0.3em] mt-2 font-semibold">Naturally.</p>
