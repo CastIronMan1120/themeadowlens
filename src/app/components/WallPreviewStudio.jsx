@@ -74,9 +74,9 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
             {/* The Artwork Container */}
             {/* Changed from left: 50% to left: 63% to center perfectly over the sofa based on user feedback. top 38% lowers it closer to the sofa. */}
             <div 
-              className={bsolute transition-all duration-500 ease-out shadow-[0_20px_50px_rgba(0,0,0,0.7)] }
+              className={`absolute transition-all duration-500 ease-out shadow-[0_20px_50px_rgba(0,0,0,0.7)] ${activeFrame.style}`}
               style={{ 
-                width: ${printWidthPercent}%,
+                width: `${printWidthPercent}%`,
                 top: '38%',
                 left: '60%', 
                 transform: 'translate(-50%, -50%)',
@@ -124,7 +124,7 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
                 <button
                   key={f.id}
                   onClick={() => setFrame(f.id)}
-                  className={px-4 py-3 text-left text-xs tracking-widest uppercase font-mono transition-colors }
+                  className={`px-4 py-3 text-left text-xs tracking-widest uppercase font-mono transition-colors ${frame === f.id ? 'bg-white text-black font-semibold' : 'bg-black text-neutral-400 hover:text-white border border-white/5'}`}
                 >
                   {f.name}
                 </button>
@@ -140,7 +140,7 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
                 <button
                   key={c.name}
                   onClick={() => setWallColor(c.value)}
-                  className={px-3 py-3 text-center text-[10px] tracking-widest uppercase font-mono transition-colors }
+                  className={`px-3 py-3 text-center text-[10px] tracking-widest uppercase font-mono transition-colors ${wallColor === c.value ? 'bg-white text-black font-semibold' : 'bg-black text-neutral-400 hover:text-white border border-white/5'}`}
                 >
                   {c.name}
                 </button>
