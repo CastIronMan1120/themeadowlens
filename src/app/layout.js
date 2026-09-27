@@ -42,7 +42,9 @@ export default async function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col bg-black text-white">
         <Navigation categories={categories} />
-        {children}
+        <main className="flex-grow flex flex-col">
+          {children}
+        </main>
         <Footer />
         <Suspense fallback={null}>
           <GlobalInquiryModal />
