@@ -1,56 +1,80 @@
-const { createClient } = require('next-sanity');
+const fs = require('fs');
+const path = require('path');
+const { createClient } = require('@sanity/client');
 
-const client = createClient({
-  projectId: 'h7ncr8cq',
-  dataset: 'production',
-  useCdn: false,
-  token: 'skYzuhSCf0j3AgpNTiyS0aASlUwemOsrKkQ2cBwE4WFDH51flJEFt2hKFXtOJ9HbkhoT6KFnqJ319aQbIctIN50MInTRUdZ6d9aMB8CNpWGV6KHyjDzPxSWpqM1CW6eoxUHU5NWommrfhHfDh1CaANxyhN8HmQAC4DUEhhJ4h789jSsYUSp9',
-  apiVersion: '2023-05-03'
-});
+// NOTE: Set the SANITY_API_WRITE_TOKEN in your environment or replace it here before running
+const token = process.env.SANITY_API_WRITE_TOKEN;
 
-const placeholders = [
-  { name: 'Birds', url: 'https://images.unsplash.com/photo-1444464666168-49b6288f615e?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Fauna', url: 'https://images.unsplash.com/photo-1549366021-9f761d450615?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Flora', url: 'https://images.unsplash.com/photo-1457089328109-e5d9bd499191?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Sky & Heavens', url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Vistas & Scenery', url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Captioned Works', url: 'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Compilations', url: 'https://images.unsplash.com/photo-1505296883204-633b6f28f522?q=80&w=1200&auto=format&fit=crop&fm=jpg' },
-  { name: 'Everything', url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=1200&auto=format&fit=crop&fm=jpg' }
-];
-
-async function run() {
-  const rootVenues = await client.fetch('*[_type == "category" && !defined(parentCategory)]');
-  
-  for (const venue of rootVenues) {
-    if (venue.menuImage) continue; // skip already uploaded
-    const placeholder = placeholders.find(p => p.name === venue.title);
-    if (!placeholder) continue;
-
-    console.log(`Downloading placeholder for ${venue.title}...`);
-    const imageRes = await fetch(placeholder.url);
-    const imageBuffer = await imageRes.arrayBuffer();
-    
-    console.log(`Uploading asset to Sanity for ${venue.title}...`);
-    const asset = await client.assets.upload('image', Buffer.from(imageBuffer), {
-      filename: `${venue.slug.current}-placeholder.jpg`
-    });
-
-    console.log(`Patching ${venue.title}...`);
-    await client.patch(venue._id)
-      .set({
-        menuImage: {
-          _type: 'image',
-          asset: {
-            _type: 'reference',
-            _ref: asset._id
-          }
-        }
-      })
-      .commit();
-      
-    console.log(`Done with ${venue.title}!\n`);
-  }
+if (!token) {
+    console.error("Error: SANITY_API_WRITE_TOKEN is missing. Please provide it.");
+    process.exit(1);
 }
 
-run().catch(console.error);
+const client = createClient({
+  projectId: 'h7ncr8cq', // From handover doc
+  dataset: 'production',
+  apiVersion: '2023-05-03',
+  useCdn: false,
+  token: token,
+});
+
+async function uploadPhotos() {
+    const baseDir = 'E:\\Meadowlens Photos\\Birds';
+    
+    if (!fs.existsSync(baseDir)) {
+        console.error(`Error: Directory ${baseDir} not found.`);
+        return;
+    }
+
+    const files = fs.readdirSync(baseDir).filter(f => f.toLowerCase().endsWith('.jpg'));
+    console.log(`Found ${files.length} photos to upload. Beginning sequence...`);
+
+    // First, find the "Birds" category document ID
+    const categories = await client.fetch(`*[_type == "category" && title == "Birds"]{_id}`);
+    if (categories.length === 0) {
+        console.error("Error: Could not find the 'Birds' category in Sanity. Please create it in the studio first.");
+        return;
+    }
+    const categoryId = categories[0]._id;
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const filePath = path.join(baseDir, file);
+        const title = file.replace(/\.jpg$/i, ''); // e.g. "American Kestrel - Study 001"
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+        try {
+            console.log(`[${i+1}/${files.length}] Uploading image for: ${title}...`);
+            const imageAsset = await client.assets.upload('image', fs.createReadStream(filePath), {
+                filename: file
+            });
+
+            console.log(`[${i+1}/${files.length}] Creating artwork document: ${title}...`);
+            await client.create({
+                _type: 'artwork',
+                title: title,
+                slug: { _type: 'slug', current: slug },
+                image: {
+                    _type: 'image',
+                    asset: {
+                        _type: 'reference',
+                        _ref: imageAsset._id
+                    }
+                },
+                category: {
+                    _type: 'reference',
+                    _ref: categoryId
+                },
+                status: 'available',
+                roomSetting: 'living-room'
+            });
+            console.log(`✅ Successfully uploaded and cataloged: ${title}\n`);
+        } catch (error) {
+            console.error(`❌ Failed to upload ${file}:`, error.message);
+        }
+    }
+
+    console.log("Bulk upload complete!");
+}
+
+uploadPhotos();

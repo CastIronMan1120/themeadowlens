@@ -66,11 +66,15 @@ export default async function Home() {
       {/* 2. THE EXHIBITION ROOMS GALLERY */}
       <section id="exhibition" className="min-h-screen p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto bg-neutral-950 relative z-20">
         
-        <div className="max-w-3xl mx-auto text-center mb-24 mt-12">
+        <div className="max-w-4xl mx-auto text-center mb-24 mt-12">
           <h2 className="text-3xl md:text-4xl font-light text-white mb-6">The Curated Collection</h2>
-          <p className="text-neutral-400 font-light leading-relaxed">
-            Every piece is displayed in scale. Hover to examine the details. Click to inquire about acquisition.
-          </p>
+          
+          <div className="text-neutral-400 font-light leading-relaxed space-y-4 text-sm md:text-base border-t border-b border-white/10 py-8 my-8 px-4">
+            <h3 className="text-white tracking-widest uppercase text-xs font-semibold mb-4">Navigating The Gallery</h3>
+            <p><strong>Venues:</strong> Use the top menu to explore our digital halls, categorized by subject (such as Birds, Flora, or Sky & Heavens).</p>
+            <p><strong>Featured Exhibition:</strong> A spotlight on specific highlighted artworks, visible when browsing the Venues menu.</p>
+            <p><strong>Visualize in Room:</strong> Click this button on any artwork below to launch an interactive 3D studio, allowing you to preview the piece to scale in luxury, real-world environments.</p>
+          </div>
         </div>
 
         {artworks.length > 0 ? (
