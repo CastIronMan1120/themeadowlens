@@ -1,11 +1,9 @@
 import { client } from '../../../sanity/lib/client'
 import Gallery from '../../components/Gallery'
-import SubcategoryDropdown from '../../components/SubcategoryDropdown'
 import Link from 'next/link'
 
 export const revalidate = 0 
 
-// 1. Dynamic SEO Metadata Generation
 export async function generateMetadata({ params }) {
   const { slug } = await params
   const categorySlug = slug[0]
@@ -42,162 +40,94 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function CategoryPage({ params, searchParams }) {
+export default async function CategoryPage({ params }) {
   const { slug } = await params
-  const resolvedSearchParams = await searchParams
-  
   const categorySlug = slug[0]
   const subcategorySlug = slug[1]
 
-  const species = resolvedSearchParams?.species || ''
-  const color = resolvedSearchParams?.color || ''
-  const size = resolvedSearchParams?.size || ''
-
-  // Fetch the current category (or subcategory) to get its title
   const currentSlug = subcategorySlug || categorySlug
+  
   const categoryQuery = `*[_type == "category" && slug.current == $currentSlug][0]`
   const category = await client.fetch(categoryQuery, { currentSlug })
 
-  // Fetch sibling subcategories for the Filter Menu
-  const parentSlugToQuery = subcategorySlug ? categorySlug : categorySlug
-  const subcategoriesQuery = `*[_type == "category" && parentCategory->slug.current == $parentSlugToQuery] | order(title asc)`
-  const subcategories = await client.fetch(subcategoriesQuery, { parentSlugToQuery })
+  const subcategoriesQuery = `*[_type == "category" && parentCategory->slug.current == $currentSlug] | order(title asc) {
+    _id,
+    title,
+    slug,
+    "imageUrl": menuImage.asset->url
+  }`
+  const subcategories = await client.fetch(subcategoriesQuery, { currentSlug })
 
-  // Build the dynamic GROQ query based on URL parameters
-  let groqConditions = `_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)`
-  if (species) groqConditions += ` && species == $species`
-  if (color) groqConditions += ` && dominantColor == $color`
-  if (size) groqConditions += ` && size == $size`
-
+  const groqConditions = `_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)`
   const artworksQuery = `*[${groqConditions}] | order(_createdAt desc) {
     ...,
     "imageUrl": image.asset->url
   }`
   
   let artworks = []
-
   if (category) {
-    artworks = await client.fetch(artworksQuery, { currentSlug, species, color, size })
+    artworks = await client.fetch(artworksQuery, { currentSlug })
   }
 
-  // FALLBACK TEMPLATE: If the category doesn't exist in Sanity, show the stunning placeholder!
   if (!category) {
     return (
-      <main className="min-h-screen bg-neutral-950">
-        
-        {/* Placeholder Header */}
-        <section className="pt-40 pb-8 px-6 md:px-12 text-center">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl text-white font-light tracking-tight mb-6 capitalize">
-            {currentSlug.replace(/-/g, ' ')}
-          </h1>
-          <p className="text-xl text-neutral-400 font-mono tracking-widest uppercase">
-            Curated Collection (Preview Mode)
-          </p>
-        </section>
-
-        {/* Placeholder Subcategory Filter Bar */}
-        <SubcategoryDropdown 
-          subcategories={[{ id: 'dummy1', title: 'Subcategory 1', slug: 'sub1' }, { id: 'dummy2', title: 'Subcategory 2', slug: 'sub2' }]} 
-          categorySlug={categorySlug} 
-          currentSubcategorySlug={subcategorySlug} 
-        />
-        <p className="text-center text-neutral-500 text-xs mt-2 mb-12 font-mono">
-          [ Subcategories will populate here once added to Sanity ]
-        </p>
-
-        {/* Placeholder Gallery */}
-        <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20">
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-12 space-y-12">
-            {[
-              { id: 1, title: "Legacy Photograph 1", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg" },
-              { id: 2, title: "Legacy Photograph 2", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVizHNoqjVGKBfhUP58mXRnMzJf0jqt1SUen0BLgI3pE92_gRXVg-6LuoU7ytliAZ0MakIbKhUR5YqEvrdqExp4pvWSfBw-lyLdR8Rkw3gs6dRsUeF3XNpGs4k8D_awBPQVsnmE08y6oKQQw.jpg" },
-              { id: 3, title: "Legacy Photograph 3", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5PZkKTYNfOLU-ZWDVc-MHRGSVpSY148ocDAqLBRu8Ywuwrm6kcGFR-q-H9EuD3zGMO2rO1c7bxEkwO4AjjbLN8-cVmSCfJxe5yLbk3VANnmtfbCI9aRDffuDQNi9SuSggzbekm6glrBuYOr0xHO97_vMhy-UDxctCtn6KlE1Vjrc-SXIQ.jpg" },
-              { id: 4, title: "Legacy Photograph 4", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVi3KOYOmUxCvYx9J1cDfA3d8cuEmqd1QU_GqQOcb3Nk5zrtTDEoj-7i6QbqwlTJPg_KxcPPpZRVY8Rvib_cpqc5uSGyKifU1foUkAkIvw5fJHo9LRCeJ_DRf2I35XyFsCQjubf2j8jXRQoT4o-hBPA.jpg" },
-              { id: 5, title: "Legacy Photograph 5", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SJSzKNoCoUUqHKjNZ49HnFix3JKZ5sdpVU_-pTewcwYdnw-kYDBJz7qSoSaaklyFWi-m2bL-gHFQh6UvubbpjqZIlWifSibFyf4clEQhh153PAp0QDzSU8GINzIf_EkxsCqKJ8TV1jKcI2es-mAz9Y4av.jpg" },
-              { id: 6, title: "Legacy Photograph 6", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5nbnTAftHkGk-JfRFT8MyOHydie-Emqd9WVPKvRu0Y3MMnzrtTDEoj-7i6QbqwlTJPg" },
-            ].map((art) => (
-              <div key={art.id} className="group relative overflow-hidden rounded-sm mb-12 break-inside-avoid aspect-[4/3] bg-neutral-900 cursor-pointer border border-neutral-800">
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-60 group-hover:opacity-40"
-                  style={{ backgroundImage: `url('${art.img}')` }}
-                ></div>
-                
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                   <p className="text-white/20 font-bold tracking-[0.5em] uppercase text-4xl -rotate-45">Preview</p>
-                </div>
-
-                <div className="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end transition-all duration-700 z-10 opacity-100 bg-gradient-to-t from-black/90 to-transparent">
-                  <h3 className="text-white text-3xl font-light mb-2 drop-shadow-lg">{art.title}</h3>
-                  <p className="text-neutral-300 text-sm font-mono uppercase tracking-widest drop-shadow-md">{art.loc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
+      <main className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-8">
+        <h1 className="text-4xl text-white mb-4">Venue Not Found</h1>
+        <Link href="/" className="text-neutral-400 hover:text-white underline">Return to Directory</Link>
       </main>
     )
   }
 
-  // IF CATEGORY EXISTS IN SANITY, RENDER THE ACTUAL DATA
   return (
-    <main className="min-h-screen bg-neutral-950">
+    <main className="min-h-screen bg-neutral-950 pt-32 pb-24">
       
-      {/* Category Header */}
-      <section className="pt-40 pb-8 px-6 md:px-12 text-center">
-        <h1 className="text-5xl md:text-7xl lg:text-8xl text-white font-light tracking-tight mb-6">
+      <section className="px-6 md:px-12 text-center mb-16">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl text-white font-light tracking-tight mb-4">
           {category.title}
         </h1>
-        <p className="text-xl text-neutral-400 font-mono tracking-widest uppercase">
-          Curated Collection
-        </p>
-      </section>
-
-      {/* Subcategory Filter Menu */}
-      {subcategories.length > 0 && (
-        <SubcategoryDropdown 
-          subcategories={subcategories} 
-          categorySlug={categorySlug} 
-          currentSubcategorySlug={subcategorySlug} 
-        />
-      )}
-
-      {/* The Gallery */}
-      <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20">
-        {artworks.length > 0 ? (
-          <Gallery artworks={artworks} />
-        ) : (
-          <div className="columns-1 md:columns-2 lg:columns-3 gap-12 space-y-12 mt-12">
-            {[
-              { id: 1, title: "Legacy Photograph 1", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg" },
-              { id: 2, title: "Legacy Photograph 2", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVizHNoqjVGKBfhUP58mXRnMzJf0jqt1SUen0BLgI3pE92_gRXVg-6LuoU7ytliAZ0MakIbKhUR5YqEvrdqExp4pvWSfBw-lyLdR8Rkw3gs6dRsUeF3XNpGs4k8D_awBPQVsnmE08y6oKQQw.jpg" },
-              { id: 3, title: "Legacy Photograph 3", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5PZkKTYNfOLU-ZWDVc-MHRGSVpSY148ocDAqLBRu8Ywuwrm6kcGFR-q-H9EuD3zGMO2rO1c7bxEkwO4AjjbLN8-cVmSCfJxe5yLbk3VANnmtfbCI9aRDffuDQNi9SuSggzbekm6glrBuYOr0xHO97_vMhy-UDxctCtn6KlE1Vjrc-SXIQ.jpg" },
-              { id: 4, title: "Legacy Photograph 4", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVi3KOYOmUxCvYx9J1cDfA3d8cuEmqd1QU_GqQOcb3Nk5zrtTDEoj-7i6QbqwlTJPg_KxcPPpZRVY8Rvib_cpqc5uSGyKifU1foUkAkIvw5fJHo9LRCeJ_DRf2I35XyFsCQjubf2j8jXRQoT4o-hBPA.jpg" },
-              { id: 5, title: "Legacy Photograph 5", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SJSzKNoCoUUqHKjNZ49HnFix3JKZ5sdpVU_-pTewcwYdnw-kYDBJz7qSoSaaklyFWi-m2bL-gHFQh6UvubbpjqZIlWifSibFyf4clEQhh153PAp0QDzSU8GINzIf_EkxsCqKJ8TV1jKcI2es-mAz9Y4av.jpg" },
-              { id: 6, title: "Legacy Photograph 6", loc: "The Meadowlands", img: "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5nbnTAftHkGk-JfRFT8MyOHydie-Emqd9WVPKvRu0Y3MMnzrtTDEoj-7i6QbqwlTJPg" },
-            ].map((art) => (
-              <div key={art.id} className="group relative overflow-hidden rounded-sm mb-12 break-inside-avoid aspect-[4/3] bg-neutral-900 cursor-pointer border border-neutral-800">
-                <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-60 group-hover:opacity-40"
-                  style={{ backgroundImage: `url('${art.img}')` }}
-                ></div>
-                
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                   <p className="text-white/20 font-bold tracking-[0.5em] uppercase text-4xl -rotate-45">Preview</p>
-                </div>
-
-                <div className="absolute bottom-0 left-0 w-full p-8 flex flex-col justify-end transition-all duration-700 z-10 opacity-100 bg-gradient-to-t from-black/90 to-transparent">
-                  <h3 className="text-white text-3xl font-light mb-2 drop-shadow-lg">{art.title}</h3>
-                  <p className="text-neutral-300 text-sm font-mono uppercase tracking-widest drop-shadow-md">{art.loc}</p>
-                </div>
-              </div>
-            ))}
-            <div className="col-span-full text-center text-neutral-500 mt-12 border-t border-white/5 pt-12">
-              <p>These are preview images. Upload real artworks to this category in the Sanity Dashboard to replace them.</p>
-            </div>
-          </div>
+        {subcategorySlug && (
+          <Link href={`/category/${categorySlug}`} className="text-sm text-neutral-500 hover:text-white uppercase tracking-widest font-mono transition-colors">
+            &larr; Back to {categorySlug.replace('-', ' ')}
+          </Link>
         )}
       </section>
+
+      {subcategories.length > 0 && (
+        <section className="px-4 sm:px-8 md:px-16 max-w-[2400px] mx-auto mb-20">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            {subcategories.map(sub => (
+              <Link 
+                key={sub._id}
+                href={`/category/${categorySlug}/${sub.slug.current}`}
+                className="group relative aspect-square overflow-hidden bg-neutral-900 block rounded-sm border border-white/5"
+              >
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100"
+                  style={{ backgroundImage: `url('${sub.imageUrl || "/room-preview.jpg"}')` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
+                <div className="absolute inset-0 flex items-end justify-center p-4 md:p-6 pb-6 md:pb-8">
+                  <h3 className="text-sm md:text-base text-white font-semibold tracking-widest uppercase text-center drop-shadow-md">
+                    {sub.title}
+                  </h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {artworks.length > 0 && (
+        <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20 border-t border-white/5 pt-16">
+          <Gallery artworks={artworks} />
+        </section>
+      )}
+      
+      {artworks.length === 0 && subcategories.length === 0 && (
+         <div className="text-center text-neutral-500 mt-24">
+           <p>There are currently no artworks in this venue.</p>
+         </div>
+      )}
 
     </main>
   )

@@ -55,6 +55,20 @@ const artwork = {
       validation: Rule => Rule.required()
     },
     {
+      name: 'fileName',
+      title: 'Original File Name',
+      type: 'string',
+      group: 'content',
+      description: 'e.g., DSC_0001.NEF or IMG_1234.jpg (Internal catalog reference)'
+    },
+    {
+      name: 'caption',
+      title: 'Artwork Caption',
+      type: 'text',
+      group: 'content',
+      description: 'A brief visible description or caption for the photograph.'
+    },
+    {
       name: 'slug',
       title: 'Slug',
       type: 'slug',
