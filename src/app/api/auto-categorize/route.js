@@ -50,7 +50,7 @@ export async function POST(req) {
       const base64 = Buffer.from(buffer).toString('base64')
 
       // Call Gemini API
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
       
       const payload = {
         contents: [{
