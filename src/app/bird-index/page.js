@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function BirdIndexPage() {
   // Fetch all defined species from the database
-  const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species) && (category->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"])].species`)
+  const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species) && (category->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"] || category->parentcategory->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"])].species`)
   
   // Deduplicate and sort alphabetically
   const uniqueSpecies = [...new Set(rawSpecies)].sort((a, b) => a.localeCompare(b))

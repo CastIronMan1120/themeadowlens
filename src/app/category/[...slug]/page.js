@@ -58,7 +58,7 @@ export default async function CategoryPage({ params }) {
   }`
   const subcategories = await client.fetch(subcategoriesQuery, { currentSlug })
 
-  const groqConditions = `_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)`
+  const groqConditions = `_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug || category->parentCategory->slug.current == $currentSlug)`
   const artworksQuery = `*[${groqConditions}] | order(_createdAt desc) {
     ...,
     "imageUrl": image.asset->url
