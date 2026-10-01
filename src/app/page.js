@@ -4,7 +4,7 @@ import Link from 'next/link'
 export const revalidate = 0 
 
 export default async function Home() {
-  const query = `*[_type == "category" && !defined(parentCategory)] | order(title asc) {
+  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything", "Compilations", "Captioned Works", "Guest Photos"])] | order(title asc) {
     _id,
     title,
     slug,
@@ -16,7 +16,7 @@ export default async function Home() {
     <main className="min-h-screen bg-black">
       
       {/* 1. THE WELCOME ENTRANCE */}
-      <section className="relative w-full pt-32 pb-16 px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
+      <section className="relative w-full pt-48 pb-16 px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start w-full">
           
