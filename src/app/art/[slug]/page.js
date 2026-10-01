@@ -149,7 +149,7 @@ export default async function ArtworkPage({ params }) {
             <div className="flex flex-wrap items-center gap-4 mt-4">
               {artwork.location && (
                 <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
-                  {artwork.location} {artwork.year && `• ${artwork.year}`}
+                  {artwork.location} {artwork.year && `ï¿½ ${artwork.year}`}
                 </p>
               )}
               {artwork.edition && (
