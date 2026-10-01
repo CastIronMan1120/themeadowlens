@@ -119,7 +119,7 @@ export default async function CategoryPage({ params }) {
 
       {artworks.length > 0 && (
         <section className="p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto relative z-20 border-t border-white/5 pt-16">
-          <Gallery artworks={artworks} />
+          <Gallery artworks={artworks} fallbackDescription={category.speciesDescription} />
         </section>
       )}
       

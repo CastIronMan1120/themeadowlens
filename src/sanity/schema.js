@@ -1,24 +1,22 @@
-const seo = {
+export const seo = {
   name: 'seo',
-  title: 'Search Engine Optimization (SEO)',
+  title: 'SEO & Metadata',
   type: 'object',
-  options: {
-    collapsible: true,
-    collapsed: true,
-  },
   fields: [
     {
       name: 'metaTitle',
-      title: 'Custom Meta Title',
+      title: 'Meta Title',
       type: 'string',
-      description: 'Override the default generated title. Keep under 60 characters.'
+      description: 'Override the default SEO title. Keep under 60 characters.',
+      validation: Rule => Rule.max(60).warning('Longer titles may be truncated by search engines')
     },
     {
       name: 'metaDescription',
-      title: 'Custom Meta Description',
+      title: 'Meta Description',
       type: 'text',
       rows: 3,
-      description: 'Override the default description. Keep between 150-160 characters for best Google ranking.'
+      description: 'Override the default SEO description. Keep under 160 characters.',
+      validation: Rule => Rule.max(160).warning('Longer descriptions may be truncated by search engines')
     },
     {
       name: 'keywords',
@@ -49,24 +47,32 @@ const artwork = {
     },
     {
       name: 'title',
-      title: 'Title',
+      title: 'SEO Title',
       type: 'string',
       group: 'content',
+      description: 'Used for Google SEO and generates the URL (e.g., "Great Blue Heron in Flight").',
       validation: Rule => Rule.required()
     },
     {
       name: 'fileName',
-      title: 'Original File Name',
+      title: 'Personal File Name',
       type: 'string',
       group: 'content',
-      description: 'e.g., DSC_0001.NEF or IMG_1234.jpg (Internal catalog reference)'
+      description: 'Internal catalog reference (e.g., DSC_0042.NEF). Not shown to the public.'
+    },
+    {
+      name: 'displayTitle',
+      title: 'Caption Title',
+      type: 'string',
+      group: 'content',
+      description: 'The large artistic title displayed on the photo (e.g., "Morning Grace").'
     },
     {
       name: 'caption',
-      title: 'Artwork Caption',
+      title: 'Caption Description',
       type: 'text',
       group: 'content',
-      description: 'A brief visible description or caption for the photograph.'
+      description: 'Optional override. Leave blank to use the Master Species Description from the Category.'
     },
     {
       name: 'slug',
@@ -232,6 +238,13 @@ const category = {
       to: [{ type: 'category' }],
       group: 'content',
       description: 'Select a parent if this is a subcategory (e.g., Owls under Birds). Leave blank if this is a Main Category.'
+    },
+    {
+      name: 'speciesDescription',
+      title: 'Master Species Description',
+      type: 'text',
+      group: 'content',
+      description: 'A biological or general description of this species. This automatically displays over every photograph in this category!'
     }
   ],
   preview: {
@@ -242,7 +255,7 @@ const category = {
     prepare({ title, parentTitle }) {
       return {
         title: title,
-        subtitle: parentTitle ? `↳ Subcategory of ${parentTitle}` : '⭐ Root Venue'
+        subtitle: parentTitle ? `? Subcategory of ${parentTitle}` : '? Root Venue'
       }
     }
   }
