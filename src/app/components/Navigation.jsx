@@ -40,7 +40,7 @@ export default function Navigation({ categories }) {
             >
               The Meadow Lens
             </h1>
-            <p className="text-neutral-300 font-mono text-[10px] md:text-sm uppercase tracking-widest mt-3 drop-shadow-md max-w-sm md:max-w-3xl leading-relaxed whitespace-nowrap">
+            <p className="text-neutral-300 font-mono text-[10px] md:text-sm uppercase tracking-widest mt-3 drop-shadow-md max-w-sm md:max-w-3xl leading-relaxed">
               "Wow-factor" photography of birds, nature and more with particular focus on the NJ "Meadowlands" !
             </p>
           </Link>
