@@ -22,9 +22,6 @@ export default async function Home() {
           
           {/* Left Column: Branding & Lens */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6">
-            <p className="text-lg md:text-xl text-neutral-300 italic max-w-lg">
-              Inspiring nature photography captured in the NJ Meadowlands and beyond!
-            </p>
             
             <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden border-8 border-neutral-900 shadow-2xl relative aspect-square">
               <img 
