@@ -103,7 +103,7 @@ export default async function CategoryPage({ params }) {
               >
                 <div 
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-70 group-hover:opacity-100"
-                  style={{ backgroundImage: `url('${sub.imageUrl || "/room-preview.jpg"}')` }}
+                  style={{ backgroundImage: `url('${sub.imageUrl || ""}')` }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
                 <div className="absolute inset-0 flex items-end justify-center p-4 md:p-6 pb-6 md:pb-8">
