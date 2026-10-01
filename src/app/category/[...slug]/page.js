@@ -79,7 +79,7 @@ export default async function CategoryPage({ params }) {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 pt-56 pb-24 px-6 md:px-12 max-w-[2000px] mx-auto">
+    <main className="min-h-screen bg-neutral-950 pt-56 pb-24 px-6 md:px-12 w-full max-w-[2000px] mx-auto">
       
       <section className="px-6 md:px-12 text-center mb-16">
         <h1 className="text-4xl md:text-6xl lg:text-7xl text-white font-light tracking-tight mb-4">
