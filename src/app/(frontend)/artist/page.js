@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { client } from '../../sanity/lib/client'
-import { urlForImage } from '../../sanity/lib/image'
+import { client } from '../../../sanity/lib/client'
+import { urlForImage } from '../../../sanity/lib/image'
 import { PortableText } from '@portabletext/react'
 
 export const revalidate = 0

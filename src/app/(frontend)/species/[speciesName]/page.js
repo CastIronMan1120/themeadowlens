@@ -1,5 +1,5 @@
-import { client } from '../../../sanity/lib/client'
-import Gallery from '../../components/Gallery'
+import { client } from '../../../../sanity/lib/client'
+import Gallery from '../../../components/Gallery'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 

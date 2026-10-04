@@ -1,10 +1,10 @@
-import { client } from '../../../sanity/lib/client'
-import { urlForImage } from '../../../sanity/lib/image'
+import { client } from '../../../../sanity/lib/client'
+import { urlForImage } from '../../../../sanity/lib/image'
 import { PortableText } from '@portabletext/react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import ArtworkOptions from '../../components/ArtworkOptions'
-import ImageZoom from '../../components/ImageZoom'
+import ArtworkOptions from '../../../components/ArtworkOptions'
+import ImageZoom from '../../../components/ImageZoom'
 
 export const revalidate = 0
 
