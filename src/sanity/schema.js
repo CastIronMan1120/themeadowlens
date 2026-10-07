@@ -55,14 +55,6 @@ const artwork = {
     },
     {
       name: 'fileName',
-      {
-        name: 'isFeatured',
-        title: 'Feature on Homepage?',
-        type: 'boolean',
-        group: 'content',
-        description: 'Toggle YES to instantly add this photo to the homepage featured ticker.',
-        initialValue: false
-      },
       title: 'Personal File Name',
       type: 'string',
       group: 'content',
