@@ -395,3 +395,4 @@ import { homepage } from './schema/homepage'
 
 export const schemaTypes = [
   homepage,seo, artwork, category, artist, news, lead]
+
