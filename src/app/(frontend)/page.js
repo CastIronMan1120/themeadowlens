@@ -47,7 +47,7 @@ export default async function Home() {
           
           {/* Left Column: Branding & Lens */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden shadow-2xl relative aspect-square bg-transparent">
+            <div className="w-full max-w-lg mt-8 shadow-2xl relative aspect-square bg-transparent">
               <img 
                 src={heroImageUrl} 
                 alt="The Meadow Lens Composite" 
@@ -128,6 +128,7 @@ export default async function Home() {
     </main>
   )
 }
+
 
 
 
