@@ -4,13 +4,13 @@ import Link from 'next/link'
 export const revalidate = 0
 
 export const metadata = {
-  title: 'Bird Index | The Meadow Lens',
+  title: 'Species Index | The Meadow Lens',
   description: 'An alphabetical encyclopedia of bird species photographed by David McClure.'
 }
 
 export default async function BirdIndexPage() {
-  // Fetch all defined species from the database
-  const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species) && (category->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"] || category->parentcategory->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"])].species`)
+  // Fetch all defined species from the database, ignoring venue restrictions to ensure NO species are missed!
+  const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species)].species`)
   
   // Deduplicate and sort alphabetically
   const uniqueSpecies = [...new Set(rawSpecies)].sort((a, b) => a.localeCompare(b))
