@@ -17,6 +17,7 @@ export default function Footer() {
         <div className="flex flex-col space-y-4 text-sm uppercase tracking-widest font-mono">
           <Link href="/#exhibition" className="hover:text-white transition-colors">Exhibitions</Link>
           <Link href="?inquire=true" scroll={false} className="hover:text-white transition-colors">Private Inquiries</Link>
+          <Link href="/sitemap" className="hover:text-white transition-colors">Site Directory</Link>
         </div>
 
         {/* Social Proof */}
@@ -34,4 +35,5 @@ export default function Footer() {
     </footer>
   )
 }
+
 
