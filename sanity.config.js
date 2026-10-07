@@ -1,6 +1,7 @@
 import { defineConfig } from 'sanity'
 import { deskTool } from 'sanity/desk'
 import { schemaTypes } from './src/sanity/schema'
+import { BulkCategorizer } from './src/sanity/components/BulkCategorizer'
 
 export default defineConfig({
   name: 'default',
@@ -90,7 +91,16 @@ export default defineConfig({
           ])
     })
   ],
+  tools: (prev) => [
+    ...prev,
+    {
+      name: 'bulk-categorizer',
+      title: 'Bulk Categorizer',
+      component: BulkCategorizer
+    }
+  ],
   schema: {
     types: schemaTypes,
   },
 })
+
