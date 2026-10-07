@@ -52,9 +52,7 @@ export default function Navigation({ categories }) {
               Venues
             </Link>
 
-            <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              Species Index
-            </Link>
+            
 
             <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
               The Artist
@@ -95,7 +93,7 @@ export default function Navigation({ categories }) {
 
         <nav className="flex flex-col space-y-8">
           <Link href="/" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-light text-white/80">Venues</Link>
-          <Link href="/bird-index" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-light text-white/80">Species Index</Link>
+          
           <Link href="/artist" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-light text-white/80">The Artist</Link>
           <Link href="/news" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-light text-white/80">What's New</Link>
           <Link href="?inquire=true" scroll={false} className="text-3xl font-light text-white/80">Inquiries & Comments</Link>
@@ -109,4 +107,5 @@ export default function Navigation({ categories }) {
     </>
   )
 }
+
 
