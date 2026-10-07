@@ -3,4 +3,4 @@ const client = createClient({
   projectId: 'h7ncr8cq', dataset: 'production', useCdn: false,
   token: process.env.SANITY_TOKEN, apiVersion: '2021-06-07'
 })
-client.fetch(`count(*[_type == "artwork"])`).then(console.log)
+client.fetch(`count(*[_type == "artwork" && !defined(category)])`).then(console.log)

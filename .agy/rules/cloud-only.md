@@ -1,12 +1,9 @@
 ---
-name: Cloud-Only Development Enforcements
-description: Strict ban on local environments and scratch script execution.
+name: Cloud-Only Execution
+description: Strict enforcement of cloud-only operations.
 ---
+Do not run local Node.js or Python scratch scripts to query the Sanity database, test APIs, or run local development servers.
+We are strictly using only Vercel and Git.
 
-# Development Rules
-
-1. **No Local Servers:** Never execute `npm run dev`, `npm run start`, or any local development servers. All previewing must happen exclusively via Vercel staging URLs.
-2. **No Local Test Scripts:** Do not create or run temporary `node` or `python` scratch scripts on the local machine to test code, check APIs, or query databases. Use the appropriate cloud tools or subagents instead.
-3. **Strict No-Querying Policy:** Do NOT run local `node` scripts to query Sanity or test API keys. If you need to manipulate or query data, write a Next.js Server Action or API route (`src/app/api/...`), push it to GitHub, and invoke the live Vercel production endpoint via `Invoke-WebRequest`.
-4. **Deployment Pipeline:** The only acceptable workflow for pushing code is committing to the main Git branch and deploying via Vercel CLI (`npx vercel --prod --yes`) or pushing to GitHub to trigger Vercel automatically.
-5. **URL Enforcement:** Always instruct the user to test and view their site exclusively via the generated Vercel staging URL (e.g., `https://themeadowlens-app-green.vercel.app`) until the final GoDaddy DNS cutover is explicitly confirmed.
+ALL code testing, API verification, and logic execution must be done by committing to Git, pushing to GitHub, and verifying the live Vercel deployment.
+Do not use the local terminal to execute code that interacts with the cloud database.

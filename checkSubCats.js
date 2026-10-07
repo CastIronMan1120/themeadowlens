@@ -4,7 +4,7 @@ const client = createClient({
   token: process.env.SANITY_TOKEN, apiVersion: '2021-06-07'
 })
 async function run() {
-  const cats = await client.fetch(`*[_type == "category" && !defined(parentCategory)]{title, "count": count(*[_type == "artwork" && category._ref == ^._id])}`)
+  const cats = await client.fetch(`*[_type == "category" && defined(parentCategory)]{title, "count": count(*[_type == "artwork" && category._ref == ^._id])}`)
   console.log(cats)
 }
 run()
