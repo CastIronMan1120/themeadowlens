@@ -33,7 +33,7 @@ export default async function Home() {
   const defaultSliderImage = "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVizHNoqjVGKBfhUP58mXRnMzJf0jqt1SUen0BLgI3pE92_gRXVg-6LuoU7ytliAZ0MakIbKhUR5YqEvrdqExp4pvWSfBw-lyLdR8Rkw3gs6dRsUeF3XNpGs4k8D_awBPQVsnmE08y6oKQQw.jpg"
   
   const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
-  const sliderImages = sliderArtworks.length > 0 ? sliderArtworks.map(a => a.url).filter(Boolean) : [defaultSliderImage]
+  const sliderImages = sliderArtworks.length > 0 ? sliderArtworks : [defaultSliderImage]
   const welcomeHeadline = homepage?.welcomeHeadline || "Welcome!"
 
   return (
@@ -127,3 +127,4 @@ export default async function Home() {
     </main>
   )
 }
+
