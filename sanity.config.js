@@ -14,10 +14,32 @@ export default defineConfig({
         S.list()
           .title('Content Management')
           .items([
-            // 1. Artworks
+            // 1. Warehouse (All Artworks)
             S.listItem()
-              .title('Gallery Artworks')
-              .child(S.documentTypeList('artwork').title('All Artworks')),
+              .title('?? The Warehouse')
+              .child(
+                S.list()
+                  .title('Warehouse Views')
+                  .items([
+                    S.listItem()
+                      .title('All Uploaded Photos')
+                      .child(S.documentTypeList('artwork').title('All Artworks')),
+                    S.listItem()
+                      .title('?? Missing a Venue')
+                      .child(
+                        S.documentList()
+                          .title('Photos Missing Venues')
+                          .filter('_type == "artwork" && !defined(category)')
+                      ),
+                    S.listItem()
+                      .title('? Featured Photos')
+                      .child(
+                        S.documentList()
+                          .title('Featured Slider Photos')
+                          .filter('_type == "artwork" && category->slug.current == "featured"')
+                      )
+                  ])
+              ),
             
             S.divider(),
             
