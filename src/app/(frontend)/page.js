@@ -19,6 +19,7 @@ export default async function Home() {
   const homepage = await client.fetch(`*[_type == "homepage"][0] {
     welcomeHeadline,
     welcomeText,
+    quote,
     "heroImageUrl": heroImage.asset->url
   }`)
 
@@ -46,7 +47,7 @@ export default async function Home() {
           
           {/* Left Column: Branding & Lens */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden border-8 border-neutral-900 shadow-2xl relative aspect-square bg-neutral-900">
+            <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden shadow-2xl relative aspect-square bg-transparent">
               <img 
                 src={heroImageUrl} 
                 alt="The Meadow Lens Composite" 
@@ -127,5 +128,7 @@ export default async function Home() {
     </main>
   )
 }
+
+
 
 
