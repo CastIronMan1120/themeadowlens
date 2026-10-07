@@ -7,7 +7,7 @@ import { PortableText } from '@portabletext/react'
 export const revalidate = 0 
 
 export default async function Home() {
-  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything", "Compilations", "Captioned Works", "Guest Photos"])] | order(title asc) {
+  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything", "Guest Photos"])] | order(title asc) {
     _id,
     title,
     slug,
@@ -127,4 +127,5 @@ export default async function Home() {
     </main>
   )
 }
+
 
