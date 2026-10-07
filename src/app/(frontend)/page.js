@@ -1,11 +1,13 @@
 import { client } from '../../sanity/lib/client'
 import Link from 'next/link'
 import HeroSlider from '../components/HeroSlider'
+import FeaturedTicker from '../components/FeaturedTicker'
+import { PortableText } from '@portabletext/react'
 
 export const revalidate = 0 
 
 export default async function Home() {
-  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything", "Compilations", "Captioned Works", "Guest Photos", "Featured"])] | order(title asc) {
+  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything", "Compilations", "Captioned Works", "Guest Photos"])] | order(title asc) {
     _id,
     title,
     slug,
@@ -13,13 +15,26 @@ export default async function Home() {
   }`
   const venues = await client.fetch(query)
 
-  // Pull specifically from the Featured category!
-  const sliderQuery = `*[_type == "artwork" && category->slug.current == "featured" && defined(image.asset)][0...10] { "url": image.asset->url }`
+  // 1. Fetch Homepage Settings
+  const homepage = await client.fetch(`*[_type == "homepage"][0] {
+    welcomeHeadline,
+    welcomeText,
+    "heroImageUrl": heroImage.asset->url
+  }`)
+
+  // 2. Fetch Featured Slider Photos (Now using isFeatured == true)
+  const sliderQuery = `*[_type == "artwork" && isFeatured == true && defined(image.asset)][0...10] { 
+    _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url 
+  }`
   const sliderArtworks = await client.fetch(sliderQuery)
   
-  // Default to the original image if Featured category is empty
-  const defaultImage = "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVizHNoqjVGKBfhUP58mXRnMzJf0jqt1SUen0BLgI3pE92_gRXVg-6LuoU7ytliAZ0MakIbKhUR5YqEvrdqExp4pvWSfBw-lyLdR8Rkw3gs6dRsUeF3XNpGs4k8D_awBPQVsnmE08y6oKQQw.jpg";
-  const sliderImages = sliderArtworks.length > 0 ? sliderArtworks.map(a => a.url).filter(Boolean) : [defaultImage];
+  // Default to original images if CMS isn't filled out yet
+  const defaultHeroLogo = "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg"
+  const defaultSliderImage = "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5SVizHNoqjVGKBfhUP58mXRnMzJf0jqt1SUen0BLgI3pE92_gRXVg-6LuoU7ytliAZ0MakIbKhUR5YqEvrdqExp4pvWSfBw-lyLdR8Rkw3gs6dRsUeF3XNpGs4k8D_awBPQVsnmE08y6oKQQw.jpg"
+  
+  const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
+  const sliderImages = sliderArtworks.length > 0 ? sliderArtworks.map(a => a.url).filter(Boolean) : [defaultSliderImage]
+  const welcomeHeadline = homepage?.welcomeHeadline || "Welcome!"
 
   return (
     <main className="min-h-screen bg-black">
@@ -31,9 +46,9 @@ export default async function Home() {
           
           {/* Left Column: Branding & Lens */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden border-8 border-neutral-900 shadow-2xl relative aspect-square">
+            <div className="w-full max-w-lg mt-8 rounded-full overflow-hidden border-8 border-neutral-900 shadow-2xl relative aspect-square bg-neutral-900">
               <img 
-                src="https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg" 
+                src={heroImageUrl} 
                 alt="The Meadow Lens Composite" 
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -46,19 +61,25 @@ export default async function Home() {
             
             {/* Overlay Text Top Right */}
             <div className="absolute top-0 right-0 w-full md:w-3/4 lg:w-4/5 xl:w-2/3 bg-black/60 backdrop-blur-md p-8 sm:p-10 border-l border-b border-neutral-800 z-20 rounded-bl-3xl">
-              <h2 className="text-4xl text-white mb-6 font-light">Welcome!</h2>
+              <h2 className="text-4xl text-white mb-6 font-light">{welcomeHeadline}</h2>
               
               <div className="space-y-4 text-neutral-200 text-sm md:text-base leading-relaxed">
-                <p>Hello! I'm photographer and Northern NJ native David McClure.</p>
-                <p>
-                  Thank you for visiting my gallery, where I showcase the allure of nature's living creatures, with special emphasis on birds, as well as captivating NYC skyline views, sunsets, aircraft, trains and anything else that is photo-worthy, captured almost exclusively in and around the marshes, creeks, forests, environmental parks, protected lands, and former landfills of the NJ Meadowlands.
-                </p>
-                <p>
-                  In NJ lingo, it's not uncommon for someone to ask, "what's your exit?", meaning "what NJ Turnpike exit do you live off of?". My answer to this question would surely be that I live off of Exit 16W of the Atlantic Flyway! The Atlantic Flyway is the major migratory route for birds traveling up and down the eastern seaboard of the United States, shadowing Interstate 95, which, in NJ, is known as the NJ Turnpike. This gallery is chock-full of those beautiful birds and nature's surrounding flora and other fauna that they co-exist with. I hope you enjoy the pictures and my occasional narratives on this unique region.
-                </p>
-                <p className="italic pt-2 text-white">
-                  After all, this is "The Meadowlands", and I'm "The Meadow LENS"! ... get it?
-                </p>
+                {homepage?.welcomeText ? (
+                  <PortableText value={homepage.welcomeText} />
+                ) : (
+                  <>
+                    <p>Hello! I'm photographer and Northern NJ native David McClure.</p>
+                    <p>
+                      Thank you for visiting my gallery, where I showcase the allure of nature's living creatures...
+                    </p>
+                    <p>
+                      This gallery is chock-full of those beautiful birds and nature's surrounding flora and other fauna...
+                    </p>
+                    <p className="italic pt-2 text-white">
+                      After all, this is "The Meadowlands", and I'm "The Meadow LENS"! ... get it?
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -66,7 +87,12 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 2. VENUES TILE GRID */}
+      {/* 2. FEATURED TICKER */}
+      {sliderArtworks.length > 0 && (
+        <FeaturedTicker artworks={sliderArtworks} />
+      )}
+
+      {/* 3. VENUES TILE GRID */}
       <section id="venues" className="min-h-screen p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto bg-neutral-950 relative z-20">
         
         <div className="max-w-4xl mx-auto text-center mb-16 mt-12">

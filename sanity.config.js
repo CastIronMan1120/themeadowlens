@@ -14,6 +14,19 @@ export default defineConfig({
         S.list()
           .title('Content Management')
           .items([
+            // 0. Global Settings
+            S.listItem()
+              .title('Homepage Settings')
+              .child(
+                S.editor()
+                  .id('homepage')
+                  .schemaType('homepage')
+                  .documentId('homepage')
+                  .title('Homepage Details')
+              ),
+              
+            S.divider(),
+
             // 1. Warehouse (All Artworks)
             S.listItem()
               .title('?? The Warehouse')
@@ -35,8 +48,8 @@ export default defineConfig({
                       .title('? Featured Photos')
                       .child(
                         S.documentList()
-                          .title('Featured Slider Photos')
-                          .filter('_type == "artwork" && category->slug.current == "featured"')
+                          .title('Featured Homepage Photos')
+                          .filter('_type == "artwork" && isFeatured == true')
                       )
                   ])
               ),
