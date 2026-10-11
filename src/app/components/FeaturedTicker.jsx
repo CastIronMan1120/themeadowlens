@@ -1,7 +1,7 @@
 "use client"
 import Link from 'next/link'
 
-export default function FeaturedTicker({ artworks, speed = 120 }) {
+export default function FeaturedTicker({ artworks, speed = 120, reverse = false }) {
   if (!artworks || artworks.length === 0) return null
 
   // Duplicate the array so the CSS marquee can loop seamlessly
@@ -46,6 +46,7 @@ export default function FeaturedTicker({ artworks, speed = 120 }) {
     </div>
   )
 }
+
 
 
 
