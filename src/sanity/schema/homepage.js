@@ -33,8 +33,9 @@ export const homepage = {
       title: 'Ticker Scroll Speed (Seconds)',
       type: 'number',
       description: 'How many seconds it takes for the ticker to complete one loop. Default is 60. Lower is faster.',
-      initialValue: 60,
+      initialValue: 120,
       validation: (Rule) => Rule.min(10).max(300)
     }
   ]
 }
+
