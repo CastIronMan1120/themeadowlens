@@ -20,7 +20,8 @@ export default async function Home() {
     welcomeHeadline,
     welcomeText,
     quote,
-    tickerSpeed,
+    featuredTickerSpeed,
+    newTickerSpeed,
     "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
     "heroImageUrl": heroImage.asset->url
   }`)
@@ -95,9 +96,9 @@ export default async function Home() {
       {/* 2. FEATURED TICKER */}
         {homepage?.featuredPhotos && homepage.featuredPhotos.length > 0 && (
           <div className="w-full bg-neutral-950 border-t border-neutral-800 pt-16 pb-6 text-center relative z-30">
-            <h2 className="text-2xl md:text-3xl font-light text-white tracking-[0.3em] uppercase text-sm">Featured Masterpieces</h2>
+            <h2 className="text-2xl md:text-3xl font-light text-white tracking-[0.3em] uppercase text-sm">Featured Works</h2>
             <div className="w-12 h-[1px] bg-emerald-600 mx-auto mt-4 mb-8"></div>
-            <FeaturedTicker artworks={homepage.featuredPhotos} speed={homepage?.tickerSpeed || 120} />
+            <FeaturedTicker artworks={homepage.featuredPhotos} speed={homepage?.featuredTickerSpeed || 120} />
           </div>
         )}
 
@@ -106,7 +107,7 @@ export default async function Home() {
           <div className="w-full bg-neutral-900 border-t border-b border-neutral-800 pt-12 pb-6 text-center relative z-30">
             <h2 className="text-xl md:text-2xl font-light text-neutral-400 tracking-[0.3em] uppercase text-sm">What's New</h2>
             <div className="w-12 h-[1px] bg-neutral-700 mx-auto mt-4 mb-8"></div>
-            <FeaturedTicker artworks={latestArts} speed={(homepage?.tickerSpeed || 120) * 0.85} reverse={true} />
+            <FeaturedTicker artworks={latestArts} speed={homepage?.newTickerSpeed || 100} reverse={true} />
           </div>
         )}
 

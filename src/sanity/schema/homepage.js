@@ -36,14 +36,20 @@ export const homepage = {
       description: 'e.g. "Laughter Nature is the best medicine!"'
     },
     {
-      name: 'tickerSpeed',
-      title: 'Ticker Scroll Speed (Seconds)',
+      name: 'featuredTickerSpeed',
+      title: 'Featured Ticker Speed (Seconds)',
       type: 'number',
-      description: 'How many seconds it takes for the ticker to complete one loop. Default is 60. Lower is faster.',
+      description: 'How many seconds it takes for the FEATURED WORKS ticker to complete one loop. Default is 120.',
       initialValue: 120,
+      validation: (Rule) => Rule.min(10).max(300)
+    },
+    {
+      name: 'newTickerSpeed',
+      title: 'What\'s New Ticker Speed (Seconds)',
+      type: 'number',
+      description: 'How many seconds it takes for the WHAT\'S NEW ticker to complete one loop. Default is 100.',
+      initialValue: 100,
       validation: (Rule) => Rule.min(10).max(300)
     }
   ]
 }
-
-

@@ -4,15 +4,17 @@ import Link from 'next/link'
 export default function FeaturedTicker({ artworks, speed = 120, reverse = false }) {
   if (!artworks || artworks.length === 0) return null
 
-  // Duplicate the array so the CSS marquee can loop seamlessly
   const doubled = [...artworks, ...artworks, ...artworks]
 
   return (
-    <div className="w-full bg-neutral-900 border-t border-b border-neutral-800 py-6 overflow-hidden relative z-30">
+    <div className="w-full border-t border-b border-neutral-800 py-6 overflow-hidden relative z-30">
       <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-neutral-900 to-transparent z-10" />
       <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-neutral-900 to-transparent z-10" />
       
-      <div className="flex animate-marquee whitespace-nowrap items-center space-x-6 w-max">
+      <div 
+        className="flex animate-marquee whitespace-nowrap items-center space-x-6 w-max"
+        style={{ animation: `marquee ${speed}s linear infinite ${reverse ? 'reverse' : 'normal'}` }}
+      >
         {doubled.map((art, idx) => (
           <Link 
             href={`/art/${art.slug.current}`} 
@@ -36,17 +38,10 @@ export default function FeaturedTicker({ artworks, speed = 120, reverse = false 
           0% { transform: translateX(0); }
           100% { transform: translateX(-33.33%); }
         }
-        .animate-marquee {
-          animation: marquee ${speed}s linear infinite;
-        }
         .animate-marquee:hover {
-          animation-play-state: paused;
+          animation-play-state: paused !important;
         }
       `}</style>
     </div>
   )
 }
-
-
-
-
