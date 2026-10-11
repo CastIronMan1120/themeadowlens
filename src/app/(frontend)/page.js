@@ -89,6 +89,12 @@ export default async function Home() {
       </section>
 
       {/* 2. FEATURED TICKER */}
+        {sliderArtworks.length > 0 && (
+          <div className="w-full bg-neutral-900 border-t border-neutral-800 pt-12 pb-4 text-center relative z-30">
+            <h2 className="text-2xl md:text-3xl font-light text-white tracking-widest uppercase">Recently Published</h2>
+            <div className="w-12 h-[1px] bg-emerald-500 mx-auto mt-4"></div>
+          </div>
+        )}
       {sliderArtworks.length > 0 && (
         <FeaturedTicker artworks={sliderArtworks} />
       )}
@@ -128,6 +134,7 @@ export default async function Home() {
     </main>
   )
 }
+
 
 
 

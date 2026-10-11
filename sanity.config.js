@@ -47,11 +47,12 @@ export default defineConfig({
                           .filter('_type == "artwork" && !defined(category)')
                       ),
                     S.listItem()
-                      .title('? Featured Photos')
+                      .title('What''s New (Live Ticker)')
                       .child(
                         S.documentList()
-                          .title('Featured Homepage Photos')
-                          .filter('_type == "artwork" && isFeatured == true')
+                          .title('Recently Published Photos')
+                          .filter('_type == "artwork" && defined(image.asset)')
+                          .defaultOrdering([{field: '_createdAt', direction: 'desc'}])
                       )
                   ])
               ),
@@ -109,5 +110,6 @@ export default defineConfig({
     types: schemaTypes,
   },
 })
+
 
 
