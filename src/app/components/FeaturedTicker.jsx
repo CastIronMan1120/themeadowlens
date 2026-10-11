@@ -37,7 +37,7 @@ export default function FeaturedTicker({ artworks, speed = 120 }) {
           100% { transform: translateX(-33.33%); }
         }
         .animate-marquee {
-          animation: marquee s linear infinite;
+          animation: marquee ${speed}s linear infinite;
         }
         .animate-marquee:hover {
           animation-play-state: paused;
@@ -46,5 +46,6 @@ export default function FeaturedTicker({ artworks, speed = 120 }) {
     </div>
   )
 }
+
 
 
