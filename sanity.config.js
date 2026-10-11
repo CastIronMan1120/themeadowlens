@@ -47,7 +47,7 @@ export default defineConfig({
                           .filter('_type == "artwork" && !defined(category)')
                       ),
                     S.listItem()
-                      .title("What's New (Live Ticker)")
+                      .title("Newly Added (Live Ticker)")
                       .child(
                         S.documentList()
                           .title('Recently Published Photos')
@@ -110,6 +110,7 @@ export default defineConfig({
     types: schemaTypes,
   },
 })
+
 
 
 

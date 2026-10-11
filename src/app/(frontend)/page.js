@@ -28,7 +28,7 @@ export default async function Home() {
 
   const latestArts = await client.fetch(`*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url }`)
 
-  // 2. Fetch "What's New" Ticker Photos (Most recently added)
+  // 2. Fetch "Newly Added" Ticker Photos (Most recently added)
   const sliderQuery = `*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { 
     _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url 
   }`
@@ -102,10 +102,10 @@ export default async function Home() {
           </div>
         )}
 
-        {/* 2.5 WHAT'S NEW TICKER */}
+        {/* 2.5 Newly Added TICKER */}
         {latestArts && latestArts.length > 0 && (
           <div className="w-full bg-neutral-900 border-t border-b border-neutral-800 pt-12 pb-6 text-center relative z-30">
-            <h2 className="text-xl md:text-2xl font-light text-neutral-400 tracking-[0.3em] uppercase text-sm">What's New</h2>
+            <h2 className="text-xl md:text-2xl font-light text-neutral-400 tracking-[0.3em] uppercase text-sm">Newly Added</h2>
             <div className="w-12 h-[1px] bg-neutral-700 mx-auto mt-4 mb-8"></div>
             <FeaturedTicker artworks={latestArts} speed={homepage?.newTickerSpeed || 100} reverse={true} />
           </div>
@@ -146,6 +146,7 @@ export default async function Home() {
     </main>
   )
 }
+
 
 
 
