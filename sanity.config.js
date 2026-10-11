@@ -2,6 +2,7 @@ import { defineConfig } from 'sanity'
 import { deskTool } from 'sanity/desk'
 import { schemaTypes } from './src/sanity/schema'
 import { BulkCategorizer } from './src/sanity/components/BulkCategorizer'
+import { SystemMetrics } from './src/sanity/components/SystemMetrics'
 
 export default defineConfig({
   name: 'default',
@@ -97,10 +98,16 @@ export default defineConfig({
       name: 'bulk-categorizer',
       title: 'Bulk Categorizer',
       component: BulkCategorizer
+    },
+    {
+      name: 'system-metrics',
+      title: 'System & Storage',
+      component: SystemMetrics
     }
   ],
   schema: {
     types: schemaTypes,
   },
 })
+
 

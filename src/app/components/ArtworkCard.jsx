@@ -45,7 +45,7 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
       <Link href={artworkUrl} className="absolute inset-0 z-0 block">
         <div className="absolute inset-0 bg-neutral-900">
           <img
-            src={urlForImage(artwork.image).width(1200).auto('format').url()}
+            src={urlForImage(artwork.image).width(1600).quality(90).auto('format').url()}
             alt={artwork.title}
             className="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-90 group-hover:opacity-60"
             loading="lazy"
@@ -103,3 +103,4 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
     </div>
   )
 }
+

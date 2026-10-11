@@ -101,7 +101,7 @@ export default async function ArtworkPage({ params }) {
           {/* Left: The Uninterrupted Image + Navigation Arrows */}
           <div className="relative group/nav">
             <ImageZoom 
-              src={urlForImage(artwork.image).width(2000).auto('format').url()} 
+              src={urlForImage(artwork.image).width(3000).quality(95).auto('format').url()} 
               alt={artwork.title} 
             />
             
@@ -199,3 +199,4 @@ export default async function ArtworkPage({ params }) {
     </main>
   )
 }
+

@@ -21,6 +21,20 @@ export const homepage = {
       type: 'array',
       of: [{ type: 'block' }],
       description: 'The main introductory text on the homepage.'
+    },
+    {
+      name: 'quote',
+      title: 'Bottom Quote',
+      type: 'string',
+      description: 'e.g. "Laughter Nature is the best medicine!"'
+    },
+    {
+      name: 'tickerSpeed',
+      title: 'Ticker Scroll Speed (Seconds)',
+      type: 'number',
+      description: 'How many seconds it takes for the ticker to complete one loop. Default is 60. Lower is faster.',
+      initialValue: 60,
+      validation: (Rule) => Rule.min(10).max(300)
     }
   ]
 }
