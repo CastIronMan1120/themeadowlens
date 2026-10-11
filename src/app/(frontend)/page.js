@@ -16,12 +16,7 @@ export default async function Home() {
   const venues = await client.fetch(query)
 
   // 1. Fetch Homepage Settings
-  const homepage = await client.fetch(`*[_type == "homepage"][0] {`n    "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
-    welcomeHeadline,
-    welcomeText,
-    quote,
-    "heroImageUrl": heroImage.asset->url
-  }`)
+  const homepage = await client.fetch(`*[_type == "homepage"][0] {`n    welcomeHeadline,`n    welcomeText,`n    quote,`n    tickerSpeed,`n    "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},`n    "heroImageUrl": heroImage.asset->url`n  }`)`n`n  const latestArts = await client.fetch(`*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url }`)
 
   // 2. Fetch "What's New" Ticker Photos (Most recently added)
   const sliderQuery = `*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { 
@@ -88,13 +83,34 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 2. FEATURED TICKER */}
-        {sliderArtworks.length > 0 && (
+      {/* 2. WHAT'S NEW TICKER */}
+        {latestArts && latestArts.length > 0 && (
           <div className="w-full bg-neutral-900 border-t border-neutral-800 pt-16 pb-6 text-center relative z-30">
-            <h2 className="text-3xl md:text-4xl font-light text-white tracking-[0.2em] uppercase">Featured Masterpieces</h2>
-            <div className="w-24 h-[1px] bg-emerald-500 mx-auto mt-6 mb-8"></div>
-            <FeaturedTicker artworks={sliderArtworks} speed={homepage?.tickerSpeed || 120} />
+            <h2 className="text-2xl md:text-3xl font-light text-neutral-400 tracking-[0.3em] uppercase text-sm">What's New</h2>
+            <div className="w-12 h-[1px] bg-emerald-700 mx-auto mt-4 mb-8"></div>
+            <FeaturedTicker artworks={latestArts} speed={homepage?.tickerSpeed || 120} />
           </div>
+        )}
+
+        {/* 2.5 FEATURED MASTERPIECES GRID */}
+        {homepage?.featuredPhotos && homepage.featuredPhotos.length > 0 && (
+          <section className="py-24 px-4 sm:px-8 bg-black relative z-20">
+            <div className="max-w-7xl mx-auto text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-light text-white tracking-[0.2em] uppercase">Featured Masterpieces</h2>
+              <div className="w-24 h-[1px] bg-emerald-500 mx-auto mt-6"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {homepage.featuredPhotos.map((art) => (
+                <Link href={/art/} key={art._id} className="group relative aspect-[4/5] overflow-hidden rounded-sm block">
+                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110" style={{ backgroundImage: "url('')" }} />
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors duration-500" />
+                  <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <h3 className="text-white text-xl font-light tracking-wide">{art.title}</h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* 3. VENUES TILE GRID */}
@@ -132,6 +148,7 @@ export default async function Home() {
     </main>
   )
 }
+
 
 
 
