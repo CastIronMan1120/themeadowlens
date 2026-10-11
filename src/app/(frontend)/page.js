@@ -23,8 +23,8 @@ export default async function Home() {
     "heroImageUrl": heroImage.asset->url
   }`)
 
-  // 2. Fetch Featured Slider Photos (Now using isFeatured == true)
-  const sliderQuery = `*[_type == "artwork" && isFeatured == true && defined(image.asset)][0...10] { 
+  // 2. Fetch "What's New" Ticker Photos (Most recently added)
+  const sliderQuery = `*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { 
     _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url 
   }`
   const sliderArtworks = await client.fetch(sliderQuery)
@@ -128,6 +128,7 @@ export default async function Home() {
     </main>
   )
 }
+
 
 
 
