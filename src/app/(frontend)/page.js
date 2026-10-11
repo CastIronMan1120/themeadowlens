@@ -16,7 +16,7 @@ export default async function Home() {
   const venues = await client.fetch(query)
 
   // 1. Fetch Homepage Settings
-  const homepage = await client.fetch(`*[_type == "homepage"][0] {
+  const homepage = await client.fetch(`*[_type == "homepage"][0] {`n    "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
     welcomeHeadline,
     welcomeText,
     quote,
@@ -90,16 +90,14 @@ export default async function Home() {
 
       {/* 2. FEATURED TICKER */}
         {sliderArtworks.length > 0 && (
-          <div className="w-full bg-neutral-900 border-t border-neutral-800 pt-12 pb-4 text-center relative z-30">
-            <h2 className="text-2xl md:text-3xl font-light text-white tracking-widest uppercase">Recently Published</h2>
-            <div className="w-12 h-[1px] bg-emerald-500 mx-auto mt-4"></div>
+          <div className="w-full bg-neutral-900 border-t border-neutral-800 pt-16 pb-6 text-center relative z-30">
+            <h2 className="text-3xl md:text-4xl font-light text-white tracking-[0.2em] uppercase">Featured Masterpieces</h2>
+            <div className="w-24 h-[1px] bg-emerald-500 mx-auto mt-6 mb-8"></div>
+            <FeaturedTicker artworks={sliderArtworks} speed={homepage?.tickerSpeed || 120} />
           </div>
         )}
-      {sliderArtworks.length > 0 && (
-        <FeaturedTicker artworks={sliderArtworks} />
-      )}
 
-      {/* 3. VENUES TILE GRID */}
+        {/* 3. VENUES TILE GRID */}
       <section id="venues" className="min-h-screen p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto bg-neutral-950 relative z-20">
         
         <div className="max-w-4xl mx-auto text-center mb-16 mt-12">
@@ -134,6 +132,8 @@ export default async function Home() {
     </main>
   )
 }
+
+
 
 
 

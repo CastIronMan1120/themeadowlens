@@ -4,6 +4,13 @@ export const homepage = {
   type: 'document',
   fields: [
     {
+      name: 'featuredArtworks',
+      title: 'Featured Ticker Photos',
+      type: 'array',
+      of: [{ type: 'reference', to: [{ type: 'artwork' }] }],
+      description: 'Hand-select the exact masterpieces you want to scroll in the Featured Ticker on the homepage.'
+    },
+    {
       name: 'heroImage',
       title: 'Circular Logo Image',
       type: 'image',
@@ -38,4 +45,5 @@ export const homepage = {
     }
   ]
 }
+
 
