@@ -16,7 +16,16 @@ export default async function Home() {
   const venues = await client.fetch(query)
 
   // 1. Fetch Homepage Settings
-  const homepage = await client.fetch(`*[_type == "homepage"][0] {`n    welcomeHeadline,`n    welcomeText,`n    quote,`n    tickerSpeed,`n    "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},`n    "heroImageUrl": heroImage.asset->url`n  }`)`n`n  const latestArts = await client.fetch(`*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url }`)
+  const homepage = await client.fetch(`*[_type == "homepage"][0] {
+    welcomeHeadline,
+    welcomeText,
+    quote,
+    tickerSpeed,
+    "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
+    "heroImageUrl": heroImage.asset->url
+  }`)
+
+  const latestArts = await client.fetch(`*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url }`)
 
   // 2. Fetch "What's New" Ticker Photos (Most recently added)
   const sliderQuery = `*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { 
