@@ -59,6 +59,7 @@ export function VenueGridManager({
         "imageUrl": image.asset->url,
         "categoryId": category._ref,
         "categoryTitle": category->title,
+        "categoryParentTitle": category->parentCategory->title,
         "subcategoryId": subcategory._ref,
         "subcategoryTitle": subcategory->title,
         species,
@@ -207,26 +208,45 @@ export function VenueGridManager({
     if (!targetVenueId || selectedArtworks.size === 0) return;
     const targetCat = categories.find((c) => c._id === targetVenueId);
     const targetName = targetCat ? targetCat.title : 'selected venue';
+    const moveCount = selectedArtworks.size;
 
     setIsProcessing(true);
     try {
+      const idsToMove = Array.from(selectedArtworks);
+      const fullDocs = await client.fetch(`*[_id in $ids]`, { ids: idsToMove });
       const transaction = client.transaction();
 
-      for (const id of selectedArtworks) {
-        const art = artworks.find((a) => a._id === id);
-        const patchData = {
-          category: { _type: 'reference', _ref: targetVenueId },
-        };
-        if (art && !art.slug?.current) {
-          patchData.slug = { _type: 'slug', current: makeSlug(art.title) };
+      for (const doc of fullDocs) {
+        const cleanSlug = doc.slug?.current
+          ? doc.slug
+          : { _type: 'slug', current: makeSlug(doc.title) };
+
+        if (doc._id.startsWith('drafts.')) {
+          const pubId = doc._id.replace(/^drafts\./, '');
+          const { _rev, _updatedAt, subcategory, ...rest } = doc;
+          transaction.createOrReplace({
+            ...rest,
+            _id: pubId,
+            slug: cleanSlug,
+            category: { _type: 'reference', _ref: targetVenueId },
+          });
+          transaction.delete(doc._id);
+        } else {
+          transaction.patch(doc._id, (p) =>
+            p
+              .set({
+                category: { _type: 'reference', _ref: targetVenueId },
+                slug: cleanSlug,
+              })
+              .unset(['subcategory'])
+          );
         }
-        transaction.patch(id, (p) => p.set(patchData).unset(['subcategory']));
       }
 
       await transaction.commit();
       setSelectedArtworks(new Set());
       await fetchData();
-      window.alert(`Moved ${selectedArtworks.size} photo(s) to "${targetName}"!`);
+      window.alert(`Successfully moved ${moveCount} photo(s) to "${targetName}"!`);
     } catch (error) {
       console.error(error);
       window.alert('Error moving photos: ' + error.message);
@@ -675,9 +695,9 @@ export function VenueGridManager({
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '260px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap' }}>
-            Inspect Venue / Sub-Venue:
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>
+            Switch View To:
           </span>
           <select
             value={viewMode === 'venue' ? activeVenueId : ''}
@@ -696,11 +716,10 @@ export function VenueGridManager({
               background: '#fff',
               fontWeight: 600,
               color: '#0f172a',
-              flex: 1,
-              maxWidth: '420px',
+              width: '280px',
             }}
           >
-            <option value="">-- Choose a Root Venue or Sub-Venue to Maintain --</option>
+            <option value="">-- Inspect a Venue / Sub-Venue --</option>
             <optgroup label="Root Venues (Main)">
               {rootVenues.map((cat) => (
                 <option key={cat._id} value={cat._id}>
@@ -729,7 +748,8 @@ export function VenueGridManager({
             padding: '0.55rem 0.85rem',
             borderRadius: '6px',
             border: '1px solid #cbd5e1',
-            minWidth: '210px',
+            minWidth: '200px',
+            flex: 1,
             fontSize: '0.85rem',
           }}
         />
@@ -809,13 +829,17 @@ export function VenueGridManager({
             fontWeight: 700,
             fontSize: '0.9rem',
             color: selectedArtworks.size > 0 ? '#1d4ed8' : '#64748b',
-            minWidth: '110px',
+            minWidth: '100px',
           }}
         >
           {selectedArtworks.size} Checked
         </span>
 
         <div style={{ width: '1px', height: '28px', background: '#cbd5e1' }} />
+
+        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+          Destination Venue:
+        </span>
 
         {/* TARGET VENUE SELECTOR FOR MOVE-TO & COPY-TO */}
         <select
@@ -824,14 +848,14 @@ export function VenueGridManager({
           style={{
             padding: '0.6rem 0.75rem',
             borderRadius: '6px',
-            border: '1px solid #94a3b8',
-            minWidth: '260px',
+            border: '2px solid #2563eb',
+            minWidth: '250px',
             background: '#fff',
             fontSize: '0.85rem',
-            fontWeight: 500,
+            fontWeight: 600,
           }}
         >
-          <option value="">-- Select Target Venue / Sub-Venue --</option>
+          <option value="">-- Select Target Venue for Checked Photo(s) --</option>
           <optgroup label="Root Venues (Main)">
             {rootVenues.map((cat) => (
               <option key={cat._id} value={cat._id}>
@@ -867,9 +891,9 @@ export function VenueGridManager({
             fontWeight: 700,
             fontSize: '0.85rem',
           }}
-          title="Move checked photos into the selected target venue"
+          title="Move ONLY the checked photo(s) into the selected destination venue"
         >
-          Move-To ({selectedArtworks.size})
+          Move Checked ({selectedArtworks.size})
         </button>
 
         {/* ACTION 2: COPY-TO */}
@@ -892,7 +916,7 @@ export function VenueGridManager({
           }}
           title="Copy checked photos into the selected target venue without using extra storage"
         >
-          Copy-To ({selectedArtworks.size})
+          Copy Checked ({selectedArtworks.size})
         </button>
 
         {/* ACTION 3: DECATEGORIZE (SEND BACK TO WAREHOUSE) */}
@@ -911,7 +935,7 @@ export function VenueGridManager({
           }}
           title="Remove category assignment and send checked photos back to The Warehouse"
         >
-          Decategorize / To Warehouse ({selectedArtworks.size})
+          To Warehouse ({selectedArtworks.size})
         </button>
 
         {/* ACTION 4: DELETE */}
@@ -935,13 +959,27 @@ export function VenueGridManager({
         </button>
       </div>
 
-      {/* PHOTO COUNT STATUS */}
-      <div style={{ marginBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: '0.9rem' }}>
+      {/* PHOTO COUNT STATUS & COLOR LEGEND */}
+      <div style={{ marginBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', color: '#475569', fontSize: '0.9rem' }}>
         <span>
           Showing <strong>{filteredArtworks.length}</strong> photo(s)
           {viewMode === 'venue' && activeVenueObj ? ` in "${activeVenueObj.title}"` : ''}
         </span>
-        {isProcessing && <span style={{ color: '#2563eb', fontWeight: 600 }}>Syncing with Sanity Cloud...</span>}
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', fontSize: '0.78rem' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#d97706', display: 'inline-block' }} />
+            Amber = In Warehouse
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#1d4ed8', display: 'inline-block' }} />
+            Blue = Root Venue
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: '#047857', display: 'inline-block' }} />
+            Green = Sub-Venue
+          </span>
+          {isProcessing && <span style={{ color: '#2563eb', fontWeight: 700 }}>Syncing with Sanity Cloud...</span>}
+        </div>
       </div>
 
       {/* LARGE VISUAL IDENTIFICATION GRID */}
@@ -954,6 +992,20 @@ export function VenueGridManager({
       >
         {filteredArtworks.map((art) => {
           const isChecked = selectedArtworks.has(art._id);
+          const isSubVenue = Boolean(art.subcategoryTitle || art.categoryParentTitle);
+          const badgeColor = !art.categoryTitle
+            ? 'rgba(217, 119, 6, 0.92)' // Amber: In Warehouse
+            : isSubVenue
+            ? 'rgba(4, 120, 87, 0.92)' // Green: Sub-Venue
+            : 'rgba(29, 78, 216, 0.92)'; // Blue: Root Venue
+          const badgeText = !art.categoryTitle
+            ? 'In Warehouse'
+            : art.subcategoryTitle
+            ? `${art.categoryTitle} ▸ ${art.subcategoryTitle}`
+            : art.categoryParentTitle
+            ? `${art.categoryParentTitle} ▸ ${art.categoryTitle}`
+            : art.categoryTitle;
+
           return (
             <div
               key={art._id}
@@ -995,26 +1047,28 @@ export function VenueGridManager({
                 />
               </div>
 
-              {/* VENUE BADGE OVERLAY */}
+              {/* COLOR-CODED VENUE BADGE OVERLAY */}
               <div
                 style={{
                   position: 'absolute',
                   top: '10px',
                   right: '10px',
-                  background: art.categoryTitle ? 'rgba(15, 23, 42, 0.85)' : 'rgba(217, 119, 6, 0.9)',
+                  background: badgeColor,
                   color: '#fff',
                   borderRadius: '4px',
                   padding: '3px 8px',
                   fontSize: '0.72rem',
                   fontWeight: 600,
                   zIndex: 10,
-                  maxWidth: '65%',
+                  maxWidth: '72%',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
                 }}
+                title={badgeText}
               >
-                {art.categoryTitle || 'In Warehouse'}
+                {badgeText}
               </div>
 
               {/* LARGE CRISP THUMBNAIL FOR EASY IDENTIFICATION */}
