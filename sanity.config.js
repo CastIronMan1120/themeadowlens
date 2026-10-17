@@ -102,7 +102,7 @@ export default defineConfig({
               .child(
                 S.document()
                   .schemaType('category')
-                  .documentId('category-guest-photos')
+                  .documentId('cat-guest-photos-7401')
                   .title('Guest Photos (Invited Showcase)')
                   .views([
                     S.view

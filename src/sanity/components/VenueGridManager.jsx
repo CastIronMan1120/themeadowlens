@@ -649,9 +649,12 @@ export function VenueGridManager({
     try {
       const guestCategory =
         categories.find(
-          (c) => c._id === 'category-guest-photos' || c.slug === 'guest-photos'
+          (c) =>
+            c._id === 'cat-guest-photos-7401' ||
+            c._id === 'category-guest-photos' ||
+            c.slug === 'guest-photos'
         ) || null;
-      const targetCatId = guestCategory ? guestCategory._id : 'category-guest-photos';
+      const targetCatId = guestCategory ? guestCategory._id : 'cat-guest-photos-7401';
 
       const rawFileTitle = guestForm.file.name.replace(/\.[^/.]+$/, '');
       const cleanTitle = (guestForm.displayTitle || rawFileTitle)
@@ -849,7 +852,7 @@ export function VenueGridManager({
             {viewMode === 'all' &&
               'Large visual identification grid of every uploaded photo across your entire collection.'}
             {viewMode === 'venue' &&
-              (activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos'
+              (activeVenueId === 'cat-guest-photos-7401' || activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos'
                 ? 'Curated By Invitation Only: Upload & publish photos from invited Facebook / nature photographers with full attribution, social link, and 1-click Facebook share note.'
                 : 'Check any photos in this venue to Move-To, Copy-To, Decategorize (send back to Warehouse), or Delete.')}
           </p>
@@ -1626,14 +1629,14 @@ export function VenueGridManager({
             <h3 style={{ margin: '0 0 0.5rem 0', color: '#334155' }}>No photos found in this view</h3>
             <p style={{ margin: '0 0 1.25rem 0' }}>
               {viewMode === 'venue' &&
-              (activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos')
+              (activeVenueId === 'cat-guest-photos-7401' || activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos')
                 ? 'Your Invited Guest Photos showcase is ready! Click below to upload a guest photographer’s photo, add their name & Facebook link, and publish it live.'
                 : viewMode === 'venue'
                 ? 'This venue currently has 0 photos. You can upload photos directly or delete this venue using the red button above.'
                 : 'Try switching views or uploading new photos.'}
             </p>
             {viewMode === 'venue' &&
-              (activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos') && (
+              (activeVenueId === 'cat-guest-photos-7401' || activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos') && (
                 <button
                   type="button"
                   onClick={() => setShowAddGuestModal(true)}
