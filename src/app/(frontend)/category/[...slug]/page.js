@@ -85,10 +85,28 @@ export default async function CategoryPage({ params }) {
         <h1 className="text-4xl md:text-6xl lg:text-7xl text-white font-light tracking-tight mb-4">
           {category.title}
         </h1>
+        {category.speciesDescription && (
+          <p className="text-neutral-400 font-light text-base md:text-lg max-w-3xl mx-auto mt-4 leading-relaxed">
+            {category.speciesDescription}
+          </p>
+        )}
+        {currentSlug === 'guest-photos' && (
+          <div className="mt-6">
+            <Link
+              href="?inquire=true&interest=Guest%20Photo%20Submission"
+              scroll={false}
+              className="inline-block px-6 py-2.5 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-400 uppercase tracking-widest text-xs font-mono transition-colors rounded-sm"
+            >
+              Inquire About Submitting a Guest Photo
+            </Link>
+          </div>
+        )}
         {subcategorySlug && (
-          <Link href={`/category/${categorySlug}`} className="text-sm text-neutral-500 hover:text-white uppercase tracking-widest font-mono transition-colors">
-            &larr; Back to {categorySlug.replace('-', ' ')}
-          </Link>
+          <div className="mt-4">
+            <Link href={`/category/${categorySlug}`} className="text-sm text-neutral-500 hover:text-white uppercase tracking-widest font-mono transition-colors">
+              &larr; Back to {categorySlug.replace('-', ' ')}
+            </Link>
+          </div>
         )}
       </section>
 

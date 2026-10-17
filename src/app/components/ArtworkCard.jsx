@@ -58,9 +58,14 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
       <div 
         className={`absolute inset-x-0 bottom-[80px] lg:bottom-20 p-6 lg:p-10 flex flex-col justify-end pointer-events-none transition-all duration-700 z-10 opacity-100 translate-y-0 lg:opacity-0 lg:translate-y-4 lg:group-hover:opacity-100 lg:group-hover:translate-y-0`}
       >
-        <h3 className="text-white text-3xl lg:text-5xl font-light mb-4 drop-shadow-2xl">
+        <h3 className="text-white text-3xl lg:text-5xl font-light mb-2 drop-shadow-2xl">
           {artwork.displayTitle || artwork.title}
         </h3>
+        {artwork.guestPhotographer && (
+          <p className="text-emerald-400 text-xs lg:text-sm font-mono uppercase tracking-widest mb-3 drop-shadow-md">
+            Guest Photographer: {artwork.guestPhotographer}
+          </p>
+        )}
         
         {displayCaption && (
           <p className="text-neutral-200 text-sm lg:text-lg font-light leading-relaxed drop-shadow-md line-clamp-3">

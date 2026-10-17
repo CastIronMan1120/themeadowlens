@@ -68,6 +68,13 @@ const artwork = {
       description: 'The large artistic title displayed on the photo (e.g., "Morning Grace").'
     },
     {
+      name: 'guestPhotographer',
+      title: 'Guest Photographer Credit (For Guest Photos Venue)',
+      type: 'string',
+      group: 'content',
+      description: 'Optional: If this is a Guest Photo, enter the guest photographer\'s name (e.g., "Jane Doe") to credit them on the card and artwork page.'
+    },
+    {
       name: 'caption',
       title: 'Caption Description',
       type: 'text',

@@ -146,6 +146,11 @@ export default async function ArtworkPage({ params }) {
             
             <div>
               <h1 className="text-5xl md:text-6xl font-light tracking-wide mb-4">{artwork.title}</h1>
+              {artwork.guestPhotographer && (
+                <p className="text-emerald-400 text-sm font-mono uppercase tracking-widest mt-2">
+                  Guest Photographer: {artwork.guestPhotographer}
+                </p>
+              )}
             <div className="flex flex-wrap items-center gap-4 mt-4">
               {artwork.location && (
                 <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
