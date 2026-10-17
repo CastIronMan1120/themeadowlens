@@ -12,8 +12,17 @@ export default async function BirdIndexPage() {
   // Fetch all defined species from published/categorized artworks
   const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species) && defined(category)].species`)
   
+  // Count occurrences per species
+  const speciesCounts = rawSpecies.reduce((acc, s) => {
+    if (!s) return acc
+    const clean = s.trim()
+    if (!clean) return acc
+    acc[clean] = (acc[clean] || 0) + 1
+    return acc
+  }, {})
+
   // Deduplicate and sort alphabetically
-  const uniqueSpecies = [...new Set(rawSpecies)].sort((a, b) => a.localeCompare(b))
+  const uniqueSpecies = Object.keys(speciesCounts).sort((a, b) => a.localeCompare(b))
 
   // Group by first letter for the glossary layout
   const groupedSpecies = uniqueSpecies.reduce((acc, species) => {
@@ -23,13 +32,29 @@ export default async function BirdIndexPage() {
     return acc
   }, {})
 
+  const letters = Object.keys(groupedSpecies).sort()
+
   return (
     <main className="min-h-screen pt-40 md:pt-[240px] pb-24 px-8 sm:px-12 md:px-24 max-w-7xl mx-auto">
-      <div className="mb-16">
+      <div className="mb-12">
         <h1 className="text-4xl md:text-5xl font-light text-white tracking-wide mb-4">Species Index</h1>
         <p className="text-neutral-400 font-mono uppercase tracking-widest text-sm">
-          A comprehensive glossary of subjects currently in the repertoire.
+          A comprehensive glossary of {uniqueSpecies.length} subjects currently in the repertoire.
         </p>
+
+        {letters.length > 0 && (
+          <div className="mt-8 flex flex-wrap gap-2 border-y border-white/10 py-4">
+            {letters.map((letter) => (
+              <a
+                key={letter}
+                href={`#letter-${letter}`}
+                className="w-8 h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-400 hover:text-white hover:bg-white/10 border border-white/5 transition-colors"
+              >
+                {letter}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       {uniqueSpecies.length === 0 ? (
@@ -39,18 +64,21 @@ export default async function BirdIndexPage() {
         </div>
       ) : (
         <div className="columns-1 md:columns-2 lg:columns-3 gap-12 space-y-12">
-          {Object.keys(groupedSpecies).sort().map(letter => (
-            <div key={letter} className="break-inside-avoid mb-8">
+          {letters.map(letter => (
+            <div key={letter} id={`letter-${letter}`} className="break-inside-avoid mb-8 scroll-mt-44">
               <h2 className="text-3xl font-serif italic text-white/30 border-b border-white/10 pb-2 mb-4">{letter}</h2>
               <ul className="space-y-3">
                 {groupedSpecies[letter].map(species => (
-                  <li key={species}>
+                  <li key={species} className="flex items-baseline justify-between gap-4">
                     <Link 
                       href={`/species/${encodeURIComponent(species)}`}
                       className="text-neutral-300 hover:text-white hover:underline transition-colors font-light text-lg tracking-wide"
                     >
                       {species}
                     </Link>
+                    <span className="text-[11px] font-mono text-neutral-600">
+                      ({speciesCounts[species]})
+                    </span>
                   </li>
                 ))}
               </ul>
