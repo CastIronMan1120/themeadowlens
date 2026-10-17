@@ -94,12 +94,12 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
 
         <div className="flex items-center space-x-6 w-full lg:w-auto justify-between lg:justify-end px-2 lg:px-0">
           <button onClick={handleLike} className="flex items-center text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
-            <span className="mr-2">{liked ? '?' : '?'}</span>
+            <span className="mr-2">{liked ? '♥' : '♡'}</span>
             {liked ? 'Loved' : 'Like'}
           </button>
           
           <button onClick={handleShare} className="flex items-center text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
-            <span className="mr-2">?</span>
+            <span className="mr-2">↗</span>
             {shared ? 'Copied' : 'Share'}
           </button>
         </div>

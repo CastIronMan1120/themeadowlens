@@ -8,24 +8,21 @@ export async function generateMetadata({ params }) {
   const { slug } = await params
   const categorySlug = slug[0]
   const subcategorySlug = slug[1]
+  const currentSlug = subcategorySlug || categorySlug
 
-  let title = "Gallery"
-  let seo = null
-  
-  if (subcategorySlug) {
-    const query = `*[_type == "category" && slug.current == $subcategorySlug][0]`
-    const data = await client.fetch(query, { subcategorySlug })
-    if (data?.title) title = data.title
-    if (data?.seo) seo = data.seo
-  } else {
-    const query = `*[_type == "category" && slug.current == $categorySlug][0]`
-    const data = await client.fetch(query, { categorySlug })
-    if (data?.title) title = data.title
-    if (data?.seo) seo = data.seo
-  }
+  const query = `*[_type == "category" && slug.current == $currentSlug][0]{
+    title,
+    speciesDescription,
+    seo,
+    "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || category->parentCategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
+  }`
+  const data = await client.fetch(query, { currentSlug })
+
+  const title = data?.title || "Gallery"
+  const seo = data?.seo
 
   const metaTitle = seo?.metaTitle || `${title} | The Meadow Lens`
-  const metaDesc = seo?.metaDescription || `Explore the ${title} fine art photography collection by David McClure.`
+  const metaDesc = seo?.metaDescription || data?.speciesDescription || `Explore the ${title} fine art photography collection by David McClure.`
   const keywords = seo?.keywords?.length > 0 ? seo.keywords : [title, "Fine Art Photography", "The Meadowlands", "Nature Photography", "David McClure", "Gallery", "Exhibition"]
 
   return {
@@ -35,6 +32,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: metaTitle,
       description: metaDesc,
+      ...(data?.imageUrl ? { images: [{ url: data.imageUrl }] } : {}),
       type: 'website',
     },
   }
@@ -54,7 +52,7 @@ export default async function CategoryPage({ params }) {
     _id,
     title,
     slug,
-    "imageUrl": menuImage.asset->url
+    "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
   }`
   const subcategories = await client.fetch(subcategoriesQuery, { currentSlug })
 
@@ -79,7 +77,7 @@ export default async function CategoryPage({ params }) {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 pt-56 pb-24 px-6 md:px-12 w-full max-w-[2000px] mx-auto">
+    <main className="min-h-screen bg-neutral-950 pt-40 md:pt-[240px] pb-24 px-6 md:px-12 w-full max-w-[2000px] mx-auto">
       
       <section className="px-6 md:px-12 text-center mb-16">
         <h1 className="text-4xl md:text-6xl lg:text-7xl text-white font-light tracking-tight mb-4">
@@ -91,14 +89,10 @@ export default async function CategoryPage({ params }) {
           </p>
         )}
         {currentSlug === 'guest-photos' && (
-          <div className="mt-6">
-            <Link
-              href="?inquire=true&interest=Guest%20Photo%20Submission"
-              scroll={false}
-              className="inline-block px-6 py-2.5 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-400 uppercase tracking-widest text-xs font-mono transition-colors rounded-sm"
-            >
-              Inquire About Submitting a Guest Photo
-            </Link>
+          <div className="mt-4 inline-block px-4 py-1.5 bg-emerald-950/40 border border-emerald-500/30 rounded-full">
+            <span className="text-emerald-300 uppercase tracking-widest text-xs font-mono">
+              Curated By Invitation Only
+            </span>
           </div>
         )}
         {subcategorySlug && (

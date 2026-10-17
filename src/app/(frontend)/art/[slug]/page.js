@@ -16,10 +16,26 @@ export async function generateMetadata({ params }) {
   if (!artwork) return {}
 
   const imageUrl = artwork.image ? urlForImage(artwork.image).width(1200).height(630).url() : ''
-  const dynamicKeywords = [artwork.title, artwork.species, artwork.dominantColor, artwork.location, 'Fine Art Photography', 'The Meadow Lens'].filter(Boolean)
+  const dynamicKeywords = [
+    artwork.title,
+    artwork.guestPhotographer,
+    artwork.species,
+    artwork.dominantColor,
+    artwork.location,
+    'Fine Art Photography',
+    'The Meadow Lens',
+  ].filter(Boolean)
 
-  const metaTitle = artwork.seo?.metaTitle || `${artwork.title} | The Meadow Lens`
-  const metaDesc = artwork.seo?.metaDescription || `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`
+  const defaultTitle = artwork.guestPhotographer
+    ? `Featured Guest Artist: ${artwork.guestPhotographer} — "${artwork.title}" | The Meadow Lens`
+    : `${artwork.title} | The Meadow Lens`
+
+  const defaultDesc = artwork.guestPhotographer
+    ? artwork.guestNote || `Featured Guest Photo by ${artwork.guestPhotographer}, curated on The Meadow Lens by David McClure.`
+    : `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`
+
+  const metaTitle = artwork.seo?.metaTitle || defaultTitle
+  const metaDesc = artwork.seo?.metaDescription || defaultDesc
   const keywords = artwork.seo?.keywords?.length > 0 ? artwork.seo.keywords : dynamicKeywords
 
   return {
@@ -29,7 +45,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: metaTitle,
       description: metaDesc,
-      images: [{ url: imageUrl }],
+      images: imageUrl ? [{ url: imageUrl }] : [],
       type: 'website',
     },
   }
@@ -41,21 +57,23 @@ export default async function ArtworkPage({ params }) {
   const artwork = await client.fetch(`*[_type == "artwork" && slug.current == $slug][0]{
     ...,
     "categorySlug": category->slug.current,
-    "categoryTitle": category->title
+    "categoryTitle": category->title,
+    "parentCategorySlug": category->parentCategory->slug.current,
+    "parentCategoryTitle": category->parentCategory->title
   }`, { slug })
 
   if (!artwork) {
     notFound()
   }
 
-  // Next / Previous Navigation within the same Main Category
+  // Next / Previous Navigation within the same Category
   const categoryId = artwork.category?._ref
   let prevArt = null
   let nextArt = null
 
   if (categoryId) {
-    prevArt = await client.fetch(`*[_type == "artwork" && category._ref == $categoryId && _createdAt > $createdAt] | order(_createdAt asc)[0] { "slug": slug.current }`, { categoryId, createdAt: artwork._createdAt })
-    nextArt = await client.fetch(`*[_type == "artwork" && category._ref == $categoryId && _createdAt < $createdAt] | order(_createdAt desc)[0] { "slug": slug.current }`, { categoryId, createdAt: artwork._createdAt })
+    prevArt = await client.fetch(`*[_type == "artwork" && category._ref == $categoryId && _createdAt > $createdAt && defined(slug.current)] | order(_createdAt asc)[0] { "slug": slug.current }`, { categoryId, createdAt: artwork._createdAt })
+    nextArt = await client.fetch(`*[_type == "artwork" && category._ref == $categoryId && _createdAt < $createdAt && defined(slug.current)] | order(_createdAt desc)[0] { "slug": slug.current }`, { categoryId, createdAt: artwork._createdAt })
   }
 
   // Inquiry Link
@@ -68,9 +86,9 @@ export default async function ArtworkPage({ params }) {
   const isAcquired = status === 'acquired'
 
   // Social Share URLs
-  const pageUrl = encodeURIComponent(`https://themeadowlens.vercel.app/art/${slug}`)
+  const pageUrl = encodeURIComponent(`https://themeadowlens.com/art/${slug}`)
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`
-  const xShareUrl = `https://twitter.com/intent/tweet?url=${pageUrl}&text=Experience%20this%20stunning%20piece%20by%20The%20Meadow%20Lens.`
+  const xShareUrl = `https://twitter.com/intent/tweet?url=${pageUrl}&text=${encodeURIComponent(artwork.guestPhotographer ? `Featured Guest Photo by ${artwork.guestPhotographer} on The Meadow Lens:` : 'Experience this stunning piece by The Meadow Lens:')}`
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(artwork.title)}`
 
   return (
@@ -78,12 +96,29 @@ export default async function ArtworkPage({ params }) {
       
       {/* 1. SEO Industry Standard Breadcrumbs */}
       <nav className="mb-12 text-sm text-neutral-500 uppercase tracking-widest font-mono flex items-center justify-between">
-        <div>
+        <div className="flex flex-wrap items-center gap-y-2">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
           <span className="mx-3">/</span>
+          {artwork.parentCategorySlug && (
+            <>
+              <Link href={`/category/${artwork.parentCategorySlug}`} className="hover:text-white transition-colors">
+                {artwork.parentCategoryTitle}
+              </Link>
+              <span className="mx-3">/</span>
+            </>
+          )}
           {artwork.categorySlug ? (
             <>
-              <Link href={`/category/${artwork.categorySlug}`} className="hover:text-white transition-colors">{artwork.categoryTitle}</Link>
+              <Link
+                href={
+                  artwork.parentCategorySlug
+                    ? `/category/${artwork.parentCategorySlug}/${artwork.categorySlug}`
+                    : `/category/${artwork.categorySlug}`
+                }
+                className="hover:text-white transition-colors"
+              >
+                {artwork.categoryTitle}
+              </Link>
               <span className="mx-3">/</span>
             </>
           ) : (
@@ -141,67 +176,104 @@ export default async function ArtworkPage({ params }) {
             </div>
           </div>
 
-          {/* Right: The Title, Optional Story, and Inquiry Guestbook */}
+          {/* Right: The Title, Guest Artist Showcase, Optional Story, and Inquiry Guestbook */}
           <div className="flex flex-col justify-center space-y-10 text-white lg:py-12">
             
             <div>
               <h1 className="text-5xl md:text-6xl font-light tracking-wide mb-4">{artwork.title}</h1>
+
               {artwork.guestPhotographer && (
-                <p className="text-emerald-400 text-sm font-mono uppercase tracking-widest mt-2">
-                  Guest Photographer: {artwork.guestPhotographer}
-                </p>
+                <div className="mt-4 p-5 bg-neutral-900/80 border border-emerald-500/30 rounded-sm space-y-2">
+                  <p className="text-emerald-400 text-xs font-mono uppercase tracking-widest">
+                    Featured Guest Photographer
+                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <p className="text-2xl font-light text-white">{artwork.guestPhotographer}</p>
+                    {artwork.guestSocialUrl && (
+                      <a
+                        href={artwork.guestSocialUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-mono uppercase tracking-widest text-emerald-300 hover:text-white underline transition-colors"
+                      >
+                        Visit Photographer's Page &rarr;
+                      </a>
+                    )}
+                  </div>
+                  {artwork.guestNote && (
+                    <p className="text-neutral-300 text-sm font-light leading-relaxed pt-2 border-t border-white/10">
+                      {artwork.guestNote}
+                    </p>
+                  )}
+                </div>
               )}
-            <div className="flex flex-wrap items-center gap-4 mt-4">
-              {artwork.location && (
-                <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
-                  {artwork.location} {artwork.year && `� ${artwork.year}`}
-                </p>
-              )}
-              {artwork.edition && (
-                <p className="text-neutral-500 text-xs font-mono uppercase tracking-widest border border-neutral-700 px-2 py-1 rounded-sm">
-                  {artwork.edition}
-                </p>
-              )}
-            </div>
-          </div>
 
-          {/* The Story is entirely optional. If blank, this disappears. */}
-          {artwork.story && (
-            <div className="prose prose-invert prose-p:text-neutral-300 prose-p:font-light prose-p:leading-relaxed prose-lg">
-              <PortableText value={artwork.story} />
-            </div>
-          )}
-
-          {/* The Passive Options Menu */}
-          <div className="pt-8 border-t border-white/10">
-            {isAcquired ? (
-              <div className="inline-block bg-neutral-900 border border-neutral-800 text-neutral-500 px-10 py-5 uppercase tracking-widest text-sm font-semibold cursor-not-allowed">
-                Acquired by Private Collector
+              <div className="flex flex-wrap items-center gap-4 mt-4">
+                {artwork.location && (
+                  <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
+                    {artwork.location} {artwork.year && `• ${artwork.year}`}
+                  </p>
+                )}
+                {artwork.edition && (
+                  <p className="text-neutral-500 text-xs font-mono uppercase tracking-widest border border-neutral-700 px-2 py-1 rounded-sm">
+                    {artwork.edition}
+                  </p>
+                )}
               </div>
-            ) : (
+            </div>
+
+            {artwork.caption && (
+              <p className="text-neutral-300 text-lg font-light leading-relaxed">
+                {artwork.caption}
+              </p>
+            )}
+
+            {/* The Story is entirely optional. If blank, this disappears. */}
+            {artwork.story && (
+              <div className="prose prose-invert prose-p:text-neutral-300 prose-p:font-light prose-p:leading-relaxed prose-lg">
+                <PortableText value={artwork.story} />
+              </div>
+            )}
+
+            {/* The Passive Options Menu */}
+            <div className="pt-8 border-t border-neutral-900">
+              {isAcquired && (
+                <div className="mb-8 inline-block bg-neutral-900 border border-neutral-800 px-4 py-2 text-xs font-mono uppercase tracking-widest text-neutral-400">
+                  ● Acquired (Private Collection)
+                </div>
+              )}
+              {isReserved && (
+                <div className="mb-8 inline-block bg-amber-950/30 border border-amber-900/50 px-4 py-2 text-xs font-mono uppercase tracking-widest text-amber-500">
+                  ● Currently Reserved
+                </div>
+              )}
+
               <ArtworkOptions 
                 inquiryLink={inquiryLink}
                 isReserved={isReserved}
                 isAcquired={isAcquired}
-                imageUrl={urlForImage(artwork.image).url()}
+                imageUrl={urlForImage(artwork.image).width(1200).url()}
                 artworkTitle={artwork.title}
               />
-            )}
-          </div>
 
-          {/* Social Proof Sharing */}
-          <div className="pt-10 border-t border-white/5">
-            <p className="text-neutral-500 text-xs uppercase tracking-widest mb-4">Share this piece</p>
-            <div className="flex space-x-6">
-              <a href={fbShareUrl} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-white transition-colors uppercase tracking-widest text-xs">Facebook</a>
-              <a href={xShareUrl} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-white transition-colors uppercase tracking-widest text-xs">X (Twitter)</a>
-              <a href={pinterestShareUrl} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-white transition-colors uppercase tracking-widest text-xs">Pinterest</a>
+              {/* Social Share Links */}
+              <div className="mt-8 pt-8 border-t border-neutral-900 flex items-center space-x-6 text-xs font-mono uppercase tracking-widest text-neutral-500">
+                <span>Share:</span>
+                <a href={fbShareUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  Facebook
+                </a>
+                <a href={xShareUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  X (Twitter)
+                </a>
+                <a href={pinterestShareUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  Pinterest
+                </a>
+              </div>
             </div>
-          </div>
 
-        </div>
-        </div>
+          </div>
+          
+      </div>
     </main>
   )
 }
-

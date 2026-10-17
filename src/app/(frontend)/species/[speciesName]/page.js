@@ -17,10 +17,11 @@ export default async function SpeciesPage({ params }) {
   const { speciesName } = await params
   const decodedSpecies = decodeURIComponent(speciesName)
 
-  const artworks = await client.fetch(`*[_type == "artwork" && species == $decodedSpecies && (category->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"] || category->parentcategory->slug.current in ["birds", "fauna", "flora"] || category->parentCategory->slug.current in ["birds", "fauna", "flora"])] | order(_createdAt desc) {
+  const artworks = await client.fetch(`*[_type == "artwork" && species == $decodedSpecies && defined(category)] | order(_createdAt desc) {
     _id,
     title,
     displayTitle,
+    guestPhotographer,
     caption,
     slug,
     image,
@@ -33,7 +34,7 @@ export default async function SpeciesPage({ params }) {
   }
 
   return (
-    <main className="min-h-screen pt-48 pb-12 px-6 md:px-12 w-full max-w-[2000px] mx-auto">
+    <main className="min-h-screen pt-40 md:pt-[240px] pb-12 px-6 md:px-12 w-full max-w-[2000px] mx-auto">
       <div className="mb-12">
         <nav className="mb-6 text-sm text-neutral-500 uppercase tracking-widest font-mono flex items-center">
           <Link href="/bird-index" className="hover:text-white transition-colors">Species Index</Link>

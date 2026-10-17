@@ -9,8 +9,8 @@ export const metadata = {
 }
 
 export default async function BirdIndexPage() {
-  // Fetch all defined species from the database, ignoring venue restrictions to ensure NO species are missed!
-  const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species)].species`)
+  // Fetch all defined species from published/categorized artworks
+  const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species) && defined(category)].species`)
   
   // Deduplicate and sort alphabetically
   const uniqueSpecies = [...new Set(rawSpecies)].sort((a, b) => a.localeCompare(b))
@@ -24,7 +24,7 @@ export default async function BirdIndexPage() {
   }, {})
 
   return (
-    <main className="min-h-screen pt-48 pb-24 px-8 sm:px-12 md:px-24 max-w-7xl mx-auto">
+    <main className="min-h-screen pt-40 md:pt-[240px] pb-24 px-8 sm:px-12 md:px-24 max-w-7xl mx-auto">
       <div className="mb-16">
         <h1 className="text-4xl md:text-5xl font-light text-white tracking-wide mb-4">Species Index</h1>
         <p className="text-neutral-400 font-mono uppercase tracking-widest text-sm">

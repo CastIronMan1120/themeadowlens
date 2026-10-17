@@ -37,6 +37,7 @@ const artwork = {
   type: 'document',
   groups: [
     { name: 'content', title: 'Artwork Details', default: true },
+    { name: 'guest', title: 'Guest Artist Details' },
     { name: 'seo', title: 'SEO & Metadata' }
   ],
   fields: [
@@ -69,10 +70,25 @@ const artwork = {
     },
     {
       name: 'guestPhotographer',
-      title: 'Guest Photographer Credit (For Guest Photos Venue)',
+      title: 'Guest Photographer Name',
       type: 'string',
-      group: 'content',
-      description: 'Optional: If this is a Guest Photo, enter the guest photographer\'s name (e.g., "Jane Doe") to credit them on the card and artwork page.'
+      group: ['content', 'guest'],
+      description: 'If this is an invited Guest Photo, enter the photographer\'s name (e.g., "John Smith") to credit them on the gallery card, artwork page, and Facebook share preview.'
+    },
+    {
+      name: 'guestSocialUrl',
+      title: 'Guest Facebook / Social / Website Link (Optional)',
+      type: 'url',
+      group: ['content', 'guest'],
+      description: 'Optional link to the guest photographer\'s Facebook profile, Instagram, or website so visitors can check out their page.'
+    },
+    {
+      name: 'guestNote',
+      title: 'Guest Artist Note / Story Behind the Capture',
+      type: 'text',
+      rows: 4,
+      group: ['content', 'guest'],
+      description: 'Add a note about how you discovered this photo on Facebook, about the guest photographer, or their quote on how they captured the shot.'
     },
     {
       name: 'caption',

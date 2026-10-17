@@ -25,7 +25,7 @@ export default async function SitemapPage() {
   const { rootVenues } = await client.fetch(query);
 
   return (
-    <main className="min-h-screen bg-black text-white pt-32 pb-24 px-6 md:px-16">
+    <main className="min-h-screen bg-black text-white pt-40 md:pt-[240px] pb-24 px-6 md:px-16">
       <div className="max-w-7xl mx-auto">
         <header className="mb-16 border-b border-white/10 pb-8">
           <h1 className="text-4xl md:text-5xl font-light tracking-widest uppercase mb-4 text-emerald-400">
@@ -47,6 +47,16 @@ export default async function SitemapPage() {
               <li>
                 <Link href="/" className="text-lg text-neutral-300 hover:text-white transition-colors block">
                   Home (The Venues)
+                </Link>
+              </li>
+              <li>
+                <Link href="/bird-index" className="text-lg text-neutral-300 hover:text-white transition-colors block">
+                  Species Index (A–Z Glossary)
+                </Link>
+              </li>
+              <li>
+                <Link href="/category/guest-photos" className="text-lg text-emerald-300 hover:text-white transition-colors block">
+                  Guest Photos (Invited Showcase)
                 </Link>
               </li>
               <li>
@@ -89,7 +99,7 @@ export default async function SitemapPage() {
                 
                 {venue.subcategories?.map((sub) => (
                   <li key={sub._id}>
-                    <Link href={`/category/${sub.slug}`} className="text-lg text-neutral-300 hover:text-white transition-colors flex justify-between items-center group">
+                    <Link href={`/category/${venue.slug}/${sub.slug}`} className="text-lg text-neutral-300 hover:text-white transition-colors flex justify-between items-center group">
                       <span>{sub.title}</span>
                       <span className="text-xs font-mono text-neutral-500 group-hover:text-blue-300 transition-colors">
                         {sub.artworkCount} photos

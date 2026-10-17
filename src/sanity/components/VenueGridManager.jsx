@@ -21,6 +21,7 @@ export function VenueGridManager({
   const [searchQuery, setSearchQuery] = useState('');
   const [thumbSize, setThumbSize] = useState('large'); // 'medium' | 'large' | 'xlarge'
   const [showVenueDeletionPanel, setShowVenueDeletionPanel] = useState(false);
+  const [editingArtwork, setEditingArtwork] = useState(null);
 
   // Sync if Sanity Desk passes a new documentId when user clicks a different Venue/Sub-Venue in the sidebar
   useEffect(() => {
@@ -49,55 +50,31 @@ export function VenueGridManager({
 
       let artQuery = '';
       let params = {};
+      const projection = `{
+        _id,
+        title,
+        slug,
+        _createdAt,
+        image,
+        "imageUrl": image.asset->url,
+        "categoryId": category._ref,
+        "categoryTitle": category->title,
+        "subcategoryId": subcategory._ref,
+        "subcategoryTitle": subcategory->title,
+        species,
+        caption,
+        displayTitle,
+        guestPhotographer,
+        guestSocialUrl,
+        guestNote
+      }`;
 
       if (viewMode === 'warehouse') {
-        artQuery = `*[_type == "artwork" && !defined(category)] {
-          _id,
-          title,
-          slug,
-          _createdAt,
-          image,
-          "imageUrl": image.asset->url,
-          "categoryId": category._ref,
-          "categoryTitle": category->title,
-          "subcategoryId": subcategory._ref,
-          "subcategoryTitle": subcategory->title,
-          species,
-          caption,
-          displayTitle
-        }`;
+        artQuery = `*[_type == "artwork" && !defined(category)] ${projection}`;
       } else if (viewMode === 'all') {
-        artQuery = `*[_type == "artwork"] {
-          _id,
-          title,
-          slug,
-          _createdAt,
-          image,
-          "imageUrl": image.asset->url,
-          "categoryId": category._ref,
-          "categoryTitle": category->title,
-          "subcategoryId": subcategory._ref,
-          "subcategoryTitle": subcategory->title,
-          species,
-          caption,
-          displayTitle
-        }`;
+        artQuery = `*[_type == "artwork"] ${projection}`;
       } else if (viewMode === 'venue' && activeVenueId) {
-        artQuery = `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId || category->parentCategory._ref == $venueId)] {
-          _id,
-          title,
-          slug,
-          _createdAt,
-          image,
-          "imageUrl": image.asset->url,
-          "categoryId": category._ref,
-          "categoryTitle": category->title,
-          "subcategoryId": subcategory._ref,
-          "subcategoryTitle": subcategory->title,
-          species,
-          caption,
-          displayTitle
-        }`;
+        artQuery = `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId || category->parentCategory._ref == $venueId)] ${projection}`;
         params = { venueId: activeVenueId };
       } else {
         setArtworks([]);
@@ -419,6 +396,37 @@ export function VenueGridManager({
     } catch (error) {
       console.error('Error deleting venue:', error);
       window.alert('Error deleting venue: ' + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 7. SAVE INLINE PHOTO & GUEST ARTIST DETAILS ---
+  const handleSaveArtworkDetails = async (e) => {
+    e.preventDefault();
+    if (!editingArtwork) return;
+
+    setIsProcessing(true);
+    try {
+      const patchData = {
+        title: editingArtwork.title || 'Untitled',
+        displayTitle: Boolean(editingArtwork.displayTitle),
+        species: editingArtwork.species || '',
+        caption: editingArtwork.caption || '',
+        guestPhotographer: editingArtwork.guestPhotographer || '',
+        guestSocialUrl: editingArtwork.guestSocialUrl || '',
+        guestNote: editingArtwork.guestNote || '',
+      };
+      if (!editingArtwork.slug?.current) {
+        patchData.slug = { _type: 'slug', current: makeSlug(editingArtwork.title) };
+      }
+
+      await client.patch(editingArtwork._id).set(patchData).commit();
+      setEditingArtwork(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Error saving photo details:', error);
+      window.alert('Error saving photo details: ' + error.message);
     } finally {
       setIsProcessing(false);
     }
@@ -1054,11 +1062,62 @@ export function VenueGridManager({
                 >
                   {art.title || 'Untitled'}
                 </div>
+                {art.guestPhotographer && (
+                  <div style={{ fontSize: '0.76rem', color: '#15803d', fontWeight: 600, marginTop: '3px' }}>
+                    Guest: {art.guestPhotographer}
+                  </div>
+                )}
                 {art.species && (
-                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
                     Species: {art.species}
                   </div>
                 )}
+
+                <div
+                  style={{ display: 'flex', gap: '0.4rem', marginTop: '0.6rem' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setEditingArtwork({ ...art })}
+                    style={{
+                      flex: 1,
+                      padding: '0.35rem 0.5rem',
+                      fontSize: '0.74rem',
+                      fontWeight: 600,
+                      background: '#f1f5f9',
+                      color: '#0f172a',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '5px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Edit Details / Guest Info
+                  </button>
+                  {art.slug?.current && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = `https://themeadowlens-app-green.vercel.app/art/${art.slug.current}`;
+                        navigator.clipboard?.writeText(url);
+                        window.alert(`Copied share link to clipboard:\n${url}`);
+                      }}
+                      style={{
+                        padding: '0.35rem 0.5rem',
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        background: '#eff6ff',
+                        color: '#1d4ed8',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                      }}
+                      title="Copy direct website link to share with Guest Photographer"
+                    >
+                      Copy Link
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -1085,6 +1144,218 @@ export function VenueGridManager({
           </div>
         )}
       </div>
+
+      {/* INLINE EDIT PHOTO & GUEST ARTIST DETAILS MODAL */}
+      {editingArtwork && (
+        <div
+          onClick={() => setEditingArtwork(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.72)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '640px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '1.75rem',
+              boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
+                Edit Photo & Guest Artist Details
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditingArtwork(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '1.25rem',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {editingArtwork.imageUrl && (
+              <div
+                style={{
+                  width: '100%',
+                  height: '180px',
+                  background: '#0f172a',
+                  borderRadius: '8px',
+                  marginBottom: '1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src={`${editingArtwork.imageUrl}?w=600&fit=max`}
+                  alt={editingArtwork.title}
+                  style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                />
+              </div>
+            )}
+
+            <form onSubmit={handleSaveArtworkDetails} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                  Photo Title
+                </label>
+                <input
+                  type="text"
+                  value={editingArtwork.title || ''}
+                  onChange={(e) => setEditingArtwork({ ...editingArtwork, title: e.target.value })}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  required
+                />
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(editingArtwork.displayTitle)}
+                  onChange={(e) => setEditingArtwork({ ...editingArtwork, displayTitle: e.target.checked })}
+                />
+                Show Photo Title on Live Website
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    Species (For Species Index)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Great Blue Heron"
+                    value={editingArtwork.species || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, species: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    Caption / Field Note
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Optional short caption..."
+                    value={editingArtwork.caption || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, caption: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* GUEST ARTIST INVITATION SECTION */}
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginTop: '0.25rem',
+                }}
+              >
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', marginBottom: '0.75rem' }}>
+                  Guest Photographer Details (For Invited Guest Photos)
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#15803d', marginBottom: '0.25rem' }}>
+                      Guest Photographer Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Sarah Jenkins"
+                      value={editingArtwork.guestPhotographer || ''}
+                      onChange={(e) => setEditingArtwork({ ...editingArtwork, guestPhotographer: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #86efac', fontSize: '0.85rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#15803d', marginBottom: '0.25rem' }}>
+                      Guest Facebook / Instagram / Website Link (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://www.facebook.com/..."
+                      value={editingArtwork.guestSocialUrl || ''}
+                      onChange={(e) => setEditingArtwork({ ...editingArtwork, guestSocialUrl: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #86efac', fontSize: '0.85rem' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#15803d', marginBottom: '0.25rem' }}>
+                      Guest Artist Note / Where Captured / Story
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Add the story behind the photo, where it was taken, or why you invited this photographer..."
+                      value={editingArtwork.guestNote || ''}
+                      onChange={(e) => setEditingArtwork({ ...editingArtwork, guestNote: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #86efac', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingArtwork(null)}
+                  style={{
+                    padding: '0.6rem 1.1rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#fff',
+                    color: '#475569',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.6rem 1.35rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: '#2563eb',
+                    color: '#fff',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isProcessing ? 'Saving...' : 'Save Details'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

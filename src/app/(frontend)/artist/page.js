@@ -19,26 +19,28 @@ export const metadata = {
 export default async function ArtistPage() {
   const query = `*[_type == "artist"][0]`
   const artist = await client.fetch(query)
+  const hp = await client.fetch(`*[_type == "homepage"][0]{"heroImageUrl": heroImage.asset->url}`)
 
-  // Fallback in case they haven't created the profile yet
+  // Fallback to the Meadow Lens composite graphic if no personal portrait is uploaded yet
+  const defaultLensImage = "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg"
   const name = artist?.name || "David McClure"
   const tagline = artist?.tagline || 'After all, this is "The Meadowlands", and I\'m "The Meadow LENS"! ... get it?'
-  const imageUrl = artist?.portrait ? urlForImage(artist.portrait).width(1200).url() : "https://images.unsplash.com/photo-1551804910-72138e4a9082?q=80&w=1200&auto=format&fit=crop"
+  const imageUrl = artist?.portrait ? urlForImage(artist.portrait).width(1200).url() : (hp?.heroImageUrl || defaultLensImage)
 
   return (
     <main className="min-h-screen bg-black">
-      <section className="relative w-full min-h-screen pt-32 pb-16 px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
+      <section className="relative w-full min-h-screen pt-40 md:pt-[240px] pb-16 px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center w-full">
           
           {/* Left Column: Portrait */}
-          <div className="w-full aspect-[3/4] relative overflow-hidden rounded-md shadow-[0_20px_50px_rgba(255,255,255,0.05)] border border-neutral-900">
+          <div className="w-full aspect-square relative overflow-hidden rounded-md shadow-[0_20px_50px_rgba(255,255,255,0.05)] border border-neutral-900">
             <img 
               src={imageUrl} 
               alt={name} 
-              className="absolute inset-0 w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-[2s]"
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-[2s]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
           </div>
 
           {/* Right Column: Bio */}
