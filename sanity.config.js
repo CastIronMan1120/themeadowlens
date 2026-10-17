@@ -97,6 +97,21 @@ export default defineConfig({
                       ])
                   )
               ),
+            S.listItem()
+              .title('★ Guest Photos (Invited Showcase)')
+              .child(
+                S.document()
+                  .schemaType('category')
+                  .documentId('category-guest-photos')
+                  .title('Guest Photos (Invited Showcase)')
+                  .views([
+                    S.view
+                      .component(VenuePhotoGridPane)
+                      .title('Guest Photo Grid & Publisher')
+                      .id('guest-photo-grid'),
+                    S.view.form().title('Guest Showcase Settings & SEO')
+                  ])
+              ),
               
             S.divider(),
             

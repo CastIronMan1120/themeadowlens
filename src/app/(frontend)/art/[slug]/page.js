@@ -15,9 +15,10 @@ export async function generateMetadata({ params }) {
   
   if (!artwork) return {}
 
+  const cleanTitle = artwork.displayTitle || artwork.title
   const imageUrl = artwork.image ? urlForImage(artwork.image).width(1200).height(630).url() : ''
   const dynamicKeywords = [
-    artwork.title,
+    cleanTitle,
     artwork.guestPhotographer,
     artwork.species,
     artwork.dominantColor,
@@ -27,12 +28,12 @@ export async function generateMetadata({ params }) {
   ].filter(Boolean)
 
   const defaultTitle = artwork.guestPhotographer
-    ? `Featured Guest Artist: ${artwork.guestPhotographer} — "${artwork.title}" | The Meadow Lens`
-    : `${artwork.title} | The Meadow Lens`
+    ? `Featured Guest Artist: ${artwork.guestPhotographer} — "${cleanTitle}" | The Meadow Lens`
+    : `${cleanTitle} | The Meadow Lens`
 
   const defaultDesc = artwork.guestPhotographer
-    ? artwork.guestNote || `Featured Guest Photo by ${artwork.guestPhotographer}, curated on The Meadow Lens by David McClure.`
-    : `Experience the story behind "${artwork.title}" by David McClure. High-end fine art photography.`
+    ? artwork.guestNote || `Featured Guest Photo by ${artwork.guestPhotographer}, curated by invitation on The Meadow Lens by David McClure.`
+    : `Experience the story behind "${cleanTitle}" by David McClure. High-end fine art photography.`
 
   const metaTitle = artwork.seo?.metaTitle || defaultTitle
   const metaDesc = artwork.seo?.metaDescription || defaultDesc
@@ -66,6 +67,8 @@ export default async function ArtworkPage({ params }) {
     notFound()
   }
 
+  const cleanTitle = artwork.displayTitle || artwork.title
+
   // Next / Previous Navigation within the same Category
   const categoryId = artwork.category?._ref
   let prevArt = null
@@ -77,7 +80,7 @@ export default async function ArtworkPage({ params }) {
   }
 
   // Inquiry Link
-  const inquiryLink = `?inquire=true&interest=${encodeURIComponent(artwork.title)}`
+  const inquiryLink = `?inquire=true&interest=${encodeURIComponent(cleanTitle)}`
 
   // Status Logic
   const status = artwork.status || 'available'
@@ -89,7 +92,7 @@ export default async function ArtworkPage({ params }) {
   const pageUrl = encodeURIComponent(`https://themeadowlens.com/art/${slug}`)
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`
   const xShareUrl = `https://twitter.com/intent/tweet?url=${pageUrl}&text=${encodeURIComponent(artwork.guestPhotographer ? `Featured Guest Photo by ${artwork.guestPhotographer} on The Meadow Lens:` : 'Experience this stunning piece by The Meadow Lens:')}`
-  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(artwork.title)}`
+  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(cleanTitle)}`
 
   return (
     <main className="min-h-screen pt-40 md:pt-[240px] pb-12 px-8 sm:px-12 md:px-24 max-w-[2000px] mx-auto">
@@ -127,7 +130,7 @@ export default async function ArtworkPage({ params }) {
               <span className="mx-3">/</span>
             </>
           )}
-          <span className="text-white">{artwork.title}</span>
+          <span className="text-white">{cleanTitle}</span>
         </div>
       </nav>
 
@@ -137,7 +140,7 @@ export default async function ArtworkPage({ params }) {
           <div className="relative group/nav">
             <ImageZoom 
               src={urlForImage(artwork.image).width(3000).quality(95).auto('format').url()} 
-              alt={artwork.title} 
+              alt={cleanTitle} 
             />
             
             {/* Hover Arrows for Desktop */}
@@ -180,13 +183,21 @@ export default async function ArtworkPage({ params }) {
           <div className="flex flex-col justify-center space-y-10 text-white lg:py-12">
             
             <div>
-              <h1 className="text-5xl md:text-6xl font-light tracking-wide mb-4">{artwork.title}</h1>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-4">{cleanTitle}</h1>
 
               {artwork.guestPhotographer && (
-                <div className="mt-4 p-5 bg-neutral-900/80 border border-emerald-500/30 rounded-sm space-y-2">
-                  <p className="text-emerald-400 text-xs font-mono uppercase tracking-widest">
-                    Featured Guest Photographer
-                  </p>
+                <div className="mt-4 p-6 bg-emerald-950/30 border border-emerald-500/40 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-emerald-400 text-xs font-mono uppercase tracking-widest">
+                      ★ Curated By Invitation • Featured Guest Photographer
+                    </p>
+                    <Link
+                      href="/category/guest-photos"
+                      className="text-[11px] font-mono uppercase tracking-wider text-emerald-300/80 hover:text-white transition-colors"
+                    >
+                      Guest Showcase &rarr;
+                    </Link>
+                  </div>
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <p className="text-2xl font-light text-white">{artwork.guestPhotographer}</p>
                     {artwork.guestSocialUrl && (
@@ -194,21 +205,29 @@ export default async function ArtworkPage({ params }) {
                         href={artwork.guestSocialUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs font-mono uppercase tracking-widest text-emerald-300 hover:text-white underline transition-colors"
+                        className="px-3.5 py-1.5 bg-emerald-500/20 border border-emerald-400/40 rounded text-xs font-mono uppercase tracking-widest text-emerald-200 hover:bg-emerald-500/30 hover:text-white transition-colors"
                       >
-                        Visit Photographer's Page &rarr;
+                        Visit Photographer&apos;s Page ↗
                       </a>
                     )}
                   </div>
                   {artwork.guestNote && (
-                    <p className="text-neutral-300 text-sm font-light leading-relaxed pt-2 border-t border-white/10">
-                      {artwork.guestNote}
+                    <p className="text-neutral-200 text-sm font-light leading-relaxed pt-3 border-t border-emerald-500/20 italic">
+                      &ldquo;{artwork.guestNote}&rdquo;
                     </p>
                   )}
                 </div>
               )}
 
               <div className="flex flex-wrap items-center gap-4 mt-4">
+                {artwork.species && (
+                  <Link
+                    href={`/species/${encodeURIComponent(artwork.species)}`}
+                    className="text-emerald-400 hover:text-emerald-300 text-xs font-mono uppercase tracking-widest border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 rounded transition-colors"
+                  >
+                    Species: {artwork.species} ↗
+                  </Link>
+                )}
                 {artwork.location && (
                   <p className="text-neutral-400 text-sm font-mono uppercase tracking-widest">
                     {artwork.location} {artwork.year && `• ${artwork.year}`}
@@ -253,7 +272,7 @@ export default async function ArtworkPage({ params }) {
                 isReserved={isReserved}
                 isAcquired={isAcquired}
                 imageUrl={urlForImage(artwork.image).width(1200).url()}
-                artworkTitle={artwork.title}
+                artworkTitle={cleanTitle}
               />
 
               {/* Social Share Links */}

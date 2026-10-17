@@ -23,6 +23,20 @@ export function VenueGridManager({
   const [showVenueDeletionPanel, setShowVenueDeletionPanel] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState(null);
   const [editingVenue, setEditingVenue] = useState(null);
+  const [showAddGuestModal, setShowAddGuestModal] = useState(false);
+  const [guestForm, setGuestForm] = useState({
+    file: null,
+    previewUrl: '',
+    displayTitle: '',
+    guestPhotographer: '',
+    guestSocialUrl: '',
+    guestNote:
+      'Selected by invitation from the nature photography community for the Featured Guest Showcase on The Meadow Lens.',
+    species: '',
+    location: '',
+    year: new Date().getFullYear().toString(),
+    caption: '',
+  });
 
   // Sync if Sanity Desk passes a new documentId when user clicks a different Venue/Sub-Venue in the sidebar
   useEffect(() => {
@@ -608,6 +622,121 @@ export function VenueGridManager({
     }
   };
 
+  // --- 10. DEDICATED INVITED GUEST PHOTO PUBLISHER ---
+  const copyGuestFacebookMessage = (artTitle, guestName, slugStr) => {
+    const productUrl = `https://themeadowlens-app-green.vercel.app/art/${slugStr}`;
+    const showcaseUrl = `https://themeadowlens-app-green.vercel.app/category/guest-photos`;
+    const msg = `Hi ${guestName || 'there'}! Your photograph "${artTitle}" is now officially live in our Invited Guest Photos Showcase on The Meadow Lens!\n\nView & share your dedicated fine art page here:\n${productUrl}\n\nExplore the full Invited Guest Showcase here:\n${showcaseUrl}`;
+    navigator.clipboard?.writeText(msg);
+    window.alert(
+      `Copied ready-to-send Facebook message & live links to your clipboard:\n\n${msg}`
+    );
+  };
+
+  const handleCreateGuestPhoto = async (e) => {
+    e.preventDefault();
+    if (!guestForm.file) {
+      window.alert('Please select a photo file to upload.');
+      return;
+    }
+    if (!guestForm.guestPhotographer.trim()) {
+      window.alert('Please enter the Guest Photographer Name.');
+      return;
+    }
+
+    setIsUploading(true);
+    setIsProcessing(true);
+    try {
+      const guestCategory =
+        categories.find(
+          (c) => c._id === 'category-guest-photos' || c.slug === 'guest-photos'
+        ) || null;
+      const targetCatId = guestCategory ? guestCategory._id : 'category-guest-photos';
+
+      const rawFileTitle = guestForm.file.name.replace(/\.[^/.]+$/, '');
+      const cleanTitle = (guestForm.displayTitle || rawFileTitle)
+        .replace(/\s+\d{1,4}-[A-Za-z0-9_-]+(?:-Edit)?$/i, '')
+        .replace(/\s+[A-Z]{1,4}\d{4,}(?:-\d+)?(?:-Edit)?$/i, '')
+        .trim();
+
+      const slugCurrent = makeSlug(`${cleanTitle}-${guestForm.guestPhotographer}`);
+
+      const asset = await client.assets.upload('image', guestForm.file, {
+        filename: guestForm.file.name,
+      });
+
+      const pubId = crypto.randomUUID
+        ? crypto.randomUUID()
+        : `guest-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+      const metaTitle =
+        `Featured Guest Artist: ${guestForm.guestPhotographer.trim()} — "${cleanTitle}" | The Meadow Lens`.slice(
+          0,
+          65
+        );
+      const metaDesc = (
+        guestForm.guestNote ||
+        `Featured Guest Photo "${cleanTitle}" by ${guestForm.guestPhotographer.trim()}, curated by invitation on The Meadow Lens.`
+      ).slice(0, 158);
+
+      await client.createOrReplace({
+        _id: pubId,
+        _type: 'artwork',
+        title: rawFileTitle,
+        displayTitle: cleanTitle,
+        slug: { _type: 'slug', current: slugCurrent },
+        image: { _type: 'image', asset: { _ref: asset._id } },
+        category: { _type: 'reference', _ref: targetCatId },
+        guestPhotographer: guestForm.guestPhotographer.trim(),
+        guestSocialUrl: guestForm.guestSocialUrl.trim(),
+        guestNote: guestForm.guestNote.trim(),
+        species: guestForm.species.trim(),
+        location: guestForm.location.trim(),
+        year: guestForm.year.trim(),
+        caption: guestForm.caption.trim(),
+        size: 'Standard 4:3',
+        roomSetting: 'living-room',
+        status: 'available',
+        seo: {
+          metaTitle,
+          metaDescription: metaDesc,
+          keywords: [
+            cleanTitle,
+            guestForm.guestPhotographer.trim(),
+            guestForm.species.trim(),
+            guestForm.location.trim(),
+            'Guest Photos',
+            'Invited Nature Photographer',
+            'The Meadow Lens',
+          ].filter(Boolean),
+        },
+      });
+
+      setShowAddGuestModal(false);
+      setGuestForm({
+        file: null,
+        previewUrl: '',
+        displayTitle: '',
+        guestPhotographer: '',
+        guestSocialUrl: '',
+        guestNote:
+          'Selected by invitation from the nature photography community for the Featured Guest Showcase on The Meadow Lens.',
+        species: '',
+        location: '',
+        year: new Date().getFullYear().toString(),
+        caption: '',
+      });
+      await fetchData();
+      copyGuestFacebookMessage(cleanTitle, guestForm.guestPhotographer.trim(), slugCurrent);
+    } catch (err) {
+      console.error('Failed to publish guest photo:', err);
+      window.alert('Error publishing guest photo: ' + err.message);
+    } finally {
+      setIsUploading(false);
+      setIsProcessing(false);
+    }
+  };
+
   // Compute live frontend URL for active venue
   const activeVenueLiveUrl = useMemo(() => {
     if (!activeVenueObj || !activeVenueObj.slug) return '';
@@ -720,12 +849,32 @@ export function VenueGridManager({
             {viewMode === 'all' &&
               'Large visual identification grid of every uploaded photo across your entire collection.'}
             {viewMode === 'venue' &&
-              'Check any photos in this venue to Move-To, Copy-To, Decategorize (send back to Warehouse), or Delete.'}
+              (activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos'
+                ? 'Curated By Invitation Only: Upload & publish photos from invited Facebook / nature photographers with full attribution, social link, and 1-click Facebook share note.'
+                : 'Check any photos in this venue to Move-To, Copy-To, Decategorize (send back to Warehouse), or Delete.')}
           </p>
         </div>
 
         {/* UPLOAD & VENUE DELETION TOGGLE */}
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowAddGuestModal(true)}
+            style={{
+              padding: '0.7rem 1.15rem',
+              background: '#059669',
+              color: '#ffffff',
+              border: '2px solid #10b981',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)',
+            }}
+          >
+            ★ + Add Invited Guest Photo
+          </button>
+
           <button
             onClick={() => setShowVenueDeletionPanel(!showVenueDeletionPanel)}
             style={{
@@ -1408,7 +1557,32 @@ export function VenueGridManager({
                       View Live ↗
                     </a>
                   )}
-                  {art.slug?.current && (
+                  {art.slug?.current && art.guestPhotographer && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyGuestFacebookMessage(
+                          art.displayTitle || art.title,
+                          art.guestPhotographer,
+                          art.slug.current
+                        )
+                      }
+                      style={{
+                        padding: '0.38rem 0.5rem',
+                        fontSize: '0.73rem',
+                        fontWeight: 700,
+                        background: '#ecfdf5',
+                        color: '#065f46',
+                        border: '1px solid #6ee7b7',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                      }}
+                      title="Copy personalized Facebook Messenger note + live link for this Guest Photographer"
+                    >
+                      📋 Copy FB Note
+                    </button>
+                  )}
+                  {art.slug?.current && !art.guestPhotographer && (
                     <button
                       type="button"
                       onClick={() => {
@@ -1450,11 +1624,33 @@ export function VenueGridManager({
             }}
           >
             <h3 style={{ margin: '0 0 0.5rem 0', color: '#334155' }}>No photos found in this view</h3>
-            <p style={{ margin: 0 }}>
-              {viewMode === 'venue'
+            <p style={{ margin: '0 0 1.25rem 0' }}>
+              {viewMode === 'venue' &&
+              (activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos')
+                ? 'Your Invited Guest Photos showcase is ready! Click below to upload a guest photographer’s photo, add their name & Facebook link, and publish it live.'
+                : viewMode === 'venue'
                 ? 'This venue currently has 0 photos. You can upload photos directly or delete this venue using the red button above.'
                 : 'Try switching views or uploading new photos.'}
             </p>
+            {viewMode === 'venue' &&
+              (activeVenueId === 'category-guest-photos' || activeVenueObj?.slug === 'guest-photos') && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddGuestModal(true)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#059669',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ★ + Add & Publish First Invited Guest Photo
+                </button>
+              )}
           </div>
         )}
       </div>
@@ -2073,6 +2269,308 @@ export function VenueGridManager({
                   style={{ padding: '0.65rem 1.35rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
                 >
                   {isProcessing ? 'Saving...' : 'Save & Publish Venue Page'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED INVITED GUEST PHOTO PUBLISHER MODAL */}
+      {showAddGuestModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.78)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1.5rem',
+          }}
+          onClick={() => !isUploading && setShowAddGuestModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '14px',
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              padding: '1.6rem 2rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
+              color: '#0f172a',
+              border: '2px solid #10b981',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    background: '#d1fae5',
+                    color: '#065f46',
+                    marginBottom: '4px',
+                  }}
+                >
+                  ★ Curated By Invitation Only • Facebook &amp; Community Showcase
+                </span>
+                <h2 style={{ margin: 0, fontSize: '1.35rem', color: '#0f172a' }}>
+                  Add &amp; Publish Invited Guest Photo
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isUploading && setShowAddGuestModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <p style={{ margin: '0 0 1.15rem 0', fontSize: '0.86rem', color: '#475569', lineHeight: 1.5 }}>
+              When a photographer on Facebook agrees to your invitation, upload their photograph below with their name and social link. Clicking <strong>Publish Guest Photo Live</strong> automatically publishes it to <code>/category/guest-photos</code> and <code>/art/[slug]</code>, and copies a ready-to-paste Facebook message with their live link!
+            </p>
+
+            <form onSubmit={handleCreateGuestPhoto} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* 1. FILE SELECTOR + PREVIEW */}
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '2px dashed #34d399',
+                  borderRadius: '10px',
+                  padding: '1rem',
+                  display: 'flex',
+                  gap: '1rem',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {guestForm.previewUrl ? (
+                  <img
+                    src={guestForm.previewUrl}
+                    alt="Guest Preview"
+                    style={{
+                      width: '120px',
+                      height: '90px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '1px solid #10b981',
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: '120px',
+                      height: '90px',
+                      borderRadius: '8px',
+                      background: '#dcfce7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#047857',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                      padding: '0.5rem',
+                    }}
+                  >
+                    Select Guest Photo
+                  </div>
+                )}
+
+                <div style={{ flex: 1, minWidth: '220px' }}>
+                  <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 700, color: '#065f46', marginBottom: '0.35rem' }}>
+                    1. Choose Photograph File *
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    required
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const rawTitle = file.name.replace(/\.[^/.]+$/, '');
+                      const cleaned = rawTitle
+                        .replace(/\s+\d{1,4}-[A-Za-z0-9_-]+(?:-Edit)?$/i, '')
+                        .replace(/\s+[A-Z]{1,4}\d{4,}(?:-\d+)?(?:-Edit)?$/i, '')
+                        .trim();
+                      setGuestForm((prev) => ({
+                        ...prev,
+                        file,
+                        previewUrl: URL.createObjectURL(file),
+                        displayTitle: prev.displayTitle || cleaned,
+                      }));
+                    }}
+                    style={{ fontSize: '0.84rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* 2. GUEST PHOTOGRAPHER ATTRIBUTION */}
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', padding: '1rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#065f46', marginBottom: '0.75rem' }}>
+                  2. Invited Photographer Credit &amp; Social Link
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '0.25rem' }}>
+                      Guest Photographer Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g., Sarah Jenkins"
+                      value={guestForm.guestPhotographer}
+                      onChange={(e) => setGuestForm({ ...guestForm, guestPhotographer: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #6ee7b7', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '0.25rem' }}>
+                      Facebook / Instagram / Website Link
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://www.facebook.com/..."
+                      value={guestForm.guestSocialUrl}
+                      onChange={(e) => setGuestForm({ ...guestForm, guestSocialUrl: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #6ee7b7', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#065f46', marginBottom: '0.25rem' }}>
+                    Curator&apos;s Note / Why You Selected This Photo
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g., Spotted on the NJ Birding Facebook group — an extraordinary capture of morning light over the marsh."
+                    value={guestForm.guestNote}
+                    onChange={(e) => setGuestForm({ ...guestForm, guestNote: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #6ee7b7', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                  />
+                </div>
+              </div>
+
+              {/* 3. PHOTOGRAPH TITLE, SPECIES & LOCATION */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b', marginBottom: '0.75rem' }}>
+                  3. Artwork Title, Species &amp; Location
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      Public Display Title *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g., Osprey Returning to Nest at Dawn"
+                      value={guestForm.displayTitle}
+                      onChange={(e) => setGuestForm({ ...guestForm, displayTitle: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      Bird Species (Optional — Links to Species Index)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Osprey"
+                      value={guestForm.species}
+                      onChange={(e) => setGuestForm({ ...guestForm, species: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      Location Captured
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., DeKorte Park, Lyndhurst, NJ"
+                      value={guestForm.location}
+                      onChange={(e) => setGuestForm({ ...guestForm, location: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                      Year
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="2026"
+                      value={guestForm.year}
+                      onChange={(e) => setGuestForm({ ...guestForm, year: e.target.value })}
+                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Additional Story / Caption (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Optional story or camera details shared by the guest photographer..."
+                    value={guestForm.caption}
+                    onChange={(e) => setGuestForm({ ...guestForm, caption: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => setShowAddGuestModal(false)}
+                  style={{
+                    padding: '0.65rem 1.15rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#fff',
+                    color: '#475569',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading || isProcessing}
+                  style={{
+                    padding: '0.65rem 1.5rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: '#059669',
+                    color: '#fff',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isUploading ? 'Uploading & Publishing Live...' : '★ Publish Guest Photo Live & Copy FB Link'}
                 </button>
               </div>
             </form>

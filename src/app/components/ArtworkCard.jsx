@@ -34,7 +34,7 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
     setLiked(!liked)
   }
 
-  const displayCaption = artwork.caption || fallbackDescription
+  const displayCaption = artwork.guestNote || artwork.caption || fallbackDescription
 
   return (
     <div 
@@ -42,11 +42,21 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Persistent Top-Left Guest Artist Badge when guestPhotographer is present */}
+      {artwork.guestPhotographer && (
+        <div className="absolute top-4 left-4 z-20 pointer-events-none bg-emerald-950/90 border border-emerald-500/50 backdrop-blur-md px-3.5 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-200">
+            Featured Guest: {artwork.guestPhotographer}
+          </span>
+        </div>
+      )}
+
       <Link href={artworkUrl} className="absolute inset-0 z-0 block">
         <div className="absolute inset-0 bg-neutral-900">
           <img
             src={urlForImage(artwork.image).width(1600).quality(90).auto('format').url()}
-            alt={artwork.title}
+            alt={artwork.displayTitle || artwork.title}
             className="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-105 opacity-90 group-hover:opacity-60"
             loading="lazy"
           />
@@ -63,7 +73,7 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
         </h3>
         {artwork.guestPhotographer && (
           <p className="text-emerald-400 text-xs lg:text-sm font-mono uppercase tracking-widest mb-3 drop-shadow-md">
-            Guest Photographer: {artwork.guestPhotographer}
+            ★ Invited Guest Photographer: {artwork.guestPhotographer}
           </p>
         )}
         
@@ -77,12 +87,12 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
       <div 
         className={`absolute bottom-0 left-0 w-full p-4 lg:p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between bg-black/80 lg:bg-black/60 backdrop-blur-md border-t border-white/10 transition-transform duration-700 z-20 translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0 gap-4 lg:gap-0`}
       >
-        <div className="flex space-x-4 w-full lg:w-auto">
+        <div className="flex flex-wrap gap-3 w-full lg:w-auto">
           <Link 
             href={artworkUrl}
             className="px-6 py-2 bg-white text-black font-semibold text-xs lg:text-sm uppercase tracking-widest hover:bg-neutral-200 transition-colors text-center"
           >
-            Inquire
+            View &amp; Inquire
           </Link>
           <Link 
             href={artworkUrl}
@@ -90,6 +100,17 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
           >
             Visualize in Room
           </Link>
+          {artwork.guestSocialUrl && (
+            <a
+              href={artwork.guestSocialUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="px-4 py-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-xs uppercase tracking-widest hover:bg-emerald-900 hover:text-white transition-colors text-center"
+            >
+              Artist Page ↗
+            </a>
+          )}
         </div>
 
         <div className="flex items-center space-x-6 w-full lg:w-auto justify-between lg:justify-end px-2 lg:px-0">
