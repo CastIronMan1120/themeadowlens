@@ -22,6 +22,7 @@ export function VenueGridManager({
   const [thumbSize, setThumbSize] = useState('large'); // 'medium' | 'large' | 'xlarge'
   const [showVenueDeletionPanel, setShowVenueDeletionPanel] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState(null);
+  const [editingVenue, setEditingVenue] = useState(null);
 
   // Sync if Sanity Desk passes a new documentId when user clicks a different Venue/Sub-Venue in the sidebar
   useEffect(() => {
@@ -42,8 +43,11 @@ export function VenueGridManager({
         _id,
         title,
         "slug": slug.current,
+        speciesDescription,
+        seo,
         "parentId": parentCategory._ref,
         "parentTitle": parentCategory->title,
+        "parentSlug": parentCategory->slug.current,
         "photoCount": count(*[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id || category->parentCategory._ref == ^._id)])
       }`);
       setCategories(cats);
@@ -65,6 +69,13 @@ export function VenueGridManager({
         species,
         caption,
         displayTitle,
+        location,
+        year,
+        size,
+        roomSetting,
+        status,
+        edition,
+        seo,
         guestPhotographer,
         guestSocialUrl,
         guestNote
@@ -421,29 +432,133 @@ export function VenueGridManager({
     }
   };
 
-  // --- 7. SAVE INLINE PHOTO & GUEST ARTIST DETAILS ---
+  // --- 7. ONE-CLICK AUTO-OPTIMIZE PHOTO & SEO FROM FILENAME/TITLE ---
+  const handleAutoOptimizeArtwork = () => {
+    if (!editingArtwork) return;
+    const raw = editingArtwork.title || '';
+    // Extract 2-digit year if filename contains pattern like "19-P4067975" or "25-PA182180"
+    const yearMatch = raw.match(/\b(1[89]|2[0-9])-[A-Z0-9]{4,}/i);
+    const extractedYear = yearMatch ? `20${yearMatch[1]}` : editingArtwork.year || '';
+
+    // Strip camera codes like "19-P4067975-Edit-Edit-gigapixel..."
+    const cleanedTitle = raw
+      .replace(/\b(1[89]|2[0-9])-[A-Z0-9_-]+.*$/i, '')
+      .replace(/[-_]+Edit.*$/i, '')
+      .trim() || raw;
+
+    const cleanSlug =
+      cleanedTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '')
+        .slice(0, 80) || makeSlug(raw);
+
+    const venueObj = categories.find((c) => c._id === editingArtwork.categoryId);
+    const venueTitle = venueObj ? venueObj.title : 'Fine Art Nature';
+    const metaTitle = `${cleanedTitle.slice(0, 38)} | The Meadow Lens`;
+    const metaDescription = (
+      editingArtwork.caption ||
+      `${cleanedTitle} — Fine art photography in the ${venueTitle} collection captured by Northern NJ photographer David McClure.`
+    ).slice(0, 158);
+
+    const autoKeywords = [
+      cleanedTitle,
+      editingArtwork.species,
+      venueTitle,
+      editingArtwork.location || 'NJ Meadowlands',
+      'David McClure',
+      'The Meadow Lens',
+    ].filter(Boolean);
+
+    setEditingArtwork({
+      ...editingArtwork,
+      displayTitle: editingArtwork.displayTitle || cleanedTitle,
+      slug: { _type: 'slug', current: cleanSlug },
+      year: extractedYear,
+      location: editingArtwork.location || 'The Meadowlands, New Jersey',
+      size: editingArtwork.size || 'Standard 4:3',
+      roomSetting: editingArtwork.roomSetting || 'living-room',
+      status: editingArtwork.status || 'available',
+      caption:
+        editingArtwork.caption ||
+        `${cleanedTitle}, captured in the New Jersey Meadowlands by David McClure.`,
+      seo: {
+        metaTitle,
+        metaDescription,
+        keywords: autoKeywords,
+      },
+    });
+  };
+
+  // --- 8. SAVE & PUBLISH INLINE PHOTO / PRODUCT / GUEST DETAILS ---
   const handleSaveArtworkDetails = async (e) => {
     e.preventDefault();
     if (!editingArtwork) return;
 
     setIsProcessing(true);
     try {
+      const slugCurrent = editingArtwork.slug?.current
+        ? editingArtwork.slug.current
+            .toLowerCase()
+            .replace(/[^a-z0-9-]+/g, '-')
+            .replace(/(^-|-$)+/g, '')
+        : makeSlug(editingArtwork.displayTitle || editingArtwork.title);
+
+      const keywordsArray = Array.isArray(editingArtwork.seo?.keywords)
+        ? editingArtwork.seo.keywords
+        : typeof editingArtwork.seo?.keywords === 'string'
+        ? editingArtwork.seo.keywords
+            .split(',')
+            .map((k) => k.trim())
+            .filter(Boolean)
+        : [];
+
       const patchData = {
         title: editingArtwork.title || 'Untitled',
         displayTitle: typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : '',
+        slug: { _type: 'slug', current: slugCurrent },
         species: editingArtwork.species || '',
         caption: editingArtwork.caption || '',
+        location: editingArtwork.location || '',
+        year: editingArtwork.year || '',
+        size: editingArtwork.size || 'Standard 4:3',
+        roomSetting: editingArtwork.roomSetting || 'living-room',
+        status: editingArtwork.status || 'available',
+        edition: editingArtwork.edition || '',
         guestPhotographer: editingArtwork.guestPhotographer || '',
         guestSocialUrl: editingArtwork.guestSocialUrl || '',
         guestNote: editingArtwork.guestNote || '',
+        seo: {
+          metaTitle: editingArtwork.seo?.metaTitle || '',
+          metaDescription: editingArtwork.seo?.metaDescription || '',
+          keywords: keywordsArray,
+        },
+        ...(editingArtwork.categoryId
+          ? { category: { _type: 'reference', _ref: editingArtwork.categoryId } }
+          : {}),
       };
-      if (!editingArtwork.slug?.current) {
-        patchData.slug = { _type: 'slug', current: makeSlug(editingArtwork.title) };
+
+      // If the document is currently a draft (drafts.*), publish it live if it has a category
+      if (editingArtwork._id.startsWith('drafts.') && editingArtwork.categoryId) {
+        const fullDoc = await client.fetch(`*[_id == $id][0]`, { id: editingArtwork._id });
+        const pubId = editingArtwork._id.replace(/^drafts\./, '');
+        const { _rev, _updatedAt, ...rest } = fullDoc || {};
+        const tx = client.transaction();
+        tx.createOrReplace({
+          ...rest,
+          _id: pubId,
+          _type: 'artwork',
+          ...patchData,
+        });
+        tx.delete(editingArtwork._id);
+        await tx.commit();
+      } else {
+        await client.patch(editingArtwork._id).set(patchData).commit();
       }
 
-      await client.patch(editingArtwork._id).set(patchData).commit();
       setEditingArtwork(null);
       await fetchData();
+      window.alert('Saved & Published Live to Website!');
     } catch (error) {
       console.error('Error saving photo details:', error);
       window.alert('Error saving photo details: ' + error.message);
@@ -451,6 +566,56 @@ export function VenueGridManager({
       setIsProcessing(false);
     }
   };
+
+  // --- 9. SAVE & PUBLISH VENUE PAGE & SEO DETAILS ---
+  const handleSaveVenueDetails = async (e) => {
+    e.preventDefault();
+    if (!editingVenue) return;
+
+    setIsProcessing(true);
+    try {
+      const keywordsArray = Array.isArray(editingVenue.seo?.keywords)
+        ? editingVenue.seo.keywords
+        : typeof editingVenue.seo?.keywords === 'string'
+        ? editingVenue.seo.keywords
+            .split(',')
+            .map((k) => k.trim())
+            .filter(Boolean)
+        : [];
+
+      const patchData = {
+        title: editingVenue.title,
+        speciesDescription: editingVenue.speciesDescription || '',
+        seo: {
+          metaTitle: editingVenue.seo?.metaTitle || `${editingVenue.title} | The Meadow Lens`,
+          metaDescription:
+            editingVenue.seo?.metaDescription ||
+            (editingVenue.speciesDescription || '').slice(0, 158),
+          keywords: keywordsArray,
+        },
+      };
+
+      const cleanVenueId = editingVenue._id.replace(/^drafts\./, '');
+      await client.patch(cleanVenueId).set(patchData).commit();
+      setEditingVenue(null);
+      await fetchData();
+      window.alert(`Venue page "${editingVenue.title}" optimized & published live!`);
+    } catch (error) {
+      console.error('Error saving venue details:', error);
+      window.alert('Error saving venue details: ' + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Compute live frontend URL for active venue
+  const activeVenueLiveUrl = useMemo(() => {
+    if (!activeVenueObj || !activeVenueObj.slug) return '';
+    if (activeVenueObj.parentSlug) {
+      return `https://themeadowlens-app-green.vercel.app/category/${activeVenueObj.parentSlug}/${activeVenueObj.slug}`;
+    }
+    return `https://themeadowlens-app-green.vercel.app/category/${activeVenueObj.slug}`;
+  }, [activeVenueObj]);
 
   // Grid dimensions based on user's selected thumbnail size
   const gridMinWidth = thumbSize === 'xlarge' ? '340px' : thumbSize === 'large' ? '260px' : '200px';
@@ -478,7 +643,7 @@ export function VenueGridManager({
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: '1.75rem', margin: 0, fontWeight: 700, color: '#0f172a' }}>
               {viewMode === 'warehouse' && 'The Warehouse: Unassigned Photos'}
               {viewMode === 'all' && 'The Warehouse: All Uploaded Photos (Grid View)'}
@@ -489,22 +654,63 @@ export function VenueGridManager({
             </h1>
 
             {viewMode === 'venue' && activeVenueObj && (
-              <button
-                onClick={() => handleDeleteVenue(activeVenueObj._id)}
-                disabled={isProcessing}
-                style={{
-                  padding: '0.45rem 0.9rem',
-                  background: '#dc2626',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                }}
-              >
-                Delete This {activeVenueObj.parentId ? 'Sub-Venue' : 'Root Venue'}
-              </button>
+              <>
+                {activeVenueLiveUrl && (
+                  <a
+                    href={activeVenueLiveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '0.45rem 0.9rem',
+                      background: '#059669',
+                      color: '#fff',
+                      textDecoration: 'none',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    View Live Venue Page ↗
+                  </a>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setEditingVenue({ ...activeVenueObj })}
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    background: '#1d4ed8',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  ✨ Optimize Venue Page & SEO
+                </button>
+
+                <button
+                  onClick={() => handleDeleteVenue(activeVenueObj._id)}
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    background: '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  Delete This {activeVenueObj.parentId ? 'Sub-Venue' : 'Root Venue'}
+                </button>
+              </>
             )}
           </div>
 
@@ -1103,6 +1309,26 @@ export function VenueGridManager({
 
               {/* PHOTO DETAILS FOOTER */}
               <div style={{ padding: '0.75rem 0.9rem', background: '#fff', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', gap: '4px' }}>
+                  <span
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: !art._id.startsWith('drafts.') && art.categoryTitle ? '#dcfce7' : '#fef3c7',
+                      color: !art._id.startsWith('drafts.') && art.categoryTitle ? '#166534' : '#92400e',
+                    }}
+                  >
+                    {!art._id.startsWith('drafts.') && art.categoryTitle ? '● LIVE ON SITE' : '● UNPUBLISHED DRAFT'}
+                  </span>
+                  {art.seo?.metaTitle && (
+                    <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#2563eb' }}>
+                      ✓ SEO Ready
+                    </span>
+                  )}
+                </div>
+
                 <div
                   style={{
                     fontSize: '0.95rem',
@@ -1112,10 +1338,24 @@ export function VenueGridManager({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
-                  title={art.title}
+                  title={art.displayTitle || art.title}
                 >
-                  {art.title || 'Untitled'}
+                  {art.displayTitle || art.title || 'Untitled'}
                 </div>
+                {art.displayTitle && art.displayTitle !== art.title && (
+                  <div
+                    style={{
+                      fontSize: '0.72rem',
+                      color: '#64748b',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={art.title}
+                  >
+                    File: {art.title}
+                  </div>
+                )}
                 {art.guestPhotographer && (
                   <div style={{ fontSize: '0.76rem', color: '#15803d', fontWeight: 600, marginTop: '3px' }}>
                     Guest: {art.guestPhotographer}
@@ -1128,7 +1368,7 @@ export function VenueGridManager({
                 )}
 
                 <div
-                  style={{ display: 'flex', gap: '0.4rem', marginTop: '0.6rem' }}
+                  style={{ display: 'flex', gap: '0.35rem', marginTop: '0.65rem', flexWrap: 'wrap' }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
@@ -1136,18 +1376,38 @@ export function VenueGridManager({
                     onClick={() => setEditingArtwork({ ...art })}
                     style={{
                       flex: 1,
-                      padding: '0.35rem 0.5rem',
-                      fontSize: '0.74rem',
-                      fontWeight: 600,
-                      background: '#f1f5f9',
-                      color: '#0f172a',
-                      border: '1px solid #cbd5e1',
+                      padding: '0.38rem 0.5rem',
+                      fontSize: '0.73rem',
+                      fontWeight: 700,
+                      background: '#1e293b',
+                      color: '#ffffff',
+                      border: 'none',
                       borderRadius: '5px',
                       cursor: 'pointer',
                     }}
                   >
-                    Edit Details / Guest Info
+                    ✨ Optimize / Edit
                   </button>
+                  {art.slug?.current && !art._id.startsWith('drafts.') && (
+                    <a
+                      href={`https://themeadowlens-app-green.vercel.app/art/${art.slug.current}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: '0.38rem 0.5rem',
+                        fontSize: '0.73rem',
+                        fontWeight: 700,
+                        background: '#ecfdf5',
+                        color: '#047857',
+                        border: '1px solid #a7f3d0',
+                        borderRadius: '5px',
+                        textDecoration: 'none',
+                      }}
+                      title="Open the live Photo / Product Page on the website"
+                    >
+                      View Live ↗
+                    </a>
+                  )}
                   {art.slug?.current && (
                     <button
                       type="button"
@@ -1157,8 +1417,8 @@ export function VenueGridManager({
                         window.alert(`Copied share link to clipboard:\n${url}`);
                       }}
                       style={{
-                        padding: '0.35rem 0.5rem',
-                        fontSize: '0.74rem',
+                        padding: '0.38rem 0.45rem',
+                        fontSize: '0.73rem',
                         fontWeight: 600,
                         background: '#eff6ff',
                         color: '#1d4ed8',
@@ -1166,7 +1426,7 @@ export function VenueGridManager({
                         borderRadius: '5px',
                         cursor: 'pointer',
                       }}
-                      title="Copy direct website link to share with Guest Photographer"
+                      title="Copy direct website link to share on Facebook"
                     >
                       Copy Link
                     </button>
@@ -1199,19 +1459,19 @@ export function VenueGridManager({
         )}
       </div>
 
-      {/* INLINE EDIT PHOTO & GUEST ARTIST DETAILS MODAL */}
+      {/* FULLSTACK PHOTO, PRODUCT PAGE & SEO OPTIMIZER MODAL */}
       {editingArtwork && (
         <div
           onClick={() => setEditingArtwork(null)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.72)',
+            background: 'rgba(15, 23, 42, 0.75)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.5rem',
+            padding: '1.25rem',
           }}
         >
           <div
@@ -1219,38 +1479,70 @@ export function VenueGridManager({
             style={{
               background: '#ffffff',
               borderRadius: '12px',
-              maxWidth: '640px',
+              maxWidth: '780px',
               width: '100%',
-              maxHeight: '90vh',
+              maxHeight: '92vh',
               overflowY: 'auto',
               padding: '1.75rem',
               boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
-                Edit Photo & Guest Artist Details
-              </h2>
-              <button
-                type="button"
-                onClick={() => setEditingArtwork(null)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '1.25rem',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                }}
-              >
-                ✕
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#0f172a' }}>
+                  Optimize Photo, Product Page & Guest Info
+                </h2>
+                {editingArtwork.slug?.current && (
+                  <a
+                    href={`https://themeadowlens-app-green.vercel.app/art/${editingArtwork.slug.current}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '0.8rem', color: '#059669', fontWeight: 600, textDecoration: 'underline' }}
+                  >
+                    Live Product Page: /art/{editingArtwork.slug.current} ↗
+                  </a>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={handleAutoOptimizeArtwork}
+                  style={{
+                    padding: '0.5rem 0.9rem',
+                    background: 'linear-gradient(135deg, #2563eb, #059669)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                  }}
+                  title="Automatically clean camera filename codes, fill Display Title, Year, Location, and Google SEO tags"
+                >
+                  ✨ 1-Click Auto-Optimize Photo & SEO
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingArtwork(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.25rem',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             {editingArtwork.imageUrl && (
               <div
                 style={{
                   width: '100%',
-                  height: '180px',
+                  height: '190px',
                   background: '#0f172a',
                   borderRadius: '8px',
                   marginBottom: '1.25rem',
@@ -1261,7 +1553,7 @@ export function VenueGridManager({
                 }}
               >
                 <img
-                  src={`${editingArtwork.imageUrl}?w=600&fit=max`}
+                  src={`${editingArtwork.imageUrl}?w=800&fit=max`}
                   alt={editingArtwork.title}
                   style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
                 />
@@ -1269,77 +1561,264 @@ export function VenueGridManager({
             )}
 
             <form onSubmit={handleSaveArtworkDetails} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* 1. TITLES, SLUG & VENUE */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
-                    SEO / Catalog Title *
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Artistic Display Title (Shown on Website)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Laurel Hill Park & Hackensack River Vista"
+                    value={typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, displayTitle: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Catalog / Original Title *
                   </label>
                   <input
                     type="text"
                     value={editingArtwork.title || ''}
                     onChange={(e) => setEditingArtwork({ ...editingArtwork, title: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem' }}
                     required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
-                    Artistic Display Title (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Overrides catalog title on card..."
-                    value={typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : ''}
-                    onChange={(e) => setEditingArtwork({ ...editingArtwork, displayTitle: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
-                    Species (For Species Index)
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Assigned Venue / Sub-Venue
+                  </label>
+                  <select
+                    value={editingArtwork.categoryId || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, categoryId: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' }}
+                  >
+                    <option value="">-- In Warehouse (Unassigned) --</option>
+                    <optgroup label="Root Venues (Main)">
+                      {rootVenues.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                          {cat.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Sub-Venues (Subcategories)">
+                      {subVenues.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                          {cat.parentTitle ? `${cat.parentTitle} ▸ ` : ''}
+                          {cat.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Product Page URL Slug (/art/...)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingArtwork.slug?.current || ''}
+                    onChange={(e) =>
+                      setEditingArtwork({
+                        ...editingArtwork,
+                        slug: { _type: 'slug', current: e.target.value },
+                      })
+                    }
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
+
+              {/* 2. PRODUCT PAGE DETAILS & ROOM VISUALIZER */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Species (For A–Z Index)
                   </label>
                   <input
                     type="text"
                     placeholder="e.g., Great Blue Heron"
                     value={editingArtwork.species || ''}
                     onChange={(e) => setEditingArtwork({ ...editingArtwork, species: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
-                    Caption / Field Note
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Location / Setting
                   </label>
                   <input
                     type="text"
-                    placeholder="Optional short caption..."
-                    value={editingArtwork.caption || ''}
-                    onChange={(e) => setEditingArtwork({ ...editingArtwork, caption: e.target.value })}
-                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                    placeholder="e.g., Laurel Hill Park, NJ"
+                    value={editingArtwork.location || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, location: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Year Captured
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., 2024"
+                    value={editingArtwork.year || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, year: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                   />
                 </div>
               </div>
 
-              {/* GUEST ARTIST INVITATION SECTION */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Room Preview Setting
+                  </label>
+                  <select
+                    value={editingArtwork.roomSetting || 'living-room'}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, roomSetting: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' }}
+                  >
+                    <option value="living-room">Modern Living Room</option>
+                    <option value="dark-gallery">Dark Gallery Wall</option>
+                    <option value="office">Minimalist Office</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Format / Aspect Ratio
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Standard 4:3, Panorama..."
+                    value={editingArtwork.size || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, size: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Availability Status
+                  </label>
+                  <select
+                    value={editingArtwork.status || 'available'}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, status: e.target.value })}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#fff' }}
+                  >
+                    <option value="available">Available</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="acquired">Acquired (Sold)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                  Caption / Narrative Description (Shown on Gallery & Product Page)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Describe the scene, lighting, or story behind this photograph..."
+                  value={editingArtwork.caption || ''}
+                  onChange={(e) => setEditingArtwork({ ...editingArtwork, caption: e.target.value })}
+                  style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              {/* 3. GOOGLE SEO METADATA SECTION */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '0.9rem',
+                }}
+              >
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e40af', marginBottom: '0.6rem' }}>
+                  Google Search & OpenGraph SEO Optimization
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.6rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.2rem' }}>
+                      SEO Meta Title (Under 60 chars)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Auto-generated if left blank..."
+                      value={editingArtwork.seo?.metaTitle || ''}
+                      onChange={(e) =>
+                        setEditingArtwork({
+                          ...editingArtwork,
+                          seo: { ...(editingArtwork.seo || {}), metaTitle: e.target.value },
+                        })
+                      }
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #93c5fd', fontSize: '0.82rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.2rem' }}>
+                      SEO Keywords (Comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Laurel Hill Park, Hackensack River, NJ Meadowlands"
+                      value={
+                        Array.isArray(editingArtwork.seo?.keywords)
+                          ? editingArtwork.seo.keywords.join(', ')
+                          : editingArtwork.seo?.keywords || ''
+                      }
+                      onChange={(e) =>
+                        setEditingArtwork({
+                          ...editingArtwork,
+                          seo: { ...(editingArtwork.seo || {}), keywords: e.target.value },
+                        })
+                      }
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #93c5fd', fontSize: '0.82rem' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.2rem' }}>
+                    SEO Meta Description (Under 160 chars)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Search engine summary for Google and social media shares..."
+                    value={editingArtwork.seo?.metaDescription || ''}
+                    onChange={(e) =>
+                      setEditingArtwork({
+                        ...editingArtwork,
+                        seo: { ...(editingArtwork.seo || {}), metaDescription: e.target.value },
+                      })
+                    }
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #93c5fd', fontSize: '0.82rem', fontFamily: 'inherit' }}
+                  />
+                </div>
+              </div>
+
+              {/* 4. GUEST ARTIST INVITATION SECTION */}
               <div
                 style={{
                   background: '#f0fdf4',
                   border: '1px solid #bbf7d0',
                   borderRadius: '8px',
-                  padding: '1rem',
-                  marginTop: '0.25rem',
+                  padding: '0.9rem',
                 }}
               >
-                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', marginBottom: '0.75rem' }}>
-                  Guest Photographer Details (For Invited Guest Photos)
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#166534', marginBottom: '0.6rem' }}>
+                  Guest Photographer Details (For Invited Guest Photos Only)
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.6rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#15803d', marginBottom: '0.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#15803d', marginBottom: '0.2rem' }}>
                       Guest Photographer Name
                     </label>
                     <input
@@ -1347,35 +1826,35 @@ export function VenueGridManager({
                       placeholder="e.g., Sarah Jenkins"
                       value={editingArtwork.guestPhotographer || ''}
                       onChange={(e) => setEditingArtwork({ ...editingArtwork, guestPhotographer: e.target.value })}
-                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #86efac', fontSize: '0.85rem' }}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #86efac', fontSize: '0.82rem' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#15803d', marginBottom: '0.25rem' }}>
-                      Guest Facebook / Instagram / Website Link (Optional)
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#15803d', marginBottom: '0.2rem' }}>
+                      Guest Facebook / Instagram / Website Link
                     </label>
                     <input
                       type="url"
                       placeholder="https://www.facebook.com/..."
                       value={editingArtwork.guestSocialUrl || ''}
                       onChange={(e) => setEditingArtwork({ ...editingArtwork, guestSocialUrl: e.target.value })}
-                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #86efac', fontSize: '0.85rem' }}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #86efac', fontSize: '0.82rem' }}
                     />
                   </div>
+                </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#15803d', marginBottom: '0.25rem' }}>
-                      Guest Artist Note / Where Captured / Story
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Add the story behind the photo, where it was taken, or why you invited this photographer..."
-                      value={editingArtwork.guestNote || ''}
-                      onChange={(e) => setEditingArtwork({ ...editingArtwork, guestNote: e.target.value })}
-                      style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #86efac', fontSize: '0.85rem', fontFamily: 'inherit' }}
-                    />
-                  </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#15803d', marginBottom: '0.2rem' }}>
+                    Guest Artist Note / Where Captured / Story
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Add the story behind the photo, where it was taken, or why you invited this photographer..."
+                    value={editingArtwork.guestNote || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, guestNote: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #86efac', fontSize: '0.82rem', fontFamily: 'inherit' }}
+                  />
                 </div>
               </div>
 
@@ -1399,16 +1878,201 @@ export function VenueGridManager({
                   type="submit"
                   disabled={isProcessing}
                   style={{
-                    padding: '0.6rem 1.35rem',
+                    padding: '0.65rem 1.4rem',
                     borderRadius: '6px',
                     border: 'none',
-                    background: '#2563eb',
+                    background: '#059669',
                     color: '#fff',
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
                 >
-                  {isProcessing ? 'Saving...' : 'Save Details'}
+                  {isProcessing ? 'Saving & Publishing...' : 'Save & Publish Live Now'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* INLINE VENUE PAGE & SEO OPTIMIZER MODAL */}
+      {editingVenue && (
+        <div
+          onClick={() => setEditingVenue(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '640px',
+              width: '100%',
+              padding: '1.75rem',
+              boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
+                Optimize Venue Page & SEO: {editingVenue.title}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditingVenue(null)}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveVenueDetails} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                  Venue / Sub-Venue Title
+                </label>
+                <input
+                  type="text"
+                  value={editingVenue.title || ''}
+                  onChange={(e) => setEditingVenue({ ...editingVenue, title: e.target.value })}
+                  style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                  Venue Page Header Description (Also used as Default Photo Caption)
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe what visitors will experience in this venue..."
+                  value={editingVenue.speciesDescription || ''}
+                  onChange={(e) => setEditingVenue({ ...editingVenue, speciesDescription: e.target.value })}
+                  style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.88rem', fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.9rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e40af' }}>
+                    Google Search SEO Metadata
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const desc =
+                        editingVenue.speciesDescription ||
+                        `Explore the ${editingVenue.title} fine art photography collection captured in the New Jersey Meadowlands by David McClure.`;
+                      setEditingVenue({
+                        ...editingVenue,
+                        speciesDescription: desc,
+                        seo: {
+                          metaTitle: `${editingVenue.title} | The Meadow Lens`,
+                          metaDescription: desc.slice(0, 158),
+                          keywords: [
+                            editingVenue.title,
+                            'NJ Meadowlands',
+                            'Fine Art Nature Photography',
+                            'David McClure',
+                            'The Meadow Lens',
+                          ],
+                        },
+                      });
+                    }}
+                    style={{
+                      padding: '0.35rem 0.7rem',
+                      background: '#2563eb',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '5px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✨ Auto-Fill Venue SEO
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.2rem' }}>
+                      Meta Title (Under 60 chars)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingVenue.seo?.metaTitle || ''}
+                      onChange={(e) =>
+                        setEditingVenue({
+                          ...editingVenue,
+                          seo: { ...(editingVenue.seo || {}), metaTitle: e.target.value },
+                        })
+                      }
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #93c5fd', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.2rem' }}>
+                      Meta Description (Under 160 chars)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editingVenue.seo?.metaDescription || ''}
+                      onChange={(e) =>
+                        setEditingVenue({
+                          ...editingVenue,
+                          seo: { ...(editingVenue.seo || {}), metaDescription: e.target.value },
+                        })
+                      }
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #93c5fd', fontSize: '0.85rem', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#1e3a8a', marginBottom: '0.2rem' }}>
+                      Keywords (Comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        Array.isArray(editingVenue.seo?.keywords)
+                          ? editingVenue.seo.keywords.join(', ')
+                          : editingVenue.seo?.keywords || ''
+                      }
+                      onChange={(e) =>
+                        setEditingVenue({
+                          ...editingVenue,
+                          seo: { ...(editingVenue.seo || {}), keywords: e.target.value },
+                        })
+                      }
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '5px', border: '1px solid #93c5fd', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingVenue(null)}
+                  style={{ padding: '0.6rem 1.1rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessing}
+                  style={{ padding: '0.65rem 1.35rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isProcessing ? 'Saving...' : 'Save & Publish Venue Page'}
                 </button>
               </div>
             </form>

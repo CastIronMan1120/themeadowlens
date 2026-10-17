@@ -278,7 +278,7 @@ const category = {
     prepare({ title, parentTitle }) {
       return {
         title: title,
-        subtitle: parentTitle ? `? Subcategory of ${parentTitle}` : '? Root Venue'
+        subtitle: parentTitle ? `↳ Sub-Venue of ${parentTitle}` : '◆ Root Venue'
       }
     }
   }
