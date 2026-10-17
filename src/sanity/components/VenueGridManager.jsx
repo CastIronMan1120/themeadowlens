@@ -44,7 +44,7 @@ export function VenueGridManager({
         "slug": slug.current,
         "parentId": parentCategory._ref,
         "parentTitle": parentCategory->title,
-        "photoCount": count(*[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id)])
+        "photoCount": count(*[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id || category->parentCategory._ref == ^._id)])
       }`);
       setCategories(cats);
 
@@ -410,7 +410,7 @@ export function VenueGridManager({
     try {
       const patchData = {
         title: editingArtwork.title || 'Untitled',
-        displayTitle: Boolean(editingArtwork.displayTitle),
+        displayTitle: typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : '',
         species: editingArtwork.species || '',
         caption: editingArtwork.caption || '',
         guestPhotographer: editingArtwork.guestPhotographer || '',
@@ -1215,27 +1215,32 @@ export function VenueGridManager({
             )}
 
             <form onSubmit={handleSaveArtworkDetails} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
-                  Photo Title
-                </label>
-                <input
-                  type="text"
-                  value={editingArtwork.title || ''}
-                  onChange={(e) => setEditingArtwork({ ...editingArtwork, title: e.target.value })}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  required
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    SEO / Catalog Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={editingArtwork.title || ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, title: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    Artistic Display Title (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Overrides catalog title on card..."
+                    value={typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : ''}
+                    onChange={(e) => setEditingArtwork({ ...editingArtwork, displayTitle: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                  />
+                </div>
               </div>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={Boolean(editingArtwork.displayTitle)}
-                  onChange={(e) => setEditingArtwork({ ...editingArtwork, displayTitle: e.target.checked })}
-                />
-                Show Photo Title on Live Website
-              </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
