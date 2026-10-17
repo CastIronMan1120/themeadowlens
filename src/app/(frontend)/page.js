@@ -11,7 +11,7 @@ export default async function Home() {
     _id,
     title,
     slug,
-    "imageUrl": menuImage.asset->url
+    "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || category->parentCategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
   }`
   const venues = await client.fetch(query)
 
@@ -21,14 +21,11 @@ export default async function Home() {
     welcomeText,
     quote,
     featuredTickerSpeed,
-    newTickerSpeed,
     "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
     "heroImageUrl": heroImage.asset->url
   }`)
 
-  const latestArts = await client.fetch(`*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url }`)
-
-  // 2. Fetch "Newly Added" Ticker Photos (Most recently added)
+  // 2. Fetch Hero Slider Photos (Most recently added)
   const sliderQuery = `*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { 
     _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url 
   }`
@@ -94,24 +91,15 @@ export default async function Home() {
       </section>
 
       {/* 2. FEATURED TICKER */}
-        {homepage?.featuredPhotos && homepage.featuredPhotos.length > 0 && (
-          <div className="w-full bg-neutral-950 border-t border-neutral-800 pt-16 pb-6 text-center relative z-30">
-            <h2 className="text-2xl md:text-3xl font-light text-white tracking-[0.3em] uppercase text-sm">Featured Works</h2>
-            <div className="w-12 h-[1px] bg-emerald-600 mx-auto mt-4 mb-8"></div>
-            <FeaturedTicker artworks={homepage.featuredPhotos} speed={homepage?.featuredTickerSpeed || 120} />
-          </div>
-        )}
+      {homepage?.featuredPhotos && homepage.featuredPhotos.length > 0 && (
+        <div className="w-full bg-neutral-950 border-t border-b border-neutral-800 pt-16 pb-6 text-center relative z-30">
+          <h2 className="text-2xl md:text-3xl font-light text-white tracking-[0.3em] uppercase text-sm">Featured Works</h2>
+          <div className="w-12 h-[1px] bg-emerald-600 mx-auto mt-4 mb-8"></div>
+          <FeaturedTicker artworks={homepage.featuredPhotos} speed={homepage?.featuredTickerSpeed || 60} />
+        </div>
+      )}
 
-        {/* 2.5 Newly Added TICKER */}
-        {latestArts && latestArts.length > 0 && (
-          <div className="w-full bg-neutral-900 border-t border-b border-neutral-800 pt-12 pb-6 text-center relative z-30">
-            <h2 className="text-xl md:text-2xl font-light text-neutral-400 tracking-[0.3em] uppercase text-sm">Newly Added</h2>
-            <div className="w-12 h-[1px] bg-neutral-700 mx-auto mt-4 mb-8"></div>
-            <FeaturedTicker artworks={latestArts} speed={homepage?.newTickerSpeed || 100} reverse={true} />
-          </div>
-        )}
-
-        {/* 3. VENUES TILE GRID */}
+      {/* 3. VENUES TILE GRID */}
       <section id="venues" className="min-h-screen p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto bg-neutral-950 relative z-20">
         
         <div className="max-w-4xl mx-auto text-center mb-16 mt-12">

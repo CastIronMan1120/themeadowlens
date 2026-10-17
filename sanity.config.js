@@ -1,7 +1,7 @@
 import { defineConfig } from 'sanity'
 import { deskTool } from 'sanity/desk'
 import { schemaTypes } from './src/sanity/schema'
-import { BulkCategorizer } from './src/sanity/components/BulkCategorizer'
+import { BulkCategorizer, AllPhotosGrid, VenuePhotoGridPane } from './src/sanity/components/BulkCategorizer'
 import { SystemMetrics } from './src/sanity/components/SystemMetrics'
 
 export default defineConfig({
@@ -29,55 +29,78 @@ export default defineConfig({
               
             S.divider(),
 
-            // 1. Warehouse (All Artworks)
+            // 1. Warehouse (All Artworks & Unassigned Grid Views)
             S.listItem()
-              .title('?? The Warehouse')
+              .title('The Warehouse')
               .child(
                 S.list()
                   .title('Warehouse Views')
                   .items([
                     S.listItem()
-                      .title('All Uploaded Photos')
-                      .child(S.documentTypeList('artwork').title('All Artworks')),
-                    S.listItem()
-                      .title('?? Missing a Venue')
+                      .title('All Uploaded Photos (Grid View)')
                       .child(
-                        S.documentList()
-                          .title('Photos Missing Venues')
-                          .filter('_type == "artwork" && !defined(category)')
+                        S.component(AllPhotosGrid)
+                          .id('all-uploaded-photos-grid')
+                          .title('All Uploaded Photos (Grid View)')
                       ),
                     S.listItem()
-                      .title("Newly Added (Live Ticker)")
+                      .title('Missing a Venue (Warehouse Grid)')
                       .child(
-                        S.documentList()
-                          .title('Recently Published Photos')
-                          .filter('_type == "artwork" && defined(image.asset)')
-                          .defaultOrdering([{field: '_createdAt', direction: 'desc'}])
-                      )
+                        S.component(BulkCategorizer)
+                          .id('missing-venue-warehouse-grid')
+                          .title('Photos Missing Venues (Grid View)')
+                      ),
+                    S.listItem()
+                      .title('All Artworks (Standard Form Editor)')
+                      .child(S.documentTypeList('artwork').title('All Artworks (Form List)'))
                   ])
               ),
             
             S.divider(),
             
-            // 2. Taxonomy (Split into Root and Sub)
+            // 2. Taxonomy (Split into Root Venues and Sub-Venues with Grid Maintenance Screens)
             S.listItem()
               .title('Root Venues (Main)')
               .child(
                 S.documentList()
                   .title('Root Venues')
                   .filter('_type == "category" && !defined(parentCategory)')
+                  .child((categoryId) =>
+                    S.document()
+                      .schemaType('category')
+                      .documentId(categoryId)
+                      .views([
+                        S.view
+                          .component(VenuePhotoGridPane)
+                          .title('Photo Grid Maintenance')
+                          .id('venue-photo-grid'),
+                        S.view.form().title('Venue Settings & SEO')
+                      ])
+                  )
               ),
             S.listItem()
-              .title('Subcategories')
+              .title('Sub-Venues (Subcategories)')
               .child(
                 S.documentList()
-                  .title('Subcategories')
+                  .title('Sub-Venues')
                   .filter('_type == "category" && defined(parentCategory)')
+                  .child((subVenueId) =>
+                    S.document()
+                      .schemaType('category')
+                      .documentId(subVenueId)
+                      .views([
+                        S.view
+                          .component(VenuePhotoGridPane)
+                          .title('Photo Grid Maintenance')
+                          .id('subvenue-photo-grid'),
+                        S.view.form().title('Sub-Venue Settings & SEO')
+                      ])
+                  )
               ),
               
             S.divider(),
             
-            // 3. Inner Pages
+            // 3. Inner Pages & CRM
             S.listItem()
               .title('Artist Profile')
               .child(
@@ -90,6 +113,13 @@ export default defineConfig({
             S.listItem()
               .title('News & Announcements')
               .child(S.documentTypeList('news').title('Timeline Updates')),
+            S.listItem()
+              .title('Inquiry Leads (CRM)')
+              .child(
+                S.documentTypeList('lead')
+                  .title('Customer Inquiries')
+                  .defaultOrdering([{ field: 'submittedAt', direction: 'desc' }])
+              ),
           ])
     })
   ],
@@ -97,7 +127,7 @@ export default defineConfig({
     ...prev,
     {
       name: 'bulk-categorizer',
-      title: 'Bulk Categorizer',
+      title: 'Warehouse & Venue Manager',
       component: BulkCategorizer
     },
     {
@@ -110,8 +140,3 @@ export default defineConfig({
     types: schemaTypes,
   },
 })
-
-
-
-
-

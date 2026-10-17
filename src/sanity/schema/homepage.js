@@ -37,18 +37,10 @@ export const homepage = {
     },
     {
       name: 'featuredTickerSpeed',
-      title: 'Featured Ticker Speed (Seconds)',
+      title: 'Featured Works Ticker Speed (Seconds)',
       type: 'number',
-      description: 'How many seconds it takes for the FEATURED WORKS ticker to complete one loop. Default is 120.',
-      initialValue: 120,
-      validation: (Rule) => Rule.min(10).max(300)
-    },
-    {
-      name: 'newTickerSpeed',
-      title: 'What\'s New Ticker Speed (Seconds)',
-      type: 'number',
-      description: 'How many seconds it takes for the WHAT\'S NEW ticker to complete one loop. Default is 100.',
-      initialValue: 100,
+      description: 'How many seconds it takes for the FEATURED WORKS ticker to complete one loop. Default is 60 (lower is faster).',
+      initialValue: 60,
       validation: (Rule) => Rule.min(10).max(300)
     }
   ]
