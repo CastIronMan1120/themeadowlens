@@ -4,12 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { urlForImage } from '../../sanity/lib/image'
 
-const ROOM_TEMPLATES = {
-  'living-room': 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=2000&auto=format&fit=crop',
-  'dark-gallery': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=2000&auto=format&fit=crop',
-  'office': 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2000&auto=format&fit=crop'
-}
-
 export default function ArtworkCard({ artwork, fallbackDescription }) {
   const [isHovered, setIsHovered] = useState(false)
   const [liked, setLiked] = useState(false)
@@ -17,7 +11,6 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
 
   if (!artwork.image || !artwork.slug?.current) return null
 
-  const roomBg = ROOM_TEMPLATES[artwork.roomSetting] || ROOM_TEMPLATES['dark-gallery']
   const artworkUrl = `/art/${artwork.slug.current}`
 
   const handleShare = (e) => {

@@ -21,8 +21,8 @@ export default async function ArtistPage() {
   const artist = await client.fetch(query)
   const hp = await client.fetch(`*[_type == "homepage"][0]{"heroImageUrl": heroImage.asset->url}`)
 
-  // Fallback to the Meadow Lens composite graphic if no personal portrait is uploaded yet
-  const defaultLensImage = "https://d15yhgn2ui21mw.cloudfront.net/production/27828/MDAwMDAwMDAwMDAw7QGraePd6CACehR_ZcfBFYwXu2FyveAYEUnRGwCTQQQLtneRwWETeR6yOMFIOjy24aDow_LJj7F22f2vd2S3k0FN_38EZqodfTc2xEuhDJufAHDziomoKXOdJ3Hs_jG_Da6jI5Eudq_OlWAGPJ5eMn5GdWubauzcA36GcgRY1fWMRXAyI_kns64GDLOzMbtDhp4MzfALcUQj-6GhUPrzz2cP26jvMuXkEAQK9UuhPaFh6sZ0WiHUxvwkfo0iBUIvrtzbVMJOQCKJtixHhM2uAFAzJqp3tkw9CK1Q-UUQdYf17tBc8FtuRPZjA0HS8f5UQNMgYWf3w4K_o-rz34O8o0_KFsf5lFPtzMsdvKDrF20U_Yv9QZ62UCQwOpCzcYBMuUz2OSK6lNEue5NbDJrMm6IGoPAHiyZ5_g61_8NiomtEwYlgpUDMZK8TyFQcauOrq_vNZrrN3XuD-pTFsS_tRZSwoQhWGDTxkzfRjWOFZqNs5sSydA.jpg"
+  // Fallback to the Sanity CDN Meadow Lens composite graphic if no personal portrait is uploaded yet
+  const defaultLensImage = "https://cdn.sanity.io/images/h7ncr8cq/production/e9e353906b85748121aaa9747813c81f602079e6-515x432.png"
   const name = artist?.name || "David McClure"
   const tagline = artist?.tagline || 'After all, this is "The Meadowlands", and I\'m "The Meadow LENS"! ... get it?'
   const imageUrl = artist?.portrait ? urlForImage(artist.portrait).width(1200).url() : (hp?.heroImageUrl || defaultLensImage)
