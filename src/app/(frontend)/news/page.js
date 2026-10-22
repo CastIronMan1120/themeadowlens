@@ -44,23 +44,23 @@ export default async function NewsPage() {
 
   return (
     <main className="min-h-screen bg-black">
-      <section className="relative w-full pt-40 md:pt-[240px] pb-24 px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto">
+      <section className="relative w-full pt-32 sm:pt-40 md:pt-[240px] pb-20 sm:pb-24 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto">
         
-        <div className="mb-24 text-center">
-          <h1 className="text-6xl md:text-8xl text-white font-light tracking-tight mb-6">
-            What's New
+        <div className="mb-14 sm:mb-24 text-center">
+          <h1 className="text-4xl sm:text-6xl md:text-8xl text-white font-light tracking-tight mb-4 sm:mb-6">
+            What&apos;s New
           </h1>
-          <p className="text-neutral-400 text-lg md:text-xl uppercase tracking-widest font-mono">
+          <p className="text-neutral-400 text-sm sm:text-lg md:text-xl uppercase tracking-widest font-mono">
             Dispatches from Exit 16W
           </p>
         </div>
 
-        <div className="space-y-16 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-800 before:to-transparent">
+        <div className="space-y-10 sm:space-y-16 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-800 before:to-transparent">
           
           {newsItemsToDisplay.map((item, index) => {
             const formattedDate = new Date(item.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
             return (
-            <div key={item._id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+            <div key={item._id} className="relative flex items-start sm:items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
               
               {/* Timeline Dot */}
               <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-black bg-neutral-700 group-hover:bg-white text-neutral-500 group-hover:text-black shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors duration-500 z-10">
@@ -68,13 +68,13 @@ export default async function NewsPage() {
               </div>
               
               {/* Content Card */}
-              <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-8 rounded-sm bg-neutral-900 border border-neutral-800 hover:border-neutral-600 transition-colors duration-500 shadow-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-neutral-400 font-mono text-sm tracking-widest">{formattedDate}</span>
-                  <span className="px-3 py-1 bg-white text-black text-xs font-bold uppercase tracking-wider">Update</span>
+              <div className="w-[calc(100%-3.25rem)] sm:w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-5 sm:p-8 rounded-sm bg-neutral-900 border border-neutral-800 hover:border-neutral-600 transition-colors duration-500 shadow-2xl">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3 sm:mb-4">
+                  <span className="text-neutral-400 font-mono text-xs sm:text-sm tracking-wider sm:tracking-widest">{formattedDate}</span>
+                  <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 bg-white text-black text-[10px] sm:text-xs font-bold uppercase tracking-wider">Update</span>
                 </div>
-                <h3 className="text-2xl text-white font-light mb-4">{item.title}</h3>
-                <div className="text-neutral-400 leading-relaxed prose prose-invert prose-p:text-neutral-400 prose-a:text-white">
+                <h3 className="text-xl sm:text-2xl text-white font-light mb-3 sm:mb-4">{item.title}</h3>
+                <div className="text-neutral-400 text-sm sm:text-base leading-relaxed prose prose-invert prose-p:text-neutral-400 prose-a:text-white">
                   {item.content ? <PortableText value={item.content} /> : null}
                 </div>
               </div>

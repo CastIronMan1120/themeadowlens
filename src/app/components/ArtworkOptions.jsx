@@ -9,10 +9,10 @@ export default function ArtworkOptions({ inquiryLink, isReserved, isAcquired, im
   const [studioOpen, setStudioOpen] = useState(false)
 
   return (
-    <div className="relative inline-block w-full max-w-xs">
+    <div className="relative inline-block w-full sm:max-w-xs">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between border border-white/20 bg-neutral-900 text-white px-6 py-4 uppercase tracking-widest text-sm font-light hover:bg-neutral-800 transition-colors"
+        className="w-full flex items-center justify-between border border-white/20 bg-neutral-900 text-white px-5 py-3.5 sm:px-6 sm:py-4 uppercase tracking-widest text-xs sm:text-sm font-light hover:bg-neutral-800 transition-colors"
       >
         <span>Options for this image</span>
         <span className="text-lg font-mono ml-4">{isOpen ? '-' : '+'}</span>

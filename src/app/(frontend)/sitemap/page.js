@@ -71,33 +71,33 @@ export default async function SitemapPage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <main className="min-h-screen bg-black text-white pt-40 md:pt-[240px] pb-24 px-6 md:px-16">
+    <main className="min-h-screen bg-black text-white pt-32 sm:pt-40 md:pt-[240px] pb-20 sm:pb-24 px-4 sm:px-6 md:px-16">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-12 border-b border-white/10 pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <header className="mb-10 sm:mb-12 border-b border-white/10 pb-6 sm:pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 sm:gap-6">
             <div>
-              <span className="text-xs font-mono uppercase tracking-[0.25em] text-emerald-400 block mb-2">
-                Fullstack Architecture & Index
+              <span className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.2em] sm:tracking-[0.25em] text-emerald-400 block mb-2">
+                Fullstack Architecture &amp; Index
               </span>
-              <h1 className="text-4xl md:text-5xl font-light tracking-widest uppercase mb-3 text-white">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light tracking-widest uppercase mb-3 text-white">
                 Site Directory
               </h1>
-              <p className="text-neutral-400 font-mono text-sm tracking-wide max-w-2xl">
+              <p className="text-neutral-400 font-mono text-xs sm:text-sm tracking-wide max-w-2xl leading-relaxed">
                 The complete, real-time architectural map of The Meadow Lens — linking every Main Page, Root Venue, Sub-Venue, Species Gallery, and Individual Fine Art Product Page.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2.5 sm:gap-3">
               <a
                 href="/sitemap.xml"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 hover:text-white text-xs font-mono uppercase tracking-wider transition-colors"
+                className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 hover:text-white text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-colors"
               >
                 XML Sitemap (/sitemap.xml) ↗
               </a>
               <Link
                 href="/studio"
-                className="px-4 py-2.5 rounded-lg bg-neutral-900 border border-white/15 text-neutral-300 hover:border-white/40 hover:text-white text-xs font-mono uppercase tracking-wider transition-colors"
+                className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-lg bg-neutral-900 border border-white/15 text-neutral-300 hover:border-white/40 hover:text-white text-[11px] sm:text-xs font-mono uppercase tracking-wider transition-colors"
               >
                 Admin Studio (/studio) ⚙
               </Link>
@@ -105,34 +105,34 @@ export default async function SitemapPage() {
           </div>
 
           {/* Live Database Metrics Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-8 pt-6 border-t border-white/10">
-            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-4">
-              <div className="text-2xl font-bold text-emerald-400">6</div>
-              <div className="text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Core Pages</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-6 border-t border-white/10">
+            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-3.5 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-emerald-400">6</div>
+              <div className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Core Pages</div>
             </div>
-            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-4">
-              <div className="text-2xl font-bold text-blue-400">{rootVenues.length}</div>
-              <div className="text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Root Venues</div>
+            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-3.5 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-blue-400">{rootVenues.length}</div>
+              <div className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Root Venues</div>
             </div>
-            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-4">
-              <div className="text-2xl font-bold text-indigo-400">{totalSubVenues}</div>
-              <div className="text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Sub-Venues</div>
+            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-3.5 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-indigo-400">{totalSubVenues}</div>
+              <div className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Sub-Venues</div>
             </div>
-            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-4">
-              <div className="text-2xl font-bold text-amber-400">{publishedArtworks.length}</div>
-              <div className="text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Live Product Pages</div>
+            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-3.5 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-amber-400">{publishedArtworks.length}</div>
+              <div className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Live Product Pages</div>
             </div>
-            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-4">
-              <div className="text-2xl font-bold text-teal-400">{activeSpecies.length}</div>
-              <div className="text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Species Galleries</div>
+            <div className="bg-neutral-900/60 border border-white/5 rounded-xl p-3.5 sm:p-4 col-span-2 sm:col-span-1">
+              <div className="text-xl sm:text-2xl font-bold text-teal-400">{activeSpecies.length}</div>
+              <div className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-neutral-400 mt-1">Species Galleries</div>
             </div>
           </div>
         </header>
 
         {/* SECTION 1: Main Pages + Root Venues & Sub-Venues */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8 mb-12 sm:mb-16">
           {/* Static Pages */}
-          <section className="bg-neutral-900/50 p-8 rounded-2xl border border-white/10 hover:border-emerald-500/40 transition-colors">
+          <section className="bg-neutral-900/50 p-5 sm:p-8 rounded-2xl border border-white/10 hover:border-emerald-500/40 transition-colors">
             <h2 className="text-xl font-semibold tracking-widest uppercase mb-6 text-emerald-300 flex items-center">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 mr-3"></span>
               Main Pages
@@ -192,19 +192,19 @@ export default async function SitemapPage() {
           {rootVenues.map((venue) => (
             <section
               key={venue._id}
-              className="bg-neutral-900/50 p-8 rounded-2xl border border-white/10 hover:border-blue-500/40 transition-colors flex flex-col justify-between"
+              className="bg-neutral-900/50 p-5 sm:p-8 rounded-2xl border border-white/10 hover:border-blue-500/40 transition-colors flex flex-col justify-between"
             >
               <div>
-                <h2 className="text-xl font-semibold tracking-widest uppercase mb-2 text-blue-300 flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-semibold tracking-widest uppercase mb-2 text-blue-300 flex flex-wrap items-center justify-between gap-2">
                   <span className="flex items-center">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-400 mr-3"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-400 mr-2.5 sm:mr-3 shrink-0"></span>
                     <Link href={`/category/${venue.slug}`} className="hover:text-white transition-colors">
                       {venue.title}
                     </Link>
                   </span>
                   <Link
                     href={`/category/${venue.slug}`}
-                    className="text-[11px] font-mono text-neutral-500 hover:text-blue-300 font-normal lowercase"
+                    className="text-[10px] sm:text-[11px] font-mono text-neutral-500 hover:text-blue-300 font-normal lowercase"
                   >
                     /category/{venue.slug} ↗
                   </Link>
@@ -264,13 +264,13 @@ export default async function SitemapPage() {
         </div>
 
         {/* SECTION 2: Complete Published Fine Art Product Pages (/art/[slug]) */}
-        <section className="mb-16 bg-neutral-900/40 p-8 md:p-10 rounded-2xl border border-white/10">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 pb-6 border-b border-white/10">
+        <section className="mb-12 sm:mb-16 bg-neutral-900/40 p-5 sm:p-8 md:p-10 rounded-2xl border border-white/10">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-white/10">
             <div>
-              <span className="text-xs font-mono uppercase tracking-[0.2em] text-amber-400 block mb-1">
+              <span className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.2em] text-amber-400 block mb-1">
                 Individual Artwork &amp; Room Visualizer Pages
               </span>
-              <h2 className="text-2xl md:text-3xl font-light tracking-widest uppercase text-white">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-light tracking-widest uppercase text-white">
                 Published Photo / Product Pages ({publishedArtworks.length})
               </h2>
             </div>
@@ -322,13 +322,13 @@ export default async function SitemapPage() {
 
         {/* SECTION 3: Photographed Bird Species Galleries (/species/[speciesName]) */}
         {activeSpecies.length > 0 && (
-          <section className="bg-neutral-900/40 p-8 md:p-10 rounded-2xl border border-white/10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 pb-6 border-b border-white/10">
+          <section className="bg-neutral-900/40 p-5 sm:p-8 md:p-10 rounded-2xl border border-white/10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-white/10">
               <div>
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-teal-400 block mb-1">
+                <span className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.2em] text-teal-400 block mb-1">
                   Ornithological Species Index
                 </span>
-                <h2 className="text-2xl md:text-3xl font-light tracking-widest uppercase text-white">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-light tracking-widest uppercase text-white">
                   Active Bird Species Pages ({activeSpecies.length})
                 </h2>
               </div>

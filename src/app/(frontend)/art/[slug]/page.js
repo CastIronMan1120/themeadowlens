@@ -95,19 +95,19 @@ export default async function ArtworkPage({ params }) {
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(cleanTitle)}`
 
   return (
-    <main className="min-h-screen pt-40 md:pt-[240px] pb-12 px-8 sm:px-12 md:px-24 max-w-[2000px] mx-auto">
+    <main className="min-h-screen pt-32 sm:pt-40 md:pt-[240px] pb-12 px-4 sm:px-8 md:px-24 max-w-[2000px] mx-auto">
       
       {/* 1. SEO Industry Standard Breadcrumbs */}
-      <nav className="mb-12 text-sm text-neutral-500 uppercase tracking-widest font-mono flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-y-2">
+      <nav className="mb-6 sm:mb-12 text-xs sm:text-sm text-neutral-500 uppercase tracking-wider sm:tracking-widest font-mono flex items-center justify-between">
+        <div className="flex flex-wrap items-center gap-y-1.5">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span className="mx-3">/</span>
+          <span className="mx-2 sm:mx-3">/</span>
           {artwork.parentCategorySlug && (
             <>
               <Link href={`/category/${artwork.parentCategorySlug}`} className="hover:text-white transition-colors">
                 {artwork.parentCategoryTitle}
               </Link>
-              <span className="mx-3">/</span>
+              <span className="mx-2 sm:mx-3">/</span>
             </>
           )}
           {artwork.categorySlug ? (
@@ -122,19 +122,19 @@ export default async function ArtworkPage({ params }) {
               >
                 {artwork.categoryTitle}
               </Link>
-              <span className="mx-3">/</span>
+              <span className="mx-2 sm:mx-3">/</span>
             </>
           ) : (
             <>
               <Link href="/" className="hover:text-white transition-colors">Exhibitions</Link>
-              <span className="mx-3">/</span>
+              <span className="mx-2 sm:mx-3">/</span>
             </>
           )}
-          <span className="text-white">{cleanTitle}</span>
+          <span className="text-white break-words">{cleanTitle}</span>
         </div>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-24 items-start">
           
           {/* Left: The Uninterrupted Image + Navigation Arrows */}
           <div className="relative group/nav">
@@ -164,26 +164,26 @@ export default async function ArtworkPage({ params }) {
               )}
             </div>
 
-            {/* Mobile Arrows (Always visible below image on small screens) */}
-            <div className="flex justify-between items-center mt-6 md:hidden">
+            {/* Mobile Arrows (Touch-friendly pill buttons below image on small screens) */}
+            <div className="flex justify-between items-center mt-4 sm:mt-6 md:hidden gap-3">
               {prevArt ? (
-                <Link href={`/art/${prevArt.slug}`} className="text-neutral-400 hover:text-white uppercase tracking-widest text-xs font-mono flex items-center">
-                  &larr; Previous
+                <Link href={`/art/${prevArt.slug}`} className="px-4 py-2 rounded-full bg-neutral-900 border border-white/15 text-neutral-200 hover:text-white uppercase tracking-widest text-xs font-mono flex items-center">
+                  &larr; Previous Photo
                 </Link>
               ) : <div></div>}
               {nextArt && (
-                <Link href={`/art/${nextArt.slug}`} className="text-neutral-400 hover:text-white uppercase tracking-widest text-xs font-mono flex items-center">
-                  Next &rarr;
+                <Link href={`/art/${nextArt.slug}`} className="px-4 py-2 rounded-full bg-neutral-900 border border-white/15 text-neutral-200 hover:text-white uppercase tracking-widest text-xs font-mono flex items-center">
+                  Next Photo &rarr;
                 </Link>
               )}
             </div>
           </div>
 
           {/* Right: The Title, Guest Artist Showcase, Optional Story, and Inquiry Guestbook */}
-          <div className="flex flex-col justify-center space-y-10 text-white lg:py-12">
+          <div className="flex flex-col justify-center space-y-6 sm:space-y-10 text-white lg:py-12">
             
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-4">{cleanTitle}</h1>
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-3 sm:mb-4 break-words">{cleanTitle}</h1>
 
               {artwork.guestPhotographer && (
                 <div className="mt-4 p-6 bg-emerald-950/30 border border-emerald-500/40 rounded-lg space-y-3">
@@ -276,7 +276,7 @@ export default async function ArtworkPage({ params }) {
               />
 
               {/* Social Share Links */}
-              <div className="mt-8 pt-8 border-t border-neutral-900 flex items-center space-x-6 text-xs font-mono uppercase tracking-widest text-neutral-500">
+              <div className="mt-8 pt-6 sm:pt-8 border-t border-neutral-900 flex flex-wrap items-center gap-4 sm:gap-6 text-xs font-mono uppercase tracking-widest text-neutral-500">
                 <span>Share:</span>
                 <a href={fbShareUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
                   Facebook

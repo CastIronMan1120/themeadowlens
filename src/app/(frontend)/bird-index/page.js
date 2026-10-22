@@ -42,29 +42,29 @@ export default async function BirdIndexPage() {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
   return (
-    <main className="min-h-screen pt-40 md:pt-[240px] pb-24 px-8 sm:px-12 md:px-24 max-w-7xl mx-auto">
-      <div className="mb-12">
-        <h1 className="text-4xl md:text-5xl font-light text-white tracking-wide mb-4">Species Index</h1>
-        <p className="text-neutral-400 font-mono uppercase tracking-widest text-sm">
+    <main className="min-h-screen pt-32 sm:pt-40 md:pt-[240px] pb-20 sm:pb-24 px-4 sm:px-8 md:px-24 max-w-7xl mx-auto">
+      <div className="mb-10 sm:mb-12">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-white tracking-wide mb-3 sm:mb-4">Species Index</h1>
+        <p className="text-neutral-400 font-mono uppercase tracking-wider sm:tracking-widest text-xs sm:text-sm leading-relaxed">
           A comprehensive A–Z glossary of {uniqueSpecies.length} biological subjects currently in the repertoire.
         </p>
 
         {letters.length > 0 && (
-          <div className="mt-8 flex flex-wrap gap-2 border-y border-white/10 py-4">
+          <div className="mt-6 sm:mt-8 flex flex-wrap gap-1.5 sm:gap-2 border-y border-white/10 py-3 sm:py-4">
             {alphabet.map((letter) => {
               const hasEntries = Boolean(groupedSpecies[letter]?.length)
               return hasEntries ? (
                 <a
                   key={letter}
                   href={`#letter-${letter}`}
-                  className="w-8 h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-300 hover:text-white hover:bg-white/10 border border-white/15 transition-colors"
+                  className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-200 hover:text-white hover:bg-white/10 border border-white/20 transition-colors rounded-sm"
                 >
                   {letter}
                 </a>
               ) : (
                 <span
                   key={letter}
-                  className="w-8 h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-700 border border-white/5 select-none"
+                  className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-700 border border-white/5 select-none rounded-sm"
                 >
                   {letter}
                 </span>
@@ -77,23 +77,23 @@ export default async function BirdIndexPage() {
       {uniqueSpecies.length === 0 ? (
         <div className="text-neutral-500 font-light italic">
           No species have been formally tagged in the database yet. 
-          (Add a species name to the "Species" field in the Sanity Studio to populate this index).
+          (Add a species name to the &ldquo;Species&rdquo; field in the Sanity Studio to populate this index).
         </div>
       ) : (
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-12 space-y-12">
+        <div className="columns-1 md:columns-2 lg:columns-3 gap-8 sm:gap-12 space-y-8 sm:space-y-12">
           {letters.map(letter => (
-            <div key={letter} id={`letter-${letter}`} className="break-inside-avoid mb-8 scroll-mt-44">
-              <h2 className="text-3xl font-serif italic text-white/30 border-b border-white/10 pb-2 mb-4">{letter}</h2>
-              <ul className="space-y-3">
+            <div key={letter} id={`letter-${letter}`} className="break-inside-avoid mb-6 sm:mb-8 scroll-mt-32 sm:scroll-mt-44">
+              <h2 className="text-2xl sm:text-3xl font-serif italic text-white/30 border-b border-white/10 pb-2 mb-3 sm:mb-4">{letter}</h2>
+              <ul className="space-y-2.5 sm:space-y-3">
                 {groupedSpecies[letter].map(species => (
-                  <li key={species} className="flex items-baseline justify-between gap-4">
+                  <li key={species} className="flex items-baseline justify-between gap-3">
                     <Link 
                       href={`/species/${encodeURIComponent(species)}`}
-                      className="text-neutral-300 hover:text-white hover:underline transition-colors font-light text-lg tracking-wide"
+                      className="text-neutral-200 hover:text-white hover:underline transition-colors font-light text-base sm:text-lg tracking-wide py-0.5"
                     >
                       {species}
                     </Link>
-                    <span className="text-[11px] font-mono text-neutral-600">
+                    <span className="text-[11px] font-mono text-neutral-500 shrink-0">
                       ({speciesCounts[species]})
                     </span>
                   </li>

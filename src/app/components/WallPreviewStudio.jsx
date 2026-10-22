@@ -44,7 +44,7 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
-        <div className="w-full md:flex-1 bg-black flex items-center justify-center relative min-h-[45vh] md:min-h-0 overflow-hidden md:p-8">
+        <div className="w-full md:flex-1 bg-black flex items-center justify-center relative min-h-[38vh] sm:min-h-[45vh] md:min-h-0 overflow-hidden p-2 sm:p-4 md:p-8 shrink-0">
           <div className="relative w-full max-w-5xl shadow-2xl">
             <img 
               src="/room-preview.jpg" 
@@ -58,7 +58,7 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
             />
 
             <div className="absolute bottom-2 md:bottom-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md border border-white/20 text-white/90 px-3 py-1 md:px-4 md:py-2 text-[8px] md:text-[10px] font-mono tracking-widest uppercase rounded-full pointer-events-none z-10 whitespace-nowrap">
-              Reference Sofa: 80" Wide
+              Reference Sofa: 80&quot; Wide
             </div>
 
             <div 
@@ -79,12 +79,12 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
           </div>
         </div>
 
-        <div className="flex-1 md:w-80 lg:w-96 md:flex-none bg-neutral-900 border-t md:border-t-0 md:border-l border-white/10 p-4 md:p-8 flex flex-col gap-6 md:gap-10 overflow-y-auto">
+        <div className="flex-1 md:w-80 lg:w-96 md:flex-none bg-neutral-900 border-t md:border-t-0 md:border-l border-white/10 p-4 sm:p-6 md:p-8 flex flex-col gap-5 sm:gap-6 md:gap-10 overflow-y-auto">
           
           <div>
-            <h3 className="text-white text-sm md:text-lg font-light mb-3 tracking-wide flex justify-between items-end">
+            <h3 className="text-white text-sm md:text-lg font-light mb-2.5 tracking-wide flex justify-between items-end">
               Print Width 
-              <span className="font-mono text-white text-lg border-b border-white/30 pb-1">{size}"</span>
+              <span className="font-mono text-white text-base sm:text-lg border-b border-white/30 pb-0.5">{size}&quot;</span>
             </h3>
             <input 
               type="range" 
@@ -93,18 +93,18 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
               step="2"
               value={size}
               onChange={(e) => setSize(e.target.value)}
-              className="w-full accent-white h-1 bg-neutral-700 rounded-none appearance-none cursor-pointer"
+              className="w-full accent-white h-2 bg-neutral-700 rounded-none appearance-none cursor-pointer"
             />
           </div>
 
           <div>
-            <h3 className="text-white text-sm md:text-lg font-light mb-3 tracking-wide">Presentation</h3>
-            <div className="flex flex-col gap-2">
+            <h3 className="text-white text-sm md:text-lg font-light mb-2.5 tracking-wide">Presentation</h3>
+            <div className="grid grid-cols-2 md:flex md:flex-col gap-2">
               {FRAMES.map(f => (
                 <button
                   key={f.id}
                   onClick={() => setFrame(f.id)}
-                  className={`px-3 py-2 text-left text-[10px] md:text-xs tracking-widest uppercase font-mono transition-colors ${frame === f.id ? 'bg-white text-black font-semibold' : 'bg-black text-neutral-400 hover:text-white border border-white/5'}`}
+                  className={`px-3 py-2.5 text-center md:text-left text-[10px] md:text-xs tracking-widest uppercase font-mono transition-colors ${frame === f.id ? 'bg-white text-black font-semibold' : 'bg-black text-neutral-400 hover:text-white border border-white/10'}`}
                 >
                   {f.name}
                 </button>

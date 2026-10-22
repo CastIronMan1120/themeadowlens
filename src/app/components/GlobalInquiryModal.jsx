@@ -78,24 +78,26 @@ export default function GlobalInquiryModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
         onClick={closeModal}
       />
       
-      <div className="relative bg-neutral-900 border border-white/10 w-full max-w-xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div className="relative bg-neutral-900 border border-white/10 w-full max-w-xl p-5 sm:p-8 shadow-2xl overflow-y-auto max-h-[92vh] rounded-sm">
         <button 
+          type="button"
+          aria-label="Close Inquiry Modal"
           onClick={closeModal}
-          className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 text-neutral-400 hover:text-white transition-colors p-1"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <h2 className="text-2xl font-light text-white mb-2 uppercase tracking-widest">Private Inquiry</h2>
-        <p className="text-neutral-400 text-sm mb-8 font-mono">Contact the studio for acquisitions and commissions.</p>
+        <h2 className="text-xl sm:text-2xl font-light text-white mb-2 uppercase tracking-widest pr-8">Private Inquiry</h2>
+        <p className="text-neutral-400 text-xs sm:text-sm mb-6 sm:mb-8 font-mono">Contact the studio for acquisitions and comments.</p>
 
         {status === 'success' ? (
           <div className="py-12 text-center">
