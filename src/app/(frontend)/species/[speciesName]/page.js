@@ -17,7 +17,7 @@ export default async function SpeciesPage({ params }) {
   const { speciesName } = await params
   const decodedSpecies = decodeURIComponent(speciesName)
 
-  const artworks = await client.fetch(`*[_type == "artwork" && species == $decodedSpecies && defined(category)] | order(_createdAt desc) {
+  const artworks = await client.fetch(`*[_type == "artwork" && lower(species) == lower($decodedSpecies) && defined(category)] | order(_createdAt desc) {
     _id,
     title,
     displayTitle,

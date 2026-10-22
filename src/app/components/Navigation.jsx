@@ -27,7 +27,7 @@ export default function Navigation({ categories }) {
     <>
       <nav 
         className={`fixed w-full z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          scrolled ? 'bg-black/80 backdrop-blur-xl border-b border-white/5 py-4' : 'bg-transparent py-8 md:py-12'
+          scrolled ? 'bg-black/85 backdrop-blur-xl py-4' : 'bg-transparent py-8 md:py-12'
         }`}
       >
         <div className="max-w-[2000px] mx-auto px-6 md:px-12 flex items-center justify-between">

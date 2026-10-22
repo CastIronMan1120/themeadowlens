@@ -62,15 +62,40 @@ export function VenueGridManager({
         "parentId": parentCategory._ref,
         "parentTitle": parentCategory->title,
         "parentSlug": parentCategory->slug.current,
-        "photoCount": count(*[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id || category->parentCategory._ref == ^._id)])
+        "photoCount": count(*[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id)]),
+        "subVenuePhotoCount": count(*[_type == "artwork" && category->parentCategory._ref == ^._id])
       }`);
       setCategories(cats);
+
+      // If the user clicked the '+' button in Sanity Structure to create a new Root Venue or Sub-Venue,
+      // cleanDocId will be a brand-new ID not yet in categories (or lacking a title). Automatically open the Add/Edit Venue Modal!
+      if (cleanDocId) {
+        const existingCat = cats.find(
+          (c) => c._id === cleanDocId || c._id === `drafts.${cleanDocId}`
+        );
+        if (!existingCat || !existingCat.title) {
+          setEditingVenue((prev) =>
+            prev && prev._id === cleanDocId
+              ? prev
+              : {
+                  _id: cleanDocId,
+                  isNew: true,
+                  title: existingCat?.title || '',
+                  slug: existingCat?.slug || '',
+                  parentId: existingCat?.parentId || '',
+                  speciesDescription: existingCat?.speciesDescription || '',
+                  seo: existingCat?.seo || {},
+                }
+          );
+        }
+      }
 
       let artQuery = '';
       let params = {};
       const projection = `{
         _id,
         title,
+        fileName,
         slug,
         _createdAt,
         image,
@@ -100,7 +125,7 @@ export function VenueGridManager({
       } else if (viewMode === 'all') {
         artQuery = `*[_type == "artwork"] ${projection}`;
       } else if (viewMode === 'venue' && activeVenueId) {
-        artQuery = `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId || category->parentCategory._ref == $venueId)] ${projection}`;
+        artQuery = `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId)] ${projection}`;
         params = { venueId: activeVenueId };
       } else {
         setArtworks([]);
@@ -115,7 +140,7 @@ export function VenueGridManager({
     } finally {
       setIsProcessing(false);
     }
-  }, [client, viewMode, activeVenueId]);
+  }, [client, viewMode, activeVenueId, cleanDocId]);
 
   useEffect(() => {
     fetchData();
@@ -137,13 +162,14 @@ export function VenueGridManager({
       list = list.filter(
         (a) =>
           (a.title || '').toLowerCase().includes(q) ||
+          (a.displayTitle || '').toLowerCase().includes(q) ||
           (a.categoryTitle || '').toLowerCase().includes(q) ||
           (a.species || '').toLowerCase().includes(q)
       );
     }
     return list.sort((a, b) => {
-      if (sortOrder === 'az') return (a.title || '').localeCompare(b.title || '');
-      if (sortOrder === 'za') return (b.title || '').localeCompare(a.title || '');
+      if (sortOrder === 'az') return (a.displayTitle || a.title || '').localeCompare(b.displayTitle || b.title || '');
+      if (sortOrder === 'za') return (b.displayTitle || b.title || '').localeCompare(a.displayTitle || a.title || '');
       if (sortOrder === 'oldest') return new Date(a._createdAt) - new Date(b._createdAt);
       return new Date(b._createdAt) - new Date(a._createdAt);
     });
@@ -173,7 +199,31 @@ export function VenueGridManager({
     '-' +
     Math.random().toString(36).substring(2, 6);
 
-  // --- 1. UPLOAD NEW PHOTOS TO WAREHOUSE ---
+  const makeCleanVenueSlug = (str) =>
+    (str || 'venue')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+  // Helper to derive Picture Title (Caption), Species, and Year from the front of the filename
+  // up to, but not including, the 2-digit year prefix (e.g. "American Goldfinch 24-PA031058 Edit.jpg" -> "American Goldfinch", year "2024")
+  const extractPhotoMetadataFromFilename = (rawFilename) => {
+    const rawBaseName = (rawFilename || '').replace(/\.[^/.]+$/, '').trim();
+    const yearPrefixMatch = rawBaseName.match(/^(.+?)\s+(\d{2})-[A-Za-z0-9]/);
+    if (yearPrefixMatch && yearPrefixMatch[1].trim().length > 0) {
+      const cleanCaption = yearPrefixMatch[1].trim();
+      const yy = parseInt(yearPrefixMatch[2], 10);
+      const fullYear = yy >= 70 ? `19${yearPrefixMatch[2]}` : `20${yearPrefixMatch[2]}`;
+      return { cleanCaption, year: fullYear, rawBaseName };
+    }
+    const studyMatch = rawBaseName.match(/^(.+?)\s+-\s+Study/i);
+    if (studyMatch && studyMatch[1].trim().length > 0) {
+      return { cleanCaption: studyMatch[1].trim(), year: '', rawBaseName };
+    }
+    return { cleanCaption: rawBaseName, year: '', rawBaseName };
+  };
+
+  // --- 1. UPLOAD NEW PHOTOS TO WAREHOUSE (OR ACTIVE VENUE) ---
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -184,8 +234,11 @@ export function VenueGridManager({
     const skippedFiles = [];
 
     for (const file of files) {
-      const title = file.name.replace(/\.[^/.]+$/, '');
-      const exists = await client.fetch(`count(*[_type == "artwork" && title == $title])`, { title });
+      const { cleanCaption, year, rawBaseName } = extractPhotoMetadataFromFilename(file.name);
+      const exists = await client.fetch(
+        `count(*[_type == "artwork" && (fileName == $fileName || title == $rawBaseName)])`,
+        { fileName: file.name, rawBaseName }
+      );
       if (exists > 0) {
         skippedCount++;
         skippedFiles.push(file.name);
@@ -203,8 +256,13 @@ export function VenueGridManager({
         await client.create({
           _id: targetCategoryRef ? draftId.replace(/^drafts\./, '') : draftId,
           _type: 'artwork',
-          title,
-          slug: { _type: 'slug', current: makeSlug(title) },
+          title: cleanCaption,
+          displayTitle: cleanCaption,
+          caption: cleanCaption,
+          species: cleanCaption,
+          ...(year ? { year } : {}),
+          fileName: file.name,
+          slug: { _type: 'slug', current: makeSlug(cleanCaption) },
           image: { _type: 'image', asset: { _ref: asset._id } },
           ...(targetCategoryRef ? { category: targetCategoryRef } : {}),
         });
@@ -218,7 +276,7 @@ export function VenueGridManager({
     fetchData();
     e.target.value = null;
 
-    let msg = `Upload Complete!\nSuccessfully uploaded: ${uploadedCount} photos.`;
+    let msg = `Upload Complete!\nSuccessfully uploaded: ${uploadedCount} photo(s) with automatic front-of-file caption extraction.`;
     if (skippedCount > 0) {
       msg +=
         `\nSkipped ${skippedCount} duplicates:\n` +
@@ -581,13 +639,15 @@ export function VenueGridManager({
     }
   };
 
-  // --- 9. SAVE & PUBLISH VENUE PAGE & SEO DETAILS ---
+  // --- 9. CREATE, RENAME, OR SAVE & PUBLISH VENUE / SUB-VENUE DETAILS ---
   const handleSaveVenueDetails = async (e) => {
     e.preventDefault();
-    if (!editingVenue) return;
+    if (!editingVenue || !editingVenue.title?.trim()) return;
 
     setIsProcessing(true);
     try {
+      const cleanTitle = editingVenue.title.trim();
+      const finalSlug = makeCleanVenueSlug(editingVenue.slug || cleanTitle);
       const keywordsArray = Array.isArray(editingVenue.seo?.keywords)
         ? editingVenue.seo.keywords
         : typeof editingVenue.seo?.keywords === 'string'
@@ -597,23 +657,58 @@ export function VenueGridManager({
             .filter(Boolean)
         : [];
 
-      const patchData = {
-        title: editingVenue.title,
+      const rawId =
+        editingVenue._id ||
+        (crypto.randomUUID
+          ? `cat-${crypto.randomUUID()}`
+          : `cat-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`);
+      const cleanVenueId = rawId.replace(/^drafts\./, '');
+      const existingDoc = await client.fetch(`*[_id == $id][0]`, { id: cleanVenueId });
+
+      const docData = {
+        title: cleanTitle,
+        slug: { _type: 'slug', current: finalSlug },
         speciesDescription: editingVenue.speciesDescription || '',
         seo: {
-          metaTitle: editingVenue.seo?.metaTitle || `${editingVenue.title} | The Meadow Lens`,
+          metaTitle: editingVenue.seo?.metaTitle || `${cleanTitle} | The Meadow Lens`,
           metaDescription:
             editingVenue.seo?.metaDescription ||
             (editingVenue.speciesDescription || '').slice(0, 158),
           keywords: keywordsArray,
         },
+        ...(editingVenue.parentId
+          ? { parentCategory: { _type: 'reference', _ref: editingVenue.parentId } }
+          : {}),
       };
 
-      const cleanVenueId = editingVenue._id.replace(/^drafts\./, '');
-      await client.patch(cleanVenueId).set(patchData).commit();
+      const tx = client.transaction();
+      if (!existingDoc || editingVenue.isNew) {
+        tx.createOrReplace({
+          ...(existingDoc || {}),
+          _id: cleanVenueId,
+          _type: 'category',
+          ...docData,
+        });
+        tx.delete(`drafts.${cleanVenueId}`);
+      } else {
+        let patch = client.patch(cleanVenueId).set(docData);
+        if (!editingVenue.parentId) {
+          patch = patch.unset(['parentCategory']);
+        }
+        tx.patch(patch);
+        tx.delete(`drafts.${cleanVenueId}`);
+      }
+
+      await tx.commit();
       setEditingVenue(null);
+      setViewMode('venue');
+      setActiveVenueId(cleanVenueId);
       await fetchData();
-      window.alert(`Venue page "${editingVenue.title}" optimized & published live!`);
+      window.alert(
+        editingVenue.isNew
+          ? `Created & Published New ${editingVenue.parentId ? 'Sub-Venue' : 'Root Venue'}: "${cleanTitle}"!`
+          : `Saved & Published Venue "${cleanTitle}" Live!`
+      );
     } catch (error) {
       console.error('Error saving venue details:', error);
       window.alert('Error saving venue details: ' + error.message);
@@ -782,8 +877,37 @@ export function VenueGridManager({
               {viewMode === 'venue' &&
                 (activeVenueObj
                   ? `${activeVenueObj.parentTitle ? `${activeVenueObj.parentTitle} ▸ ` : ''}${activeVenueObj.title}`
-                  : 'Venue / Sub-Venue Photo Manager')}
+                  : 'New Venue / Sub-Venue Setup')}
             </h1>
+
+            {viewMode === 'venue' && !activeVenueObj && (
+              <button
+                type="button"
+                onClick={() =>
+                  setEditingVenue({
+                    isNew: true,
+                    _id: cleanDocId || '',
+                    title: '',
+                    slug: '',
+                    parentId: '',
+                    speciesDescription: '',
+                    seo: {},
+                  })
+                }
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#7c3aed',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                }}
+              >
+                ➕ Enter New Venue / Sub-Venue Details
+              </button>
+            )}
 
             {viewMode === 'venue' && activeVenueObj && (
               <>
@@ -811,7 +935,12 @@ export function VenueGridManager({
 
                 <button
                   type="button"
-                  onClick={() => setEditingVenue({ ...activeVenueObj })}
+                  onClick={() =>
+                    setEditingVenue({
+                      ...activeVenueObj,
+                      isNew: false,
+                    })
+                  }
                   style={{
                     padding: '0.45rem 0.9rem',
                     background: '#1d4ed8',
@@ -823,8 +952,38 @@ export function VenueGridManager({
                     fontSize: '0.8rem',
                   }}
                 >
-                  ✨ Optimize Venue Page & SEO
+                  ✏️ Rename / Edit Venue & SEO
                 </button>
+
+                {!activeVenueObj.parentId && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingVenue({
+                        isNew: true,
+                        _id: '',
+                        title: '',
+                        slug: '',
+                        parentId: activeVenueObj._id,
+                        parentTitle: activeVenueObj.title,
+                        speciesDescription: '',
+                        seo: {},
+                      })
+                    }
+                    style={{
+                      padding: '0.45rem 0.9rem',
+                      background: '#7c3aed',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                    }}
+                  >
+                    ➕ Add Sub-Venue to &ldquo;{activeVenueObj.title}&rdquo;
+                  </button>
+                )}
 
                 <button
                   onClick={() => handleDeleteVenue(activeVenueObj._id)}
@@ -856,10 +1015,90 @@ export function VenueGridManager({
                 ? 'Curated By Invitation Only: Upload & publish photos from invited Facebook / nature photographers with full attribution, social link, and 1-click Facebook share note.'
                 : 'Check any photos in this venue to Move-To, Copy-To, Decategorize (send back to Warehouse), or Delete.')}
           </p>
+
+          {viewMode === 'venue' &&
+            activeVenueObj &&
+            !activeVenueObj.parentId &&
+            categories.some((c) => c.parentId === activeVenueObj._id) && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    color: '#334155',
+                    marginBottom: '0.45rem',
+                  }}
+                >
+                  📂 Sub-Venues of {activeVenueObj.title} (Photos live inside these Sub-Venues so the Root Venue page is never duplicated):
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                  {categories
+                    .filter((c) => c.parentId === activeVenueObj._id)
+                    .map((sub) => (
+                      <button
+                        key={sub._id}
+                        type="button"
+                        onClick={() => {
+                          setViewMode('venue');
+                          setActiveVenueId(sub._id);
+                          setSelectedArtworks(new Set());
+                        }}
+                        style={{
+                          padding: '0.35rem 0.7rem',
+                          borderRadius: '6px',
+                          border: '1px solid #94a3b8',
+                          background: '#ffffff',
+                          color: '#0f172a',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {sub.title} ({sub.photoCount || 0})
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
         </div>
 
         {/* UPLOAD & VENUE DELETION TOGGLE */}
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() =>
+              setEditingVenue({
+                isNew: true,
+                _id: '',
+                title: '',
+                slug: '',
+                parentId: viewMode === 'venue' && activeVenueObj && !activeVenueObj.parentId ? activeVenueObj._id : '',
+                speciesDescription: '',
+                seo: {},
+              })
+            }
+            style={{
+              padding: '0.7rem 1.1rem',
+              background: '#7c3aed',
+              color: '#ffffff',
+              border: '1px solid #6d28d9',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+            }}
+          >
+            ➕ Add Venue / Sub-Venue
+          </button>
+
           <button
             type="button"
             onClick={() => setShowAddGuestModal(true)}
@@ -891,7 +1130,7 @@ export function VenueGridManager({
               fontSize: '0.85rem',
             }}
           >
-            {showVenueDeletionPanel ? 'Close Venue Cleanup Manager' : 'Manage / Delete Venues & Sub-Venues'}
+            {showVenueDeletionPanel ? 'Close Venue Manager' : 'Manage / Rename / Delete Venues'}
           </button>
 
           <input
@@ -925,29 +1164,55 @@ export function VenueGridManager({
         </div>
       </div>
 
-      {/* COLLAPSIBLE ROOT VENUE & SUB-VENUE DELETION PANEL */}
+      {/* COLLAPSIBLE ROOT VENUE & SUB-VENUE MANAGEMENT PANEL */}
       {showVenueDeletionPanel && (
         <div
           style={{
-            background: '#fff1f2',
-            border: '1px solid #fecdd3',
+            background: '#f8fafc',
+            border: '1px solid #cbd5e1',
             borderRadius: '10px',
             padding: '1.25rem',
             marginBottom: '1.5rem',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div>
-              <h3 style={{ margin: 0, color: '#9f1239', fontSize: '1.05rem' }}>
-                Root Venue & Sub-Venue Deletion Manager
+              <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.05rem' }}>
+                Root Venue & Sub-Venue Manager (Add, Rename, or Delete)
               </h3>
-              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#881337' }}>
-                Click any Root Venue or Sub-Venue below to view its photos, or click the red <strong>Delete</strong> button to permanently remove it.
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#475569' }}>
+                Click any Root Venue or Sub-Venue below to view its photos, click <strong>✏️ Rename</strong> to rename/edit it, or click <strong>Delete</strong> to remove it.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() =>
+                setEditingVenue({
+                  isNew: true,
+                  _id: '',
+                  title: '',
+                  slug: '',
+                  parentId: '',
+                  speciesDescription: '',
+                  seo: {},
+                })
+              }
+              style={{
+                background: '#7c3aed',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '0.5rem 0.9rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              ➕ Add New Root Venue or Sub-Venue
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.6rem', maxHeight: '340px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '0.6rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25rem' }}>
             {categories.map((cat) => (
               <div
                 key={cat._id}
@@ -958,8 +1223,9 @@ export function VenueGridManager({
                   background: '#ffffff',
                   padding: '0.5rem 0.75rem',
                   borderRadius: '6px',
-                  border: '1px solid #fda4af',
+                  border: '1px solid #cbd5e1',
                   fontSize: '0.85rem',
+                  gap: '0.4rem',
                 }}
               >
                 <div
@@ -967,7 +1233,7 @@ export function VenueGridManager({
                     setViewMode('venue');
                     setActiveVenueId(cat._id);
                   }}
-                  style={{ cursor: 'pointer', flex: 1, paddingRight: '0.5rem' }}
+                  style={{ cursor: 'pointer', flex: 1, paddingRight: '0.35rem' }}
                   title="Click to inspect photos in this venue"
                 >
                   <div style={{ fontWeight: 600, color: '#0f172a' }}>
@@ -978,22 +1244,41 @@ export function VenueGridManager({
                     {cat.parentTitle ? `Sub-Venue of ${cat.parentTitle}` : 'Root Venue'}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDeleteVenue(cat._id)}
-                  disabled={isProcessing}
-                  style={{
-                    background: '#ef4444',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '4px',
-                    padding: '0.35rem 0.65rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Delete
-                </button>
+                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingVenue({ ...cat, isNew: false })}
+                    disabled={isProcessing}
+                    style={{
+                      background: '#2563eb',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '0.35rem 0.55rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✏️ Rename
+                  </button>
+                  <button
+                    onClick={() => handleDeleteVenue(cat._id)}
+                    disabled={isProcessing}
+                    style={{
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '0.35rem 0.55rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -2094,7 +2379,7 @@ export function VenueGridManager({
         </div>
       )}
 
-      {/* INLINE VENUE PAGE & SEO OPTIMIZER MODAL */}
+      {/* INLINE ADD / RENAME / EDIT VENUE & SEO MODAL */}
       {editingVenue && (
         <div
           onClick={() => setEditingVenue(null)}
@@ -2107,6 +2392,7 @@ export function VenueGridManager({
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1.25rem',
+            overflowY: 'auto',
           }}
         >
           <div
@@ -2114,15 +2400,19 @@ export function VenueGridManager({
             style={{
               background: '#ffffff',
               borderRadius: '12px',
-              maxWidth: '640px',
+              maxWidth: '660px',
               width: '100%',
               padding: '1.75rem',
               boxShadow: '0 20px 45px rgba(0,0,0,0.35)',
+              maxHeight: '92vh',
+              overflowY: 'auto',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
-                Optimize Venue Page & SEO: {editingVenue.title}
+                {editingVenue.isNew
+                  ? '➕ Add New Root Venue or Sub-Venue'
+                  : `✏️ Rename / Edit Venue & SEO: ${editingVenue.title}`}
               </h2>
               <button
                 type="button"
@@ -2134,16 +2424,90 @@ export function VenueGridManager({
             </div>
 
             <form onSubmit={handleSaveVenueDetails} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Venue / Sub-Venue Title *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Shorebirds or Flora"
+                    value={editingVenue.title || ''}
+                    onChange={(e) => {
+                      const nextTitle = e.target.value;
+                      setEditingVenue((prev) => ({
+                        ...prev,
+                        title: nextTitle,
+                        slug: prev.isNew ? toSlug(nextTitle) : prev.slug,
+                      }));
+                    }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
+                    Venue Hierarchy (Root vs Sub-Venue)
+                  </label>
+                  <select
+                    value={editingVenue.parentId || ''}
+                    onChange={(e) => {
+                      const nextParentId = e.target.value;
+                      const parentObj = categories.find((c) => c._id === nextParentId);
+                      setEditingVenue({
+                        ...editingVenue,
+                        parentId: nextParentId || null,
+                        parentTitle: parentObj ? parentObj.title : null,
+                      });
+                    }}
+                    style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', background: '#fff' }}
+                  >
+                    <option value="">★ Root Venue (Top-Level Gallery)</option>
+                    {categories
+                      .filter((c) => !c.parentId && c._id !== editingVenue._id)
+                      .map((rootCat) => (
+                        <option key={rootCat._id} value={rootCat._id}>
+                          ↳ Sub-Venue of: {rootCat.title}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>
-                  Venue / Sub-Venue Title
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
+                    URL Slug (Used in `/category/...`)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingVenue({
+                        ...editingVenue,
+                        slug: toSlug(editingVenue.title || ''),
+                      })
+                    }
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      padding: '0.2rem 0.55rem',
+                      fontSize: '0.73rem',
+                      fontWeight: 600,
+                      color: '#334155',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ↻ Match New Title
+                  </button>
+                </div>
                 <input
                   type="text"
-                  value={editingVenue.title || ''}
-                  onChange={(e) => setEditingVenue({ ...editingVenue, title: e.target.value })}
-                  style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
-                  required
+                  placeholder="auto-generated-from-title"
+                  value={editingVenue.slug || ''}
+                  onChange={(e) => setEditingVenue({ ...editingVenue, slug: toSlug(e.target.value) })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontFamily: 'monospace' }}
                 />
               </div>
 
@@ -2271,7 +2635,11 @@ export function VenueGridManager({
                   disabled={isProcessing}
                   style={{ padding: '0.65rem 1.35rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
                 >
-                  {isProcessing ? 'Saving...' : 'Save & Publish Venue Page'}
+                  {isProcessing
+                    ? 'Saving...'
+                    : editingVenue.isNew
+                    ? 'Create & Publish Venue'
+                    : 'Save Venue Changes'}
                 </button>
               </div>
             </form>

@@ -12,12 +12,18 @@ export default async function BirdIndexPage() {
   // Fetch all defined species from published/categorized artworks
   const rawSpecies = await client.fetch(`*[_type == "artwork" && defined(species) && defined(category)].species`)
   
-  // Count occurrences per species
+  // Count occurrences per species (case-insensitive canonical deduplication)
+  const canonicalMap = {}
   const speciesCounts = rawSpecies.reduce((acc, s) => {
     if (!s) return acc
     const clean = s.trim()
     if (!clean) return acc
-    acc[clean] = (acc[clean] || 0) + 1
+    const key = clean.toLowerCase()
+    if (!canonicalMap[key]) {
+      canonicalMap[key] = clean
+    }
+    const label = canonicalMap[key]
+    acc[label] = (acc[label] || 0) + 1
     return acc
   }, {})
 
@@ -33,26 +39,37 @@ export default async function BirdIndexPage() {
   }, {})
 
   const letters = Object.keys(groupedSpecies).sort()
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
   return (
     <main className="min-h-screen pt-40 md:pt-[240px] pb-24 px-8 sm:px-12 md:px-24 max-w-7xl mx-auto">
       <div className="mb-12">
         <h1 className="text-4xl md:text-5xl font-light text-white tracking-wide mb-4">Species Index</h1>
         <p className="text-neutral-400 font-mono uppercase tracking-widest text-sm">
-          A comprehensive glossary of {uniqueSpecies.length} subjects currently in the repertoire.
+          A comprehensive A–Z glossary of {uniqueSpecies.length} biological subjects currently in the repertoire.
         </p>
 
         {letters.length > 0 && (
           <div className="mt-8 flex flex-wrap gap-2 border-y border-white/10 py-4">
-            {letters.map((letter) => (
-              <a
-                key={letter}
-                href={`#letter-${letter}`}
-                className="w-8 h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-400 hover:text-white hover:bg-white/10 border border-white/5 transition-colors"
-              >
-                {letter}
-              </a>
-            ))}
+            {alphabet.map((letter) => {
+              const hasEntries = Boolean(groupedSpecies[letter]?.length)
+              return hasEntries ? (
+                <a
+                  key={letter}
+                  href={`#letter-${letter}`}
+                  className="w-8 h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-300 hover:text-white hover:bg-white/10 border border-white/15 transition-colors"
+                >
+                  {letter}
+                </a>
+              ) : (
+                <span
+                  key={letter}
+                  className="w-8 h-8 flex items-center justify-center text-xs font-mono uppercase tracking-widest text-neutral-700 border border-white/5 select-none"
+                >
+                  {letter}
+                </span>
+              )
+            })}
           </div>
         )}
       </div>

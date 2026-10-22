@@ -56,14 +56,16 @@ export default async function CategoryPage({ params }) {
   }`
   const subcategories = await client.fetch(subcategoriesQuery, { currentSlug })
 
-  const groqConditions = `_type == "artwork" && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug || category->parentCategory->slug.current == $currentSlug)`
+  const isRootWithSubvenues = !subcategorySlug && subcategories.length > 0
+
+  const groqConditions = `_type == "artwork" && !(_id in path("drafts.**")) && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)`
   const artworksQuery = `*[${groqConditions}] | order(_createdAt desc) {
     ...,
     "imageUrl": image.asset->url
   }`
   
   let artworks = []
-  if (category) {
+  if (category && !isRootWithSubvenues) {
     artworks = await client.fetch(artworksQuery, { currentSlug })
   }
 
