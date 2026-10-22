@@ -8,45 +8,86 @@ import ImageZoom from '../../../components/ImageZoom'
 
 export const revalidate = 0
 
-// Dynamic SEO Metadata Generation for Facebook/Social Sharing
+function extractStudyCode(artwork) {
+  const source = `${artwork?.fileName || ''} ${artwork?.title || ''} ${artwork?.slug?.current || ''}`
+  const match = source.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i)
+  if (match && match[1]) {
+    return match[1].slice(-4)
+  }
+  const cleanId = (artwork?._id || '').replace(/^drafts\./, '')
+  return cleanId.slice(-4).toUpperCase() || '0001'
+}
+
+// Dynamic SEO Metadata Generation for Google Indexing & Social Sharing
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const artwork = await client.fetch(`*[_type == "artwork" && slug.current == $slug][0]`, { slug })
-  
+  const artwork = await client.fetch(
+    `*[_type == "artwork" && slug.current == $slug][0]{
+      ...,
+      "categoryTitle": category->title,
+      "parentCategoryTitle": category->parentCategory->title
+    }`,
+    { slug }
+  )
+
   if (!artwork) return {}
 
-  const cleanTitle = artwork.displayTitle || artwork.title
+  const cleanTitle = (artwork.displayTitle || artwork.title || 'Fine Art Photograph').trim()
+  const studyCode = extractStudyCode(artwork)
+  const venueLabel = artwork.categoryTitle || artwork.parentCategoryTitle || 'The Meadowlands'
+  const yearLabel = artwork.year ? `${artwork.year} ` : ''
+  const locationLabel = artwork.location || 'The New Jersey Meadowlands (Exit 16W, Atlantic Flyway)'
   const imageUrl = artwork.image ? urlForImage(artwork.image).width(1200).height(630).url() : ''
-  const dynamicKeywords = [
-    cleanTitle,
-    artwork.guestPhotographer,
-    artwork.species,
-    artwork.dominantColor,
-    artwork.location,
-    'Fine Art Photography',
-    'The Meadow Lens',
-  ].filter(Boolean)
+
+  const dynamicKeywords = Array.from(
+    new Set(
+      [
+        cleanTitle,
+        `${cleanTitle} ${venueLabel}`,
+        `${cleanTitle} Study ${studyCode}`,
+        artwork.species && `${artwork.species} Photography`,
+        artwork.species && `${artwork.species} Fine Art Print`,
+        venueLabel,
+        artwork.parentCategoryTitle,
+        artwork.guestPhotographer,
+        artwork.dominantColor,
+        locationLabel,
+        artwork.year && `${artwork.year} Wildlife Photography`,
+        'The Meadowlands',
+        'Atlantic Flyway',
+        'David McClure Fine Art Photography',
+        'The Meadow Lens',
+      ].filter(Boolean)
+    )
+  )
 
   const defaultTitle = artwork.guestPhotographer
-    ? `Featured Guest Artist: ${artwork.guestPhotographer} — "${cleanTitle}" | The Meadow Lens`
-    : `${cleanTitle} | The Meadow Lens`
+    ? `${cleanTitle} by Guest Artist ${artwork.guestPhotographer} (${venueLabel}, Study #${studyCode}) | The Meadow Lens`
+    : `${cleanTitle} — ${venueLabel} (${yearLabel}Study #${studyCode}) | Fine Art Print | The Meadow Lens`
 
+  const captionSnippet = artwork.caption ? ` ${artwork.caption.trim()}` : ''
   const defaultDesc = artwork.guestPhotographer
-    ? artwork.guestNote || `Featured Guest Photo by ${artwork.guestPhotographer}, curated by invitation on The Meadow Lens by David McClure.`
-    : `Experience the story behind "${cleanTitle}" by David McClure. High-end fine art photography.`
+    ? artwork.guestNote ||
+      `Featured Guest Photograph "${cleanTitle}" (Study #${studyCode}) by ${artwork.guestPhotographer}, curated by invitation in the ${venueLabel} exhibition on The Meadow Lens by David McClure.`
+    : `Collector fine art photograph "${cleanTitle}" (${yearLabel}${venueLabel} Exhibition, Study #${studyCode}) captured in ${locationLabel} by David McClure.${captionSnippet} Available for private inquiry and interactive room preview.`
 
   const metaTitle = artwork.seo?.metaTitle || defaultTitle
   const metaDesc = artwork.seo?.metaDescription || defaultDesc
   const keywords = artwork.seo?.keywords?.length > 0 ? artwork.seo.keywords : dynamicKeywords
+  const canonicalPath = `/art/${slug}`
 
   return {
     title: metaTitle,
     description: metaDesc,
     keywords: keywords,
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
       title: metaTitle,
       description: metaDesc,
-      images: imageUrl ? [{ url: imageUrl }] : [],
+      url: canonicalPath,
+      images: imageUrl ? [{ url: imageUrl, alt: cleanTitle }] : [],
       type: 'website',
     },
   }
@@ -89,13 +130,89 @@ export default async function ArtworkPage({ params }) {
   const isAcquired = status === 'acquired'
 
   // Social Share URLs
-  const pageUrl = encodeURIComponent(`https://themeadowlens.com/art/${slug}`)
+  const canonicalUrl = `https://themeadowlens.com/art/${slug}`
+  const pageUrl = encodeURIComponent(canonicalUrl)
+  const fullImageUrl = artwork.image ? urlForImage(artwork.image).width(2000).quality(90).auto('format').url() : ''
   const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`
   const xShareUrl = `https://twitter.com/intent/tweet?url=${pageUrl}&text=${encodeURIComponent(artwork.guestPhotographer ? `Featured Guest Photo by ${artwork.guestPhotographer} on The Meadow Lens:` : 'Experience this stunning piece by The Meadow Lens:')}`
-  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(cleanTitle)}`
+  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(fullImageUrl)}&description=${encodeURIComponent(cleanTitle)}`
+
+  const studyCode = extractStudyCode(artwork)
+  const venueLabel = artwork.categoryTitle || artwork.parentCategoryTitle || 'The Meadowlands'
+  const structuredData = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'VisualArtwork',
+      name: `${cleanTitle} (Study #${studyCode})`,
+      alternateName: cleanTitle,
+      artMedium: 'Fine Art Photography',
+      artform: 'Photograph',
+      url: canonicalUrl,
+      image: fullImageUrl || undefined,
+      description:
+        artwork.seo?.metaDescription ||
+        artwork.caption ||
+        `Collector fine art wildlife and nature photograph "${cleanTitle}" (${venueLabel}, Study #${studyCode}) by ${artwork.guestPhotographer || 'David McClure'}.`,
+      creator: {
+        '@type': 'Person',
+        name: artwork.guestPhotographer || 'David McClure',
+      },
+      copyrightHolder: {
+        '@type': 'Person',
+        name: artwork.guestPhotographer || 'David McClure',
+      },
+      ...(artwork.year ? { dateCreated: String(artwork.year) } : {}),
+      ...(artwork.location ? { contentLocation: { '@type': 'Place', name: artwork.location } } : {}),
+      ...(artwork.species ? { about: { '@type': 'Thing', name: artwork.species } } : {}),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: 'https://themeadowlens.com/',
+        },
+        ...(artwork.parentCategorySlug
+          ? [
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: artwork.parentCategoryTitle,
+                item: `https://themeadowlens.com/category/${artwork.parentCategorySlug}`,
+              },
+            ]
+          : []),
+        ...(artwork.categorySlug
+          ? [
+              {
+                '@type': 'ListItem',
+                position: artwork.parentCategorySlug ? 3 : 2,
+                name: artwork.categoryTitle,
+                item: artwork.parentCategorySlug
+                  ? `https://themeadowlens.com/category/${artwork.parentCategorySlug}/${artwork.categorySlug}`
+                  : `https://themeadowlens.com/category/${artwork.categorySlug}`,
+              },
+            ]
+          : []),
+        {
+          '@type': 'ListItem',
+          position: (artwork.parentCategorySlug ? 2 : 1) + (artwork.categorySlug ? 2 : 1),
+          name: cleanTitle,
+          item: canonicalUrl,
+        },
+      ],
+    },
+  ]
 
   return (
     <main className="min-h-screen pt-6 sm:pt-8 md:pt-10 pb-12 px-4 sm:px-8 md:px-24 max-w-[2000px] mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       
       {/* 1. SEO Industry Standard Breadcrumbs */}
       <nav className="mb-6 sm:mb-12 text-xs sm:text-sm text-neutral-500 uppercase tracking-wider sm:tracking-widest font-mono flex items-center justify-between">

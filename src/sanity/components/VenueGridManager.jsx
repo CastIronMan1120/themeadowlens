@@ -252,6 +252,14 @@ export function VenueGridManager({
           viewMode === 'venue' && activeVenueId
             ? { _type: 'reference', _ref: activeVenueId }
             : undefined;
+        const venueObj = activeVenueId ? categories.find((c) => c._id === activeVenueId) : null;
+        const venueTitle = venueObj ? venueObj.title : 'The Meadowlands';
+        const studyMatch = file.name.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i);
+        const studyCode =
+          studyMatch && studyMatch[1]
+            ? studyMatch[1].slice(-4)
+            : draftId.replace(/^drafts\./, '').slice(-4).toUpperCase() || '0001';
+        const yearLabel = year ? `${year} ` : '';
 
         await client.create({
           _id: targetCategoryRef ? draftId.replace(/^drafts\./, '') : draftId,
@@ -260,10 +268,25 @@ export function VenueGridManager({
           displayTitle: cleanCaption,
           caption: cleanCaption,
           species: cleanCaption,
+          location: 'The Meadowlands, New Jersey',
           ...(year ? { year } : {}),
           fileName: file.name,
           slug: { _type: 'slug', current: makeSlug(cleanCaption) },
           image: { _type: 'image', asset: { _ref: asset._id } },
+          seo: {
+            metaTitle: `${cleanCaption} — ${venueTitle} (${yearLabel}Study #${studyCode}) | The Meadow Lens`,
+            metaDescription: `Collector fine art photograph "${cleanCaption}" (${yearLabel}${venueTitle} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`,
+            keywords: [
+              cleanCaption,
+              `${cleanCaption} ${venueTitle}`,
+              `${cleanCaption} Study ${studyCode}`,
+              venueTitle,
+              'The Meadowlands',
+              'Atlantic Flyway',
+              'David McClure',
+              'The Meadow Lens',
+            ],
+          },
           ...(targetCategoryRef ? { category: targetCategoryRef } : {}),
         });
         uploadedCount++;
@@ -508,9 +531,16 @@ export function VenueGridManager({
   const handleAutoOptimizeArtwork = () => {
     if (!editingArtwork) return;
     const raw = editingArtwork.title || '';
+    const fileSource = `${editingArtwork.fileName || ''} ${raw} ${editingArtwork.slug?.current || ''}`;
     // Extract 2-digit year if filename contains pattern like "19-P4067975" or "25-PA182180"
-    const yearMatch = raw.match(/\b(1[89]|2[0-9])-[A-Z0-9]{4,}/i);
+    const yearMatch = fileSource.match(/\b(1[89]|2[0-9])-[A-Z0-9]{4,}/i);
     const extractedYear = yearMatch ? `20${yearMatch[1]}` : editingArtwork.year || '';
+
+    // Extract 4-digit study/frame number for unique SEO differentiation across same-species photos
+    const studyMatch = fileSource.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i);
+    const studyCode = studyMatch && studyMatch[1]
+      ? studyMatch[1].slice(-4)
+      : (editingArtwork._id || '').replace(/^drafts\./, '').slice(-4).toUpperCase() || '0001';
 
     // Strip camera codes like "19-P4067975-Edit-Edit-gigapixel..."
     const cleanedTitle = raw
@@ -519,28 +549,35 @@ export function VenueGridManager({
       .trim() || raw;
 
     const cleanSlug =
-      cleanedTitle
+      editingArtwork.slug?.current ||
+      `${cleanedTitle
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '')
-        .slice(0, 80) || makeSlug(raw);
+        .slice(0, 72)}-${studyCode.toLowerCase()}`;
 
     const venueObj = categories.find((c) => c._id === editingArtwork.categoryId);
     const venueTitle = venueObj ? venueObj.title : 'Fine Art Nature';
-    const metaTitle = `${cleanedTitle.slice(0, 38)} | The Meadow Lens`;
-    const metaDescription = (
-      editingArtwork.caption ||
-      `${cleanedTitle} — Fine art photography in the ${venueTitle} collection captured by Northern NJ photographer David McClure.`
-    ).slice(0, 158);
+    const yearLabel = extractedYear ? `${extractedYear} ` : '';
+    const metaTitle = `${cleanedTitle} — ${venueTitle} (${yearLabel}Study #${studyCode}) | The Meadow Lens`;
+    const metaDescription = `Collector fine art photograph "${cleanedTitle}" (${yearLabel}${venueTitle} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`.slice(0, 160);
 
-    const autoKeywords = [
-      cleanedTitle,
-      editingArtwork.species,
-      venueTitle,
-      editingArtwork.location || 'NJ Meadowlands',
-      'David McClure',
-      'The Meadow Lens',
-    ].filter(Boolean);
+    const autoKeywords = Array.from(
+      new Set(
+        [
+          cleanedTitle,
+          `${cleanedTitle} ${venueTitle}`,
+          `${cleanedTitle} Study ${studyCode}`,
+          editingArtwork.species && `${editingArtwork.species} Photography`,
+          venueTitle,
+          editingArtwork.location || 'NJ Meadowlands',
+          extractedYear && `${extractedYear} Wildlife Photography`,
+          'Atlantic Flyway',
+          'David McClure',
+          'The Meadow Lens',
+        ].filter(Boolean)
+      )
+    );
 
     setEditingArtwork({
       ...editingArtwork,

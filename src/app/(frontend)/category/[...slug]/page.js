@@ -9,30 +9,69 @@ export async function generateMetadata({ params }) {
   const categorySlug = slug[0]
   const subcategorySlug = slug[1]
   const currentSlug = subcategorySlug || categorySlug
+  const canonicalPath = subcategorySlug ? `/category/${categorySlug}/${subcategorySlug}` : `/category/${categorySlug}`
 
   const query = `*[_type == "category" && slug.current == $currentSlug][0]{
     title,
     speciesDescription,
     seo,
+    "parentTitle": parentCategory->title,
+    "parentSlug": parentCategory->slug.current,
+    "subCount": count(*[_type == "category" && !(_id in path("drafts.**")) && parentCategory._ref == ^._id]),
+    "artCount": count(*[_type == "artwork" && !(_id in path("drafts.**")) && (category._ref == ^._id || subcategory._ref == ^._id || category->parentCategory._ref == ^._id)]),
     "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || category->parentCategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
   }`
   const data = await client.fetch(query, { currentSlug })
 
-  const title = data?.title || "Gallery"
+  const title = data?.title || 'Gallery'
+  const parentTitle = data?.parentTitle
   const seo = data?.seo
 
-  const metaTitle = seo?.metaTitle || `${title} | The Meadow Lens`
-  const metaDesc = seo?.metaDescription || data?.speciesDescription || `Explore the ${title} fine art photography collection by David McClure.`
-  const keywords = seo?.keywords?.length > 0 ? seo.keywords : [title, "Fine Art Photography", "The Meadowlands", "Nature Photography", "David McClure", "Gallery", "Exhibition"]
+  const defaultTitle = parentTitle
+    ? `${title} (${parentTitle} Exhibition) — Fine Art Photography | The Meadow Lens`
+    : `${title} — Fine Art Photography Exhibition | The Meadow Lens`
+
+  const defaultDesc =
+    data?.speciesDescription ||
+    (parentTitle
+      ? `Explore the ${title} fine art photography sub-venue within the ${parentTitle} collection (${data?.artCount || 0} curated works) captured in the New Jersey Meadowlands by David McClure.`
+      : `Explore the ${title} fine art photography venue (${data?.subCount ? `${data.subCount} sub-venues, ` : ''}${data?.artCount || 0} curated photographs) captured along Exit 16W of the Atlantic Flyway by David McClure.`)
+
+  const metaTitle = seo?.metaTitle || defaultTitle
+  const metaDesc = seo?.metaDescription || defaultDesc
+  const keywords =
+    seo?.keywords?.length > 0
+      ? seo.keywords
+      : Array.from(
+          new Set(
+            [
+              title,
+              `${title} Photography`,
+              `${title} Fine Art Prints`,
+              parentTitle,
+              parentTitle && `${parentTitle} ${title}`,
+              'The Meadowlands',
+              'Atlantic Flyway',
+              'Exit 16W',
+              'New Jersey Nature Photography',
+              'David McClure',
+              'The Meadow Lens',
+            ].filter(Boolean)
+          )
+        )
 
   return {
     title: metaTitle,
     description: metaDesc,
-    keywords: keywords,
+    keywords,
+    alternates: {
+      canonical: canonicalPath,
+    },
     openGraph: {
       title: metaTitle,
       description: metaDesc,
-      ...(data?.imageUrl ? { images: [{ url: data.imageUrl }] } : {}),
+      url: canonicalPath,
+      ...(data?.imageUrl ? { images: [{ url: data.imageUrl, alt: title }] } : {}),
       type: 'website',
     },
   }

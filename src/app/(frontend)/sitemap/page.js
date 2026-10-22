@@ -3,8 +3,27 @@ import Link from 'next/link';
 import { client } from '../../../sanity/lib/client';
 
 export const metadata = {
-  title: 'Site Directory & Product Index | The Meadow Lens',
-  description: 'Navigate the complete collection of Fine Art Photography, Venues, Sub-Venues, Species Galleries, and Product Pages by David McClure.',
+  title: 'Site Directory & Complete Fine Art Index | The Meadow Lens',
+  description:
+    'Navigate the complete architectural directory of The Meadow Lens — indexing all Core Pages, Root Venues, Sub-Venues, 240+ Species Galleries, and 1,150+ Collector Fine Art Product Pages by David McClure.',
+  keywords: [
+    'The Meadow Lens Site Directory',
+    'Fine Art Photography Sitemap',
+    'Meadowlands Photography Index',
+    'Bird Photography Catalogue',
+    'Collector Print Directory',
+    'David McClure Portfolio Map',
+  ],
+  alternates: {
+    canonical: '/sitemap',
+  },
+  openGraph: {
+    title: 'Site Directory & Complete Fine Art Index | The Meadow Lens',
+    description:
+      'Navigate the complete architectural directory of The Meadow Lens — indexing all Core Pages, Root Venues, Sub-Venues, 240+ Species Galleries, and 1,150+ Collector Fine Art Product Pages.',
+    url: '/sitemap',
+    type: 'website',
+  },
 };
 
 export const dynamic = 'force-dynamic';

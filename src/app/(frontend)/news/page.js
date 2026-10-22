@@ -5,14 +5,27 @@ import { PortableText } from '@portabletext/react'
 export const revalidate = 0
 
 export const metadata = {
-  title: "What's New | The Meadow Lens",
-  description: 'The latest updates, exhibitions, and news from David McClure.',
-  keywords: ["News", "Updates", "Exhibitions", "Photography Blog", "David McClure", "The Meadow Lens", "Fine Art"],
+  title: "What's New — Dispatches from Exit 16W & Field Notes | The Meadow Lens",
+  description:
+    'Read the latest field dispatches, migratory bird sightings, macro photography updates, and fine art exhibition announcements from Exit 16W in the New Jersey Meadowlands by David McClure.',
+  keywords: [
+    'Exit 16W Dispatches',
+    'Meadowlands Birding Field Notes',
+    'Atlantic Flyway Migration Updates',
+    'Wildlife Photography Exhibitions',
+    'David McClure News',
+    'The Meadow Lens Blog',
+  ],
+  alternates: {
+    canonical: '/news',
+  },
   openGraph: {
-    title: "What's New | The Meadow Lens",
-    description: 'The latest updates, exhibitions, and news from David McClure.',
+    title: "What's New — Dispatches from Exit 16W & Field Notes | The Meadow Lens",
+    description:
+      'Read the latest field dispatches, migratory bird sightings, macro photography updates, and fine art exhibition announcements from Exit 16W by David McClure.',
+    url: '/news',
     type: 'website',
-  }
+  },
 }
 
 export default async function NewsPage() {

@@ -6,14 +6,28 @@ import { PortableText } from '@portabletext/react'
 export const revalidate = 0
 
 export const metadata = {
-  title: 'The Artist | The Meadow Lens',
-  description: 'Learn more about photographer and Northern NJ native David McClure.',
-  keywords: ["David McClure", "Photographer", "Biography", "Fine Art", "The Meadowlands", "Nature Photographer", "NJ Native"],
+  title: 'The Artist — David McClure | Northern NJ Wildlife Photographer | The Meadow Lens',
+  description:
+    'Meet Northern New Jersey native and fine art wildlife photographer David McClure — chronicling the birds, marshes, creeks, and NYC skyline vistas of Exit 16W along the Atlantic Flyway.',
+  keywords: [
+    'David McClure',
+    'David McClure Photographer',
+    'Northern NJ Wildlife Photographer',
+    'The Meadowlands Fine Art Artist',
+    'Exit 16W Atlantic Flyway',
+    'Secaucus NJ Bird Photographer',
+    'The Meadow Lens Biography',
+  ],
+  alternates: {
+    canonical: '/artist',
+  },
   openGraph: {
-    title: 'The Artist | The Meadow Lens',
-    description: 'Learn more about photographer and Northern NJ native David McClure.',
+    title: 'The Artist — David McClure | Northern NJ Wildlife Photographer | The Meadow Lens',
+    description:
+      'Meet Northern New Jersey native and fine art wildlife photographer David McClure — chronicling the birds, marshes, creeks, and NYC skyline vistas of Exit 16W along the Atlantic Flyway.',
+    url: '/artist',
     type: 'profile',
-  }
+  },
 }
 
 export default async function ArtistPage() {

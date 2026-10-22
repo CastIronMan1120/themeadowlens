@@ -4,8 +4,29 @@ import Link from 'next/link'
 export const revalidate = 0
 
 export const metadata = {
-  title: 'Species Index | The Meadow Lens',
-  description: 'An alphabetical encyclopedia of bird species photographed by David McClure.'
+  title: 'Species Index (A–Z Wildlife & Bird Glossary) | The Meadow Lens',
+  description:
+    'Browse the complete A–Z alphabetical encyclopedia of 240+ bird, wildlife, and botanical species photographed in the New Jersey Meadowlands (Atlantic Flyway, Exit 16W) by David McClure.',
+  keywords: [
+    'Bird Species Index',
+    'New Jersey Meadowlands Birds',
+    'Atlantic Flyway Bird Species',
+    'Ornithology Photography Glossary',
+    'Wildlife Encyclopedia A-Z',
+    'Exit 16W Birding',
+    'David McClure Bird Photography',
+    'The Meadow Lens',
+  ],
+  alternates: {
+    canonical: '/bird-index',
+  },
+  openGraph: {
+    title: 'Species Index (A–Z Wildlife & Bird Glossary) | The Meadow Lens',
+    description:
+      'Browse the complete A–Z alphabetical encyclopedia of 240+ bird, wildlife, and botanical species photographed in the New Jersey Meadowlands by David McClure.',
+    url: '/bird-index',
+    type: 'website',
+  },
 }
 
 export default async function BirdIndexPage() {
