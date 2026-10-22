@@ -26,10 +26,10 @@ export default function Navigation({ categories }) {
   return (
     <>
       <nav 
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
+        className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-black/95 backdrop-blur-xl py-2.5 md:py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
-            : 'bg-black/90 backdrop-blur-md py-3.5 sm:py-4 md:py-5'
+            ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
+            : 'bg-black py-3.5 sm:py-5 md:py-6'
         }`}
       >
         <div className="max-w-[2000px] mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between gap-4">
@@ -37,12 +37,20 @@ export default function Navigation({ categories }) {
           {/* Logo & Slogan */}
           <Link href="/" className="group flex flex-col relative z-50 min-w-0 flex-1 pr-2">
             <h1 
-              className="text-[26px] xs:text-[30px] sm:text-4xl md:text-[48px] xl:text-[58px] leading-none whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-500 group-hover:opacity-85"
+              className={`leading-none whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:opacity-85 ${
+                scrolled
+                  ? 'text-[22px] sm:text-3xl md:text-[36px]'
+                  : 'text-[26px] xs:text-[30px] sm:text-4xl md:text-[48px] xl:text-[58px]'
+              }`}
               style={{ fontFamily: 'var(--font-logo)' }}
             >
               The Meadow Lens
             </h1>
-            <p className="text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider sm:tracking-widest mt-1.5 sm:mt-2 drop-shadow-md max-w-full lg:max-w-2xl xl:max-w-none leading-snug">
+            <p
+              className={`text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider sm:tracking-widest drop-shadow-md max-w-full lg:max-w-2xl xl:max-w-none leading-snug transition-all duration-300 overflow-hidden ${
+                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-24 opacity-100 mt-1.5 sm:mt-2'
+              }`}
+            >
               &ldquo;Wow-factor&rdquo; photography of birds, nature and more with particular focus on the NJ &ldquo;Meadowlands&rdquo; !
             </p>
           </Link>

@@ -42,7 +42,7 @@ export default async function BirdIndexPage() {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
   return (
-    <main className="min-h-screen pt-36 sm:pt-44 md:pt-48 pb-20 sm:pb-24 px-4 sm:px-8 md:px-24 max-w-7xl mx-auto">
+    <main className="min-h-screen pt-6 sm:pt-8 md:pt-10 pb-20 sm:pb-24 px-4 sm:px-8 md:px-24 max-w-7xl mx-auto">
       <div className="mb-10 sm:mb-12">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-white tracking-wide mb-3 sm:mb-4">Species Index</h1>
         <p className="text-neutral-400 font-mono uppercase tracking-wider sm:tracking-widest text-xs sm:text-sm leading-relaxed">

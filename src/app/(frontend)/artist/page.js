@@ -29,7 +29,7 @@ export default async function ArtistPage() {
 
   return (
     <main className="min-h-screen bg-black">
-      <section className="relative w-full min-h-screen pt-36 sm:pt-44 md:pt-48 pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
+      <section className="relative w-full pt-6 sm:pt-10 md:pt-12 pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-24 items-center w-full">
           

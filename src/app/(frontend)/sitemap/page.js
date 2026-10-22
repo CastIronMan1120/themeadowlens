@@ -71,7 +71,7 @@ export default async function SitemapPage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <main className="min-h-screen bg-black text-white pt-36 sm:pt-44 md:pt-48 pb-20 sm:pb-24 px-4 sm:px-6 md:px-16">
+    <main className="min-h-screen bg-black text-white pt-6 sm:pt-8 md:pt-10 pb-20 sm:pb-24 px-4 sm:px-6 md:px-16">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10 sm:mb-12 border-b border-white/10 pb-6 sm:pb-8">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 sm:gap-6">

@@ -44,7 +44,7 @@ export default async function NewsPage() {
 
   return (
     <main className="min-h-screen bg-black">
-      <section className="relative w-full pt-36 sm:pt-44 md:pt-48 pb-20 sm:pb-24 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto">
+      <section className="relative w-full pt-6 sm:pt-8 md:pt-10 pb-20 sm:pb-24 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto">
         
         <div className="mb-12 sm:mb-16 text-center">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-light tracking-wide mb-3 sm:mb-4">

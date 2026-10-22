@@ -43,13 +43,13 @@ export default async function Home() {
     <main className="min-h-screen bg-black">
       
       {/* 1. THE WELCOME ENTRANCE */}
-      <section className="relative w-full pt-36 sm:pt-44 md:pt-48 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2400px] mx-auto flex items-center">
+      <section className="relative w-full pt-4 sm:pt-6 md:pt-8 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2400px] mx-auto flex items-center">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-12 items-stretch w-full">
           
           {/* Left Column: Branding & Lens */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="w-full max-w-md sm:max-w-lg mt-2 sm:mt-8 shadow-2xl relative aspect-square bg-transparent">
+            <div className="w-full max-w-md sm:max-w-lg shadow-2xl relative aspect-square bg-transparent">
               <img 
                 src={heroImageUrl} 
                 alt="The Meadow Lens Composite" 

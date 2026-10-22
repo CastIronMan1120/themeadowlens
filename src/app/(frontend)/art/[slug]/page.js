@@ -95,7 +95,7 @@ export default async function ArtworkPage({ params }) {
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(cleanTitle)}`
 
   return (
-    <main className="min-h-screen pt-36 sm:pt-44 md:pt-48 pb-12 px-4 sm:px-8 md:px-24 max-w-[2000px] mx-auto">
+    <main className="min-h-screen pt-6 sm:pt-8 md:pt-10 pb-12 px-4 sm:px-8 md:px-24 max-w-[2000px] mx-auto">
       
       {/* 1. SEO Industry Standard Breadcrumbs */}
       <nav className="mb-6 sm:mb-12 text-xs sm:text-sm text-neutral-500 uppercase tracking-wider sm:tracking-widest font-mono flex items-center justify-between">

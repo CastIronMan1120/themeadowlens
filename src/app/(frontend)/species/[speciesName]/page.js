@@ -34,7 +34,7 @@ export default async function SpeciesPage({ params }) {
   }
 
   return (
-    <main className="min-h-screen pt-36 sm:pt-44 md:pt-48 pb-12 px-4 sm:px-6 md:px-12 w-full max-w-[2000px] mx-auto">
+    <main className="min-h-screen pt-6 sm:pt-8 md:pt-10 pb-12 px-4 sm:px-6 md:px-12 w-full max-w-[2000px] mx-auto">
       <div className="mb-8 sm:mb-12">
         <nav className="mb-4 sm:mb-6 text-xs sm:text-sm text-neutral-500 uppercase tracking-wider sm:tracking-widest font-mono flex flex-wrap items-center gap-y-1">
           <Link href="/bird-index" className="hover:text-white transition-colors">Species Index</Link>
