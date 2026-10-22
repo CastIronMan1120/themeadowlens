@@ -3,6 +3,7 @@ import Footer from "../components/Footer";
 import { client } from "../../sanity/lib/client";
 import { Suspense } from "react";
 import GlobalInquiryModal from "../components/GlobalInquiryModal";
+import PageViewTracker from "../components/PageViewTracker";
 import localFont from 'next/font/local';
 
 const modernLove = localFont({
@@ -27,6 +28,7 @@ export default async function FrontendLayout({ children }) {
         {children}
       </main>
       <Footer />
+      <PageViewTracker />
       <Suspense fallback={null}>
         <GlobalInquiryModal />
       </Suspense>

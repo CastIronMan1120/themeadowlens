@@ -135,6 +135,13 @@ export default defineConfig({
                   .title('Customer Inquiries')
                   .defaultOrdering([{ field: 'submittedAt', direction: 'desc' }])
               ),
+            S.listItem()
+              .title('📊 Visitor Analytics & Storage')
+              .child(
+                S.component(SystemMetrics)
+                  .id('visitor-analytics-and-storage')
+                  .title('Visitor Analytics & Storage')
+              ),
           ])
     })
   ],
@@ -147,7 +154,7 @@ export default defineConfig({
     },
     {
       name: 'system-metrics',
-      title: 'System & Storage',
+      title: 'Analytics & Storage',
       component: SystemMetrics
     }
   ],
