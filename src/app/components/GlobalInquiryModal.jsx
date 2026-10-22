@@ -99,7 +99,12 @@ export default function GlobalInquiryModal() {
         </button>
 
         <h2 className="text-xl sm:text-2xl font-light text-white mb-2 uppercase tracking-widest pr-8">Private Inquiry</h2>
-        <p className="text-neutral-400 text-xs sm:text-sm mb-6 sm:mb-8 font-mono">Contact the studio for acquisitions and comments.</p>
+        <p className="text-neutral-400 text-xs sm:text-sm mb-6 sm:mb-8 font-mono">
+          Contact the studio for acquisitions and comments, or email{' '}
+          <a href="mailto:dmc1120@themeadowlens.com" className="text-emerald-400 hover:text-emerald-300 underline transition-colors">
+            dmc1120@themeadowlens.com
+          </a>
+        </p>
 
         {status === 'success' ? (
           <div className="py-12 text-center">

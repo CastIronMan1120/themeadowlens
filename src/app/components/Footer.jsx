@@ -34,10 +34,11 @@ export default function Footer() {
 
         {/* 3. Social Proof */}
         <div className="flex flex-col md:items-end space-y-3 sm:space-y-4 text-xs sm:text-sm uppercase tracking-widest font-mono">
-          <span className="text-xs text-neutral-600 uppercase tracking-[0.2em]">Follow The Gallery</span>
-          <div className="flex md:flex-col gap-6 md:gap-3 md:items-end">
+          <span className="text-xs text-neutral-600 uppercase tracking-[0.2em]">Follow &amp; Contact</span>
+          <div className="flex flex-wrap md:flex-col gap-6 md:gap-3 md:items-end">
             <a href="https://www.facebook.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Facebook</a>
             <a href="https://www.instagram.com/themeadowlens/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a>
+            <a href="mailto:dmc1120@themeadowlens.com" className="text-neutral-400 hover:text-emerald-300 transition-colors lowercase">dmc1120@themeadowlens.com</a>
           </div>
         </div>
       </div>
