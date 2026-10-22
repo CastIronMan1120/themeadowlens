@@ -28,7 +28,9 @@ export default function HeroSlider({ images }) {
           <img
             src={typeof imgObj === 'string' ? imgObj : imgObj.url}
             alt={typeof imgObj === 'string' ? "Featured Photography by David McClure" : (imgObj.title || "Featured Photography by David McClure")}
-            className="w-full h-full object-cover object-center"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+            className="w-full h-full object-cover object-center select-none"
             loading={idx === 0 ? "eager" : "lazy"}
           />
         </div>

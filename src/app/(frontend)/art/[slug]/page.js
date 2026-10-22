@@ -256,7 +256,7 @@ export default async function ArtworkPage({ params }) {
           {/* Left: The Uninterrupted Image + Navigation Arrows */}
           <div className="relative group/nav">
             <ImageZoom 
-              src={urlForImage(artwork.image).width(3000).quality(95).auto('format').url()} 
+              src={urlForImage(artwork.image).width(1920).quality(90).auto('format').url()} 
               alt={cleanTitle} 
             />
             

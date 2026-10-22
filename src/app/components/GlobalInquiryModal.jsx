@@ -15,7 +15,8 @@ export default function GlobalInquiryModal() {
     email: '',
     phone: '',
     interest: initialInterest,
-    message: ''
+    message: '',
+    website: '' // Honeypot field for bot protection
   });
   
   const [status, setStatus] = useState('idle'); // idle, submitting, success, error
@@ -43,7 +44,8 @@ export default function GlobalInquiryModal() {
         email: '',
         phone: '',
         interest: '',
-        message: ''
+        message: '',
+        website: ''
       });
     }, 300);
   };
@@ -170,10 +172,25 @@ export default function GlobalInquiryModal() {
               <label className="text-xs uppercase tracking-widest text-neutral-400 font-mono">Message</label>
               <textarea 
                 name="message"
+                maxLength={3000}
                 value={formData.message}
                 onChange={handleChange}
                 rows={4}
                 className="w-full bg-black/50 border border-white/10 p-3 text-white focus:outline-none focus:border-white/50 transition-colors resize-none"
+              />
+            </div>
+
+            {/* Anti-Spam Honeypot Field (Hidden from real users, traps automated bots) */}
+            <div className="hidden" aria-hidden="true">
+              <label htmlFor="inquiry-website">Website</label>
+              <input
+                id="inquiry-website"
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={formData.website}
+                onChange={handleChange}
               />
             </div>
 

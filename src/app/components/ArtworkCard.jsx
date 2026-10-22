@@ -44,11 +44,17 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
           </div>
         )}
 
-        <Link href={artworkUrl} className="block w-full h-full">
+        <Link
+          href={artworkUrl}
+          className="block w-full h-full select-none"
+          onContextMenu={(e) => e.preventDefault()}
+        >
           <img
             src={urlForImage(artwork.image).width(1600).quality(90).auto('format').url()}
             alt={cleanTitle}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03] select-none"
             loading="lazy"
           />
         </Link>

@@ -73,7 +73,9 @@ export default function WallPreviewStudio({ imageUrl, artworkTitle, onClose }) {
               <img 
                 src={imageUrl} 
                 alt={artworkTitle}
-                className="w-full h-auto block shadow-inner"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+                className="w-full h-auto block shadow-inner select-none"
               />
             </div>
           </div>

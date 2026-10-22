@@ -8,13 +8,16 @@ export default function ImageZoom({ src, alt }) {
   return (
     <>
       <div 
-        className="w-full flex justify-center relative lg:sticky lg:top-24 group cursor-zoom-in"
+        className="w-full flex justify-center relative lg:sticky lg:top-24 group cursor-zoom-in select-none"
         onClick={() => setIsZoomed(true)}
+        onContextMenu={(e) => e.preventDefault()}
       >
         <img
           src={src}
           alt={alt}
-          className="w-full max-h-[70vh] sm:max-h-[80vh] object-contain shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+          className="w-full max-h-[70vh] sm:max-h-[80vh] object-contain shadow-2xl transition-transform duration-500 group-hover:scale-[1.02] select-none"
         />
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-black/65 border border-white/15 px-2.5 py-1.5 sm:p-2 rounded-full opacity-90 lg:opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 justify-center backdrop-blur-sm">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-6 sm:w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,13 +29,16 @@ export default function ImageZoom({ src, alt }) {
 
       {isZoomed && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-2 sm:p-4 md:p-12 cursor-zoom-out"
+          className="fixed inset-0 z-[100] bg-black/98 flex items-center justify-center p-2 sm:p-4 md:p-12 cursor-zoom-out select-none"
           onClick={() => setIsZoomed(false)}
+          onContextMenu={(e) => e.preventDefault()}
         >
           <img
             src={src}
             alt={alt}
-            className="max-w-full max-h-[92vh] sm:max-h-screen object-contain"
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
+            className="max-w-full max-h-[92vh] sm:max-h-screen object-contain select-none"
           />
           <button
             type="button"
