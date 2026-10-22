@@ -26,27 +26,29 @@ export default function Navigation({ categories }) {
   return (
     <>
       <nav 
-        className={`fixed w-full z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          scrolled ? 'bg-black/90 backdrop-blur-xl py-3 md:py-4' : 'bg-gradient-to-b from-black/85 via-black/40 to-transparent py-4 sm:py-6 md:py-10'
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
+          scrolled
+            ? 'bg-black/95 backdrop-blur-xl py-2.5 md:py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
+            : 'bg-black/90 backdrop-blur-md py-3.5 sm:py-4 md:py-5'
         }`}
       >
-        <div className="max-w-[2000px] mx-auto px-4 sm:px-6 md:px-12 flex items-start sm:items-center justify-between gap-3">
+        <div className="max-w-[2000px] mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between gap-4">
           
           {/* Logo & Slogan */}
           <Link href="/" className="group flex flex-col relative z-50 min-w-0 flex-1 pr-2">
             <h1 
-              className="text-[26px] xs:text-[30px] sm:text-4xl md:text-[64px] xl:text-[80px] leading-tight whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-700 group-hover:opacity-80"
+              className="text-[26px] xs:text-[30px] sm:text-4xl md:text-[48px] xl:text-[58px] leading-none whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-500 group-hover:opacity-85"
               style={{ fontFamily: 'var(--font-logo)' }}
             >
               The Meadow Lens
             </h1>
-            <p className="text-neutral-300 font-mono text-[9px] sm:text-[11px] md:text-sm uppercase tracking-wider sm:tracking-widest mt-1.5 sm:mt-2.5 drop-shadow-md max-w-full sm:max-w-xl md:max-w-3xl leading-snug sm:leading-relaxed">
+            <p className="text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider sm:tracking-widest mt-1.5 sm:mt-2 drop-shadow-md max-w-full lg:max-w-2xl xl:max-w-none leading-snug">
               &ldquo;Wow-factor&rdquo; photography of birds, nature and more with particular focus on the NJ &ldquo;Meadowlands&rdquo; !
             </p>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8 xl:space-x-10 shrink-0">
+          <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0">
             
             <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
               HOME

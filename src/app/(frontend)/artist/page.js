@@ -29,7 +29,7 @@ export default async function ArtistPage() {
 
   return (
     <main className="min-h-screen bg-black">
-      <section className="relative w-full min-h-screen pt-32 sm:pt-40 md:pt-[240px] pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
+      <section className="relative w-full min-h-screen pt-36 sm:pt-44 md:pt-48 pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2000px] mx-auto flex items-center">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-24 items-center w-full">
           
@@ -45,7 +45,7 @@ export default async function ArtistPage() {
 
           {/* Right Column: Bio */}
           <div className="flex flex-col space-y-6 sm:space-y-8">
-            <h1 className="text-4xl sm:text-6xl md:text-8xl text-white font-light tracking-tight mb-2 sm:mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-light tracking-wide mb-2 sm:mb-4">
               The Artist
             </h1>
             

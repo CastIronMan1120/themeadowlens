@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { urlForImage } from '../../sanity/lib/image'
 
 export default function ArtworkCard({ artwork, fallbackDescription }) {
-  const [isHovered, setIsHovered] = useState(false)
   const [liked, setLiked] = useState(false)
   const [shared, setShared] = useState(false)
 
@@ -27,102 +26,106 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
     setLiked(!liked)
   }
 
-  const displayCaption = artwork.guestNote || artwork.caption || fallbackDescription
+  const cleanTitle = artwork.displayTitle || artwork.title
+  const displayCaption =
+    artwork.guestNote ||
+    (artwork.caption && artwork.caption !== cleanTitle ? artwork.caption : '')
 
   return (
-    <div 
-      className="group relative overflow-hidden rounded-sm mb-6 sm:mb-8 break-inside-avoid bg-neutral-950 border border-white/10 lg:border-0 flex flex-col lg:block lg:aspect-[4/3]"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Image Container: Unobstructed 4:3 on Smartphones, Full Bleed on Desktop */}
-      <div className="relative w-full aspect-[4/3] lg:aspect-auto lg:absolute lg:inset-0 bg-neutral-900 overflow-hidden">
-        {/* Persistent Top-Left Guest Artist Badge when guestPhotographer is present */}
+    <div className="group relative overflow-hidden rounded-sm mb-6 sm:mb-8 break-inside-avoid bg-neutral-950 border border-white/10 hover:border-white/25 transition-colors duration-300 flex flex-col">
+      {/* 1. Unobstructed Photograph Container (Never covered by text or popups on scroll/hover) */}
+      <div className="relative w-full aspect-[4/3] bg-neutral-900 overflow-hidden">
         {artwork.guestPhotographer && (
-          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 pointer-events-none bg-emerald-950/90 border border-emerald-500/50 backdrop-blur-md px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full flex items-center gap-2 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-emerald-200">
-              Featured Guest: {artwork.guestPhotographer}
+          <div className="absolute top-3 left-3 z-20 pointer-events-none bg-emerald-950/90 border border-emerald-500/50 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-200">
+              Guest: {artwork.guestPhotographer}
             </span>
           </div>
         )}
 
-        <Link href={artworkUrl} className="absolute inset-0 z-0 block">
+        <Link href={artworkUrl} className="block w-full h-full">
           <img
             src={urlForImage(artwork.image).width(1600).quality(90).auto('format').url()}
-            alt={artwork.displayTitle || artwork.title}
-            className="w-full h-full object-cover transition-transform duration-[2s] ease-out lg:group-hover:scale-105 opacity-95 lg:opacity-90 lg:group-hover:opacity-60"
+            alt={cleanTitle}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             loading="lazy"
           />
-          <div className="hidden lg:block absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 transition-opacity duration-700 lg:group-hover:opacity-100"></div>
         </Link>
       </div>
 
-      {/* Typography Context: Stacked cleanly below photo on Smartphones, Floating Hover on Desktop */}
-      <div 
-        className="relative lg:absolute lg:inset-x-0 lg:bottom-20 p-4 sm:p-5 lg:p-10 flex flex-col justify-end lg:pointer-events-none transition-all duration-700 z-10 lg:opacity-0 lg:translate-y-4 lg:group-hover:opacity-100 lg:group-hover:translate-y-0"
-      >
-        <Link href={artworkUrl} className="lg:pointer-events-none">
-          <h3 className="text-white text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-light mb-1.5 lg:mb-2 drop-shadow-2xl leading-snug">
-            {artwork.displayTitle || artwork.title}
-          </h3>
-        </Link>
-        {artwork.guestPhotographer && (
-          <p className="text-emerald-400 text-[11px] lg:text-sm font-mono uppercase tracking-widest mb-2 lg:mb-3 drop-shadow-md">
-            ★ Invited Guest Photographer: {artwork.guestPhotographer}
-          </p>
-        )}
-        
-        {displayCaption && displayCaption !== (artwork.displayTitle || artwork.title) && (
-          <p className="text-neutral-300 lg:text-neutral-200 text-xs sm:text-sm lg:text-base font-light leading-relaxed drop-shadow-md line-clamp-2 lg:line-clamp-3">
-            {displayCaption}
-          </p>
-        )}
-      </div>
-
-      {/* Action Bar: Compact footer strip below photo on Smartphones, Slide-up bar on Desktop */}
-      <div 
-        className="relative lg:absolute lg:bottom-0 lg:left-0 w-full px-4 py-3 sm:px-5 sm:py-4 lg:p-6 flex flex-wrap items-center justify-between bg-neutral-950 lg:bg-black/70 lg:backdrop-blur-md border-t border-white/10 transition-transform duration-700 z-20 lg:translate-y-full lg:group-hover:translate-y-0 gap-3"
-      >
-        <div className="flex flex-wrap gap-2 sm:gap-3 flex-1 sm:flex-initial">
-          <Link 
-            href={artworkUrl}
-            className="flex-1 sm:flex-initial px-4 sm:px-5 py-2 bg-white text-black font-semibold text-[11px] lg:text-xs uppercase tracking-widest hover:bg-neutral-200 transition-colors text-center"
-          >
-            View &amp; Inquire
-          </Link>
-          <Link 
-            href={artworkUrl}
-            className="flex-1 sm:flex-initial px-3.5 sm:px-4 py-2 border border-white/30 text-white font-semibold text-[11px] lg:text-xs uppercase tracking-widest hover:border-white transition-colors text-center"
-          >
-            Room View
-          </Link>
-          {artwork.guestSocialUrl && (
-            <a
-              href={artwork.guestSocialUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="px-3.5 py-2 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[11px] uppercase tracking-widest hover:bg-emerald-900 hover:text-white transition-colors text-center"
+      {/* 2. Clean Gallery Plaque Below Photo (Consistent on Laptop & Smartphone) */}
+      <div className="p-3.5 sm:p-4 bg-neutral-950 flex flex-col gap-2.5 border-t border-white/10">
+        <div className="flex items-start justify-between gap-2">
+          <Link href={artworkUrl} className="min-w-0 flex-1 group/title">
+            <h3
+              className="text-white text-sm sm:text-base font-normal tracking-wide leading-snug truncate group-hover/title:text-emerald-300 transition-colors"
+              title={cleanTitle}
             >
-              Artist Page ↗
-            </a>
-          )}
+              {cleanTitle}
+            </h3>
+            {artwork.guestPhotographer && (
+              <p className="text-emerald-400 text-[10px] font-mono uppercase tracking-wider mt-0.5 truncate">
+                ★ By {artwork.guestPhotographer}
+              </p>
+            )}
+            {displayCaption && (
+              <p className="text-neutral-400 text-xs font-light line-clamp-1 mt-0.5">
+                {displayCaption}
+              </p>
+            )}
+          </Link>
+
+          <div className="flex items-center gap-3 shrink-0 pt-0.5">
+            <button
+              type="button"
+              onClick={handleLike}
+              title={liked ? 'Loved' : 'Like this photo'}
+              className="text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+            >
+              <span className={liked ? 'text-rose-400' : ''}>{liked ? '♥' : '♡'}</span>
+              <span className="hidden xl:inline text-[10px]">{liked ? 'Loved' : 'Like'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              title="Copy link to photo"
+              className="text-xs font-mono uppercase tracking-wider text-neutral-400 hover:text-white transition-colors flex items-center gap-1"
+            >
+              <span>↗</span>
+              <span className="text-[10px]">{shared ? 'Copied' : 'Share'}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-4 sm:space-x-6 justify-end">
-          <button onClick={handleLike} className="flex items-center text-xs sm:text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
-            <span className="mr-1.5">{liked ? '♥' : '♡'}</span>
-            {liked ? 'Loved' : 'Like'}
-          </button>
-          
-          <button onClick={handleShare} className="flex items-center text-xs sm:text-sm uppercase tracking-widest text-white/80 hover:text-white transition-colors">
-            <span className="mr-1.5">↗</span>
-            {shared ? 'Copied' : 'Share'}
-          </button>
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+          <div className="flex items-center gap-2 w-full">
+            <Link
+              href={artworkUrl}
+              className="flex-1 px-3 py-1.5 bg-white/95 hover:bg-white text-black font-semibold text-[10px] sm:text-[11px] uppercase tracking-widest transition-colors text-center rounded-[2px]"
+            >
+              View &amp; Inquire
+            </Link>
+            <Link
+              href={artworkUrl}
+              className="flex-1 px-3 py-1.5 border border-white/25 hover:border-white text-neutral-200 hover:text-white font-mono text-[10px] sm:text-[11px] uppercase tracking-wider transition-colors text-center rounded-[2px]"
+            >
+              Room View
+            </Link>
+            {artwork.guestSocialUrl && (
+              <a
+                href={artwork.guestSocialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="px-2.5 py-1.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] uppercase tracking-wider hover:bg-emerald-900 hover:text-white transition-colors text-center rounded-[2px]"
+              >
+                Artist ↗
+              </a>
+            )}
+          </div>
         </div>
       </div>
-      
     </div>
   )
 }

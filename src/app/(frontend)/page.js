@@ -43,7 +43,7 @@ export default async function Home() {
     <main className="min-h-screen bg-black">
       
       {/* 1. THE WELCOME ENTRANCE */}
-      <section className="relative w-full pt-32 sm:pt-40 md:pt-48 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2400px] mx-auto flex items-center">
+      <section className="relative w-full pt-36 sm:pt-44 md:pt-48 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2400px] mx-auto flex items-center">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-12 items-stretch w-full">
           

@@ -44,13 +44,13 @@ export default async function NewsPage() {
 
   return (
     <main className="min-h-screen bg-black">
-      <section className="relative w-full pt-32 sm:pt-40 md:pt-[240px] pb-20 sm:pb-24 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto">
+      <section className="relative w-full pt-36 sm:pt-44 md:pt-48 pb-20 sm:pb-24 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[1200px] mx-auto">
         
-        <div className="mb-14 sm:mb-24 text-center">
-          <h1 className="text-4xl sm:text-6xl md:text-8xl text-white font-light tracking-tight mb-4 sm:mb-6">
+        <div className="mb-12 sm:mb-16 text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-light tracking-wide mb-3 sm:mb-4">
             What&apos;s New
           </h1>
-          <p className="text-neutral-400 text-sm sm:text-lg md:text-xl uppercase tracking-widest font-mono">
+          <p className="text-neutral-400 text-xs sm:text-sm md:text-base uppercase tracking-widest font-mono">
             Dispatches from Exit 16W
           </p>
         </div>

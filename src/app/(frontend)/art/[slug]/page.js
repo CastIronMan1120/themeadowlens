@@ -95,7 +95,7 @@ export default async function ArtworkPage({ params }) {
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${pageUrl}&media=${encodeURIComponent(urlForImage(artwork.image).url())}&description=${encodeURIComponent(cleanTitle)}`
 
   return (
-    <main className="min-h-screen pt-32 sm:pt-40 md:pt-[240px] pb-12 px-4 sm:px-8 md:px-24 max-w-[2000px] mx-auto">
+    <main className="min-h-screen pt-36 sm:pt-44 md:pt-48 pb-12 px-4 sm:px-8 md:px-24 max-w-[2000px] mx-auto">
       
       {/* 1. SEO Industry Standard Breadcrumbs */}
       <nav className="mb-6 sm:mb-12 text-xs sm:text-sm text-neutral-500 uppercase tracking-wider sm:tracking-widest font-mono flex items-center justify-between">
@@ -183,7 +183,7 @@ export default async function ArtworkPage({ params }) {
           <div className="flex flex-col justify-center space-y-6 sm:space-y-10 text-white lg:py-12">
             
             <div>
-              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-wide mb-3 sm:mb-4 break-words">{cleanTitle}</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide mb-3 sm:mb-4 break-words">{cleanTitle}</h1>
 
               {artwork.guestPhotographer && (
                 <div className="mt-4 p-6 bg-emerald-950/30 border border-emerald-500/40 rounded-lg space-y-3">

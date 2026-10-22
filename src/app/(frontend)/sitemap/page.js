@@ -71,7 +71,7 @@ export default async function SitemapPage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <main className="min-h-screen bg-black text-white pt-32 sm:pt-40 md:pt-[240px] pb-20 sm:pb-24 px-4 sm:px-6 md:px-16">
+    <main className="min-h-screen bg-black text-white pt-36 sm:pt-44 md:pt-48 pb-20 sm:pb-24 px-4 sm:px-6 md:px-16">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10 sm:mb-12 border-b border-white/10 pb-6 sm:pb-8">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 sm:gap-6">
@@ -79,7 +79,7 @@ export default async function SitemapPage() {
               <span className="text-[11px] sm:text-xs font-mono uppercase tracking-[0.2em] sm:tracking-[0.25em] text-emerald-400 block mb-2">
                 Fullstack Architecture &amp; Index
               </span>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-light tracking-widest uppercase mb-3 text-white">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide mb-3 text-white">
                 Site Directory
               </h1>
               <p className="text-neutral-400 font-mono text-xs sm:text-sm tracking-wide max-w-2xl leading-relaxed">
