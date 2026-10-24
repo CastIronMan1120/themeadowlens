@@ -53,7 +53,7 @@ export function VenueGridManager({
   const fetchData = useCallback(async () => {
     setIsProcessing(true);
     try {
-      const cats = await client.fetch(`*[_type == "category"] | order(title asc) {
+      const rawCats = await client.fetch(`*[_type == "category"] | order(title asc) {
         _id,
         title,
         "slug": slug.current,
@@ -65,14 +65,46 @@ export function VenueGridManager({
         "photoCount": count(*[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id)]),
         "subVenuePhotoCount": count(*[_type == "artwork" && category->parentCategory._ref == ^._id])
       }`);
+
+      // Deduplicate draft vs published category documents so slug/title edits in Structure Tool never conflict
+      const catMap = new Map();
+      for (const c of rawCats) {
+        const cleanId = c._id.replace(/^drafts\./, '');
+        const isDraft = c._id.startsWith('drafts.');
+        const existing = catMap.get(cleanId);
+        if (!existing) {
+          catMap.set(cleanId, { ...c, _id: cleanId });
+        } else if (isDraft) {
+          catMap.set(cleanId, {
+            ...existing,
+            title: c.title || existing.title,
+            slug: c.slug || existing.slug,
+            speciesDescription: c.speciesDescription ?? existing.speciesDescription,
+            seo: c.seo || existing.seo,
+            parentId: c.parentId ?? existing.parentId,
+            parentTitle: c.parentTitle ?? existing.parentTitle,
+            parentSlug: c.parentSlug ?? existing.parentSlug,
+          });
+        } else {
+          catMap.set(cleanId, {
+            ...c,
+            _id: cleanId,
+            title: existing.title || c.title,
+            slug: existing.slug || c.slug,
+            photoCount: c.photoCount ?? existing.photoCount,
+            subVenuePhotoCount: c.subVenuePhotoCount ?? existing.subVenuePhotoCount,
+          });
+        }
+      }
+      const cats = Array.from(catMap.values()).sort((a, b) =>
+        (a.title || '').localeCompare(b.title || '')
+      );
       setCategories(cats);
 
       // If the user clicked the '+' button in Sanity Structure to create a new Root Venue or Sub-Venue,
       // cleanDocId will be a brand-new ID not yet in categories (or lacking a title). Automatically open the Add/Edit Venue Modal!
       if (cleanDocId) {
-        const existingCat = cats.find(
-          (c) => c._id === cleanDocId || c._id === `drafts.${cleanDocId}`
-        );
+        const existingCat = cats.find((c) => c._id === cleanDocId);
         if (!existingCat || !existingCat.title) {
           setEditingVenue((prev) =>
             prev && prev._id === cleanDocId
@@ -80,6 +112,7 @@ export function VenueGridManager({
               : {
                   _id: cleanDocId,
                   isNew: true,
+                  slugManuallyEdited: false,
                   title: existingCat?.title || '',
                   slug: existingCat?.slug || '',
                   parentId: existingCat?.parentId || '',
@@ -205,22 +238,147 @@ export function VenueGridManager({
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
 
-  // Helper to derive Picture Title (Caption), Species, and Year from the front of the filename
+  const toSlug = (str) =>
+    (str || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+  const formatLiveSlugInput = (str) =>
+    (str || '')
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-');
+
+  const NON_BIO_VENUES = useMemo(
+    () =>
+      new Set([
+        'Wings of Man',
+        'Vistas and Scenery',
+        'Sky & Heavens',
+        'Parks, Trails, Marshes and Pools',
+        'City Skylines',
+        'Moon, Sun, Stars',
+        'Clouds and Rainbows',
+        'Sun, Sunrises and Sunsets',
+        'Video',
+      ]),
+    []
+  );
+
+  const toTitleCaseSpecies = useCallback((str) => {
+    if (!str) return '';
+    const minor = new Set(['and', 'or', 'of', 'in', 'on', 'at', 'to', 'the', 'a', 'an']);
+    return str
+      .trim()
+      .replace(/\s+/g, ' ')
+      .split(' ')
+      .map((word, idx) => {
+        const lower = word.toLowerCase();
+        if (idx > 0 && minor.has(lower)) return lower;
+        return word
+          .split('-')
+          .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : ''))
+          .join('-');
+      })
+      .join(' ');
+  }, []);
+
+  // Helper to derive canonical biological Species from filename, title, or displayTitle automatically
+  const deriveCanonicalSpecies = useCallback(
+    (artOrFields, targetCatId = '') => {
+      if (!artOrFields) return '';
+      const catId = targetCatId || artOrFields.categoryId || '';
+      const catObj = catId ? categories.find((c) => c._id === catId) : null;
+      const catTitle = catObj?.title || artOrFields.categoryTitle || '';
+      const parentTitle = catObj?.parentTitle || artOrFields.categoryParentTitle || '';
+
+      if (NON_BIO_VENUES.has(catTitle) || NON_BIO_VENUES.has(parentTitle)) {
+        return '';
+      }
+
+      const rawCombined = `${artOrFields.fileName || ''} ${artOrFields.title || ''} ${artOrFields.displayTitle || ''}`;
+      if (/whitetail deer|white-tailed deer|8-point buck|\bdeer\b/i.test(rawCombined) && !/killdeer/i.test(rawCombined)) {
+        return 'Whitetail Deer';
+      }
+      if (/oven\s*bird/i.test(rawCombined)) return 'Ovenbird';
+
+      let base = (artOrFields.fileName || artOrFields.title || artOrFields.displayTitle || '')
+        .replace(/\.[^/.]+$/, '')
+        .trim();
+
+      const yearMatch = base.match(/^(.+?)\s+(?:1[89]|2[0-9])-[A-Za-z0-9]/);
+      if (yearMatch && yearMatch[1].trim().length > 0) {
+        base = yearMatch[1].trim();
+      } else {
+        base = base
+          .replace(/\b(?:1[89]|2[0-9])-[A-Za-z0-9_-]+.*$/i, '')
+          .replace(/\b(?:P|PA|PB|PC|DSC_|IMG_|DMC)\d{4,}.*$/i, '')
+          .replace(/\s+-\s+Study.*$/i, '')
+          .replace(/[-_\s]+Edit.*$/i, '')
+          .replace(/[-_\s]+Copy.*$/i, '')
+          .trim();
+      }
+
+      // Strip parenthetical modifiers like (immature), (male), (female), (juvenile), (2)
+      base = base.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // De-pluralize common plural species endings
+      base = base
+        .replace(/\bFinches$/i, 'Finch')
+        .replace(/\bSwallows$/i, 'Swallow')
+        .replace(/\bSandpipers$/i, 'Sandpiper')
+        .replace(/\bGulls$/i, 'Gull')
+        .replace(/\bWarblers$/i, 'Warbler')
+        .replace(/\bSparrows$/i, 'Sparrow')
+        .replace(/\bStarlings$/i, 'Starling')
+        .replace(/\bBlackbirds$/i, 'Blackbird')
+        .replace(/\bHerons$/i, 'Heron')
+        .replace(/\bEgrets$/i, 'Egret')
+        .replace(/\bMergansers$/i, 'Merganser')
+        .replace(/\bGeese$/i, 'Goose')
+        .replace(/\bSwans$/i, 'Swan')
+        .replace(/\bDragonflies$/i, 'Dragonfly')
+        .replace(/\bButterflies$/i, 'Butterfly');
+
+      return toTitleCaseSpecies(base);
+    },
+    [categories, NON_BIO_VENUES, toTitleCaseSpecies]
+  );
+
+  // Helper to derive Picture Title (Caption), Canonical Species, and Year from the front of the filename
   // up to, but not including, the 2-digit year prefix (e.g. "American Goldfinch 24-PA031058 Edit.jpg" -> "American Goldfinch", year "2024")
-  const extractPhotoMetadataFromFilename = (rawFilename) => {
+  const extractPhotoMetadataFromFilename = (rawFilename, targetCatId = '') => {
     const rawBaseName = (rawFilename || '').replace(/\.[^/.]+$/, '').trim();
-    const yearPrefixMatch = rawBaseName.match(/^(.+?)\s+(\d{2})-[A-Za-z0-9]/);
+    let cleanCaption = rawBaseName;
+    let fullYear = '';
+
+    const yearPrefixMatch = rawBaseName.match(/^(.+?)\s+(1[89]|2[0-9])-[A-Za-z0-9]/);
     if (yearPrefixMatch && yearPrefixMatch[1].trim().length > 0) {
-      const cleanCaption = yearPrefixMatch[1].trim();
+      cleanCaption = yearPrefixMatch[1].replace(/\s+/g, ' ').trim();
       const yy = parseInt(yearPrefixMatch[2], 10);
-      const fullYear = yy >= 70 ? `19${yearPrefixMatch[2]}` : `20${yearPrefixMatch[2]}`;
-      return { cleanCaption, year: fullYear, rawBaseName };
+      fullYear = yy >= 70 ? `19${yearPrefixMatch[2]}` : `20${yearPrefixMatch[2]}`;
+    } else {
+      const studyMatch = rawBaseName.match(/^(.+?)\s+-\s+Study/i);
+      if (studyMatch && studyMatch[1].trim().length > 0) {
+        cleanCaption = studyMatch[1].replace(/\s+/g, ' ').trim();
+      } else {
+        cleanCaption = rawBaseName
+          .replace(/\b(?:P|PA|PB|PC|DSC_|IMG_|DMC)\d{4,}.*$/i, '')
+          .replace(/[-_\s]+Edit.*$/i, '')
+          .replace(/[-_\s]+Copy.*$/i, '')
+          .replace(/\s+/g, ' ')
+          .trim() || rawBaseName;
+      }
     }
-    const studyMatch = rawBaseName.match(/^(.+?)\s+-\s+Study/i);
-    if (studyMatch && studyMatch[1].trim().length > 0) {
-      return { cleanCaption: studyMatch[1].trim(), year: '', rawBaseName };
-    }
-    return { cleanCaption: rawBaseName, year: '', rawBaseName };
+
+    const canonicalSpecies = deriveCanonicalSpecies(
+      { fileName: rawFilename, title: cleanCaption, displayTitle: cleanCaption },
+      targetCatId
+    );
+
+    return { cleanCaption, canonicalSpecies, year: fullYear, rawBaseName };
   };
 
   // --- 1. UPLOAD NEW PHOTOS TO WAREHOUSE (OR ACTIVE VENUE) ---
@@ -234,7 +392,11 @@ export function VenueGridManager({
     const skippedFiles = [];
 
     for (const file of files) {
-      const { cleanCaption, year, rawBaseName } = extractPhotoMetadataFromFilename(file.name);
+      const targetCatId = viewMode === 'venue' && activeVenueId ? activeVenueId : '';
+      const { cleanCaption, canonicalSpecies, year, rawBaseName } = extractPhotoMetadataFromFilename(
+        file.name,
+        targetCatId
+      );
       const exists = await client.fetch(
         `count(*[_type == "artwork" && (fileName == $fileName || title == $rawBaseName)])`,
         { fileName: file.name, rawBaseName }
@@ -248,11 +410,10 @@ export function VenueGridManager({
       try {
         const asset = await client.assets.upload('image', file, { filename: file.name });
         const draftId = `drafts.${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
-        const targetCategoryRef =
-          viewMode === 'venue' && activeVenueId
-            ? { _type: 'reference', _ref: activeVenueId }
-            : undefined;
-        const venueObj = activeVenueId ? categories.find((c) => c._id === activeVenueId) : null;
+        const targetCategoryRef = targetCatId
+          ? { _type: 'reference', _ref: targetCatId }
+          : undefined;
+        const venueObj = targetCatId ? categories.find((c) => c._id === targetCatId) : null;
         const venueTitle = venueObj ? venueObj.title : 'The Meadowlands';
         const studyMatch = file.name.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i);
         const studyCode =
@@ -267,7 +428,7 @@ export function VenueGridManager({
           title: cleanCaption,
           displayTitle: cleanCaption,
           caption: cleanCaption,
-          species: cleanCaption,
+          species: canonicalSpecies || cleanCaption,
           location: 'The Meadowlands, New Jersey',
           ...(year ? { year } : {}),
           fileName: file.name,
@@ -278,6 +439,7 @@ export function VenueGridManager({
             metaDescription: `Collector fine art photograph "${cleanCaption}" (${yearLabel}${venueTitle} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`,
             keywords: [
               cleanCaption,
+              canonicalSpecies && `${canonicalSpecies} Photography`,
               `${cleanCaption} ${venueTitle}`,
               `${cleanCaption} Study ${studyCode}`,
               venueTitle,
@@ -285,7 +447,7 @@ export function VenueGridManager({
               'Atlantic Flyway',
               'David McClure',
               'The Meadow Lens',
-            ],
+            ].filter(Boolean),
           },
           ...(targetCategoryRef ? { category: targetCategoryRef } : {}),
         });
@@ -299,7 +461,7 @@ export function VenueGridManager({
     fetchData();
     e.target.value = null;
 
-    let msg = `Upload Complete!\nSuccessfully uploaded: ${uploadedCount} photo(s) with automatic front-of-file caption extraction.`;
+    let msg = `Upload Complete!\nSuccessfully uploaded: ${uploadedCount} photo(s) with automatic Caption & Species tagging.`;
     if (skippedCount > 0) {
       msg +=
         `\nSkipped ${skippedCount} duplicates:\n` +
@@ -326,6 +488,14 @@ export function VenueGridManager({
         const cleanSlug = doc.slug?.current
           ? doc.slug
           : { _type: 'slug', current: makeSlug(doc.title) };
+        const autoSpecies =
+          doc.species && doc.species.trim() !== ''
+            ? doc.species
+            : deriveCanonicalSpecies(doc, targetVenueId);
+        const autoCaption =
+          doc.caption && doc.caption.trim() !== ''
+            ? doc.caption
+            : doc.displayTitle || doc.title || '';
 
         if (doc._id.startsWith('drafts.')) {
           const pubId = doc._id.replace(/^drafts\./, '');
@@ -334,6 +504,8 @@ export function VenueGridManager({
             ...rest,
             _id: pubId,
             slug: cleanSlug,
+            ...(autoSpecies ? { species: autoSpecies } : {}),
+            ...(autoCaption ? { caption: autoCaption } : {}),
             category: { _type: 'reference', _ref: targetVenueId },
           });
           transaction.delete(doc._id);
@@ -343,6 +515,8 @@ export function VenueGridManager({
               .set({
                 category: { _type: 'reference', _ref: targetVenueId },
                 slug: cleanSlug,
+                ...(autoSpecies ? { species: autoSpecies } : {}),
+                ...(autoCaption ? { caption: autoCaption } : {}),
               })
               .unset(['subcategory'])
           );
@@ -352,7 +526,7 @@ export function VenueGridManager({
       await transaction.commit();
       setSelectedArtworks(new Set());
       await fetchData();
-      window.alert(`Successfully moved ${moveCount} photo(s) to "${targetName}"!`);
+      window.alert(`Successfully moved ${moveCount} photo(s) to "${targetName}" (with automatic Species tagging)!`);
     } catch (error) {
       console.error(error);
       window.alert('Error moving photos: ' + error.message);
@@ -376,6 +550,15 @@ export function VenueGridManager({
         const art = artworks.find((a) => a._id === id);
         if (!art || !art.image?.asset?._ref) continue;
 
+        const autoSpecies =
+          art.species && art.species.trim() !== ''
+            ? art.species
+            : deriveCanonicalSpecies(art, targetVenueId);
+        const autoCaption =
+          art.caption && art.caption.trim() !== ''
+            ? art.caption
+            : art.displayTitle || art.title || '';
+
         const newId = `art-copy-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
         transaction.create({
           _id: newId,
@@ -384,8 +567,8 @@ export function VenueGridManager({
           slug: { _type: 'slug', current: makeSlug(art.title) },
           image: art.image,
           category: { _type: 'reference', _ref: targetVenueId },
-          ...(art.species ? { species: art.species } : {}),
-          ...(art.caption ? { caption: art.caption } : {}),
+          ...(autoSpecies ? { species: autoSpecies } : {}),
+          ...(autoCaption ? { caption: autoCaption } : {}),
           ...(art.displayTitle ? { displayTitle: art.displayTitle } : {}),
         });
         copied++;
@@ -548,6 +731,14 @@ export function VenueGridManager({
       .replace(/[-_]+Edit.*$/i, '')
       .trim() || raw;
 
+    const autoSpecies =
+      editingArtwork.species && editingArtwork.species.trim() !== ''
+        ? editingArtwork.species
+        : deriveCanonicalSpecies(
+            { ...editingArtwork, title: cleanedTitle },
+            editingArtwork.categoryId
+          );
+
     const cleanSlug =
       editingArtwork.slug?.current ||
       `${cleanedTitle
@@ -568,7 +759,7 @@ export function VenueGridManager({
           cleanedTitle,
           `${cleanedTitle} ${venueTitle}`,
           `${cleanedTitle} Study ${studyCode}`,
-          editingArtwork.species && `${editingArtwork.species} Photography`,
+          autoSpecies && `${autoSpecies} Photography`,
           venueTitle,
           editingArtwork.location || 'NJ Meadowlands',
           extractedYear && `${extractedYear} Wildlife Photography`,
@@ -582,6 +773,7 @@ export function VenueGridManager({
     setEditingArtwork({
       ...editingArtwork,
       displayTitle: editingArtwork.displayTitle || cleanedTitle,
+      species: autoSpecies,
       slug: { _type: 'slug', current: cleanSlug },
       year: extractedYear,
       location: editingArtwork.location || 'The Meadowlands, New Jersey',
@@ -590,7 +782,7 @@ export function VenueGridManager({
       status: editingArtwork.status || 'available',
       caption:
         editingArtwork.caption ||
-        `${cleanedTitle}, captured in the New Jersey Meadowlands by David McClure.`,
+        cleanedTitle,
       seo: {
         metaTitle,
         metaDescription,
@@ -622,12 +814,17 @@ export function VenueGridManager({
             .filter(Boolean)
         : [];
 
+      const resolvedSpecies =
+        editingArtwork.species && editingArtwork.species.trim() !== ''
+          ? editingArtwork.species.trim()
+          : deriveCanonicalSpecies(editingArtwork, editingArtwork.categoryId);
+
       const patchData = {
         title: editingArtwork.title || 'Untitled',
         displayTitle: typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : '',
         slug: { _type: 'slug', current: slugCurrent },
-        species: editingArtwork.species || '',
-        caption: editingArtwork.caption || '',
+        species: resolvedSpecies || '',
+        caption: editingArtwork.caption || editingArtwork.displayTitle || editingArtwork.title || '',
         location: editingArtwork.location || '',
         year: editingArtwork.year || '',
         size: editingArtwork.size || 'Standard 4:3',
@@ -719,22 +916,20 @@ export function VenueGridManager({
       };
 
       const tx = client.transaction();
-      if (!existingDoc || editingVenue.isNew) {
-        tx.createOrReplace({
-          ...(existingDoc || {}),
-          _id: cleanVenueId,
-          _type: 'category',
-          ...docData,
-        });
-        tx.delete(`drafts.${cleanVenueId}`);
-      } else {
-        let patch = client.patch(cleanVenueId).set(docData);
-        if (!editingVenue.parentId) {
-          patch = patch.unset(['parentCategory']);
-        }
-        tx.patch(patch);
-        tx.delete(`drafts.${cleanVenueId}`);
+      const baseDoc = existingDoc ? { ...existingDoc } : {};
+      delete baseDoc._rev;
+      delete baseDoc._updatedAt;
+      if (!editingVenue.parentId) {
+        delete baseDoc.parentCategory;
       }
+
+      tx.createOrReplace({
+        ...baseDoc,
+        _id: cleanVenueId,
+        _type: 'category',
+        ...docData,
+      });
+      tx.delete(`drafts.${cleanVenueId}`);
 
       await tx.commit();
       setEditingVenue(null);
@@ -743,8 +938,8 @@ export function VenueGridManager({
       await fetchData();
       window.alert(
         editingVenue.isNew
-          ? `Created & Published New ${editingVenue.parentId ? 'Sub-Venue' : 'Root Venue'}: "${cleanTitle}"!`
-          : `Saved & Published Venue "${cleanTitle}" Live!`
+          ? `Created & Published New ${editingVenue.parentId ? 'Sub-Venue' : 'Root Venue'}: "${cleanTitle}" (Slug: /category/${finalSlug})!`
+          : `Saved & Published Venue "${cleanTitle}" (Slug: /category/${finalSlug}) Live!`
       );
     } catch (error) {
       console.error('Error saving venue details:', error);
@@ -1835,9 +2030,9 @@ export function VenueGridManager({
                     Guest: {art.guestPhotographer}
                   </div>
                 )}
-                {art.species && (
+                {(art.species || deriveCanonicalSpecies(art, art.categoryId)) && (
                   <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
-                    Species: {art.species}
+                    Species: {art.species || deriveCanonicalSpecies(art, art.categoryId)}
                   </div>
                 )}
 
@@ -1847,7 +2042,17 @@ export function VenueGridManager({
                 >
                   <button
                     type="button"
-                    onClick={() => setEditingArtwork({ ...art })}
+                    onClick={() => {
+                      const autoSpecies =
+                        art.species && art.species.trim() !== ''
+                          ? art.species
+                          : deriveCanonicalSpecies(art, art.categoryId);
+                      setEditingArtwork({
+                        ...art,
+                        species: autoSpecies || '',
+                        caption: art.caption || art.displayTitle || art.title || '',
+                      });
+                    }}
                     style={{
                       flex: 1,
                       padding: '0.38rem 0.5rem',
@@ -2475,7 +2680,7 @@ export function VenueGridManager({
                       setEditingVenue((prev) => ({
                         ...prev,
                         title: nextTitle,
-                        slug: prev.isNew ? toSlug(nextTitle) : prev.slug,
+                        slug: prev.slugManuallyEdited ? prev.slug : toSlug(nextTitle),
                       }));
                     }}
                     style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
@@ -2515,15 +2720,16 @@ export function VenueGridManager({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
-                    URL Slug (Used in `/category/...`)
+                    URL Slug (Used in `/category/...` — Auto-updates on rename or type to overwrite)
                   </label>
                   <button
                     type="button"
                     onClick={() =>
-                      setEditingVenue({
-                        ...editingVenue,
-                        slug: toSlug(editingVenue.title || ''),
-                      })
+                      setEditingVenue((prev) => ({
+                        ...prev,
+                        slug: toSlug(prev.title || ''),
+                        slugManuallyEdited: false,
+                      }))
                     }
                     style={{
                       background: '#f1f5f9',
@@ -2543,7 +2749,19 @@ export function VenueGridManager({
                   type="text"
                   placeholder="auto-generated-from-title"
                   value={editingVenue.slug || ''}
-                  onChange={(e) => setEditingVenue({ ...editingVenue, slug: toSlug(e.target.value) })}
+                  onChange={(e) =>
+                    setEditingVenue((prev) => ({
+                      ...prev,
+                      slug: formatLiveSlugInput(e.target.value),
+                      slugManuallyEdited: true,
+                    }))
+                  }
+                  onBlur={(e) =>
+                    setEditingVenue((prev) => ({
+                      ...prev,
+                      slug: toSlug(e.target.value || prev.title || ''),
+                    }))
+                  }
                   style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', fontFamily: 'monospace' }}
                 />
               </div>

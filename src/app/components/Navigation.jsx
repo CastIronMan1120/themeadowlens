@@ -9,13 +9,27 @@ export default function Navigation({ categories }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  // Detect scroll for dynamic header background
+  // Detect scroll with hysteresis so header never oscillates or shakes near the threshold
   useEffect(() => {
+    let rafId = null
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
+      if (rafId !== null) return
+      rafId = window.requestAnimationFrame(() => {
+        const y = window.scrollY
+        setScrolled((prev) => {
+          if (!prev && y > 80) return true
+          if (prev && y < 20) return false
+          return prev
+        })
+        rafId = null
+      })
     }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (rafId !== null) window.cancelAnimationFrame(rafId)
+    }
   }, [])
 
   // Close mobile menu on route change
@@ -25,79 +39,78 @@ export default function Navigation({ categories }) {
 
   return (
     <>
-      <nav 
-        className={`sticky top-0 left-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
-            : 'bg-black py-3.5 sm:py-5 md:py-6'
-        }`}
-      >
-        <div className="max-w-[2000px] mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between gap-4">
-          
-          {/* Logo & Slogan */}
-          <Link href="/" className="group flex flex-col relative z-50 min-w-0 flex-1 pr-2">
-            <h1 
-              className={`leading-none whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:opacity-85 ${
-                scrolled
-                  ? 'text-[22px] sm:text-3xl md:text-[36px]'
-                  : 'text-[26px] xs:text-[30px] sm:text-4xl md:text-[48px] xl:text-[58px]'
-              }`}
-              style={{ fontFamily: 'var(--font-logo)' }}
-            >
-              The Meadow Lens
-            </h1>
-            <p
-              className={`text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider sm:tracking-widest drop-shadow-md max-w-full lg:max-w-2xl xl:max-w-none leading-snug transition-all duration-300 overflow-hidden ${
-                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-24 opacity-100 mt-1.5 sm:mt-2'
-              }`}
-            >
-              &ldquo;Wow-factor&rdquo; photography of birds, nature and more with particular focus on the NJ &ldquo;Meadowlands&rdquo; !
-            </p>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0">
+      {/* Constant-height layout spacer prevents fixed header compacting from ever altering window.scrollY */}
+      <header className="h-[92px] sm:h-[112px] md:h-[132px] w-full shrink-0 bg-black">
+        <nav 
+          className={`fixed top-0 left-0 w-full z-50 transition-[background-color,padding,box-shadow] duration-300 ${
+            scrolled
+              ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
+              : 'bg-black py-3 sm:py-4 md:py-5'
+          }`}
+        >
+          <div className="max-w-[2000px] mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between gap-4">
             
-            <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              HOME
+            {/* Logo & Slogan */}
+            <Link href="/" className="group flex flex-col relative z-50 min-w-0 flex-1 pr-2">
+              <h1 
+                className="leading-none whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-85 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
+                style={{ fontFamily: 'var(--font-logo)' }}
+              >
+                The Meadow Lens
+              </h1>
+              <p
+                className={`text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-xs uppercase tracking-wider sm:tracking-widest drop-shadow-md max-w-full lg:max-w-2xl xl:max-w-none leading-snug transition-[max-height,opacity,margin] duration-300 overflow-hidden ${
+                  scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-20 opacity-100 mt-1.5 sm:mt-2'
+                }`}
+              >
+                &ldquo;Wow-factor&rdquo; photography of birds, nature and more with particular focus on the NJ &ldquo;Meadowlands&rdquo; !
+              </p>
             </Link>
 
-            <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              Species Index
-            </Link>
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0">
+              
+              <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                HOME
+              </Link>
 
-            <Link href="/category/guest-photos" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              Guest Photos
-            </Link>
+              <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                Species Index
+              </Link>
 
-            <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              The Artist
-            </Link>
+              <Link href="/category/guest-photos" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                Guest Photos
+              </Link>
 
-            <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              What&apos;s New
-            </Link>
+              <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                The Artist
+              </Link>
 
-            <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
-              Inquiries &amp; Comments
-            </Link>
+              <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                What&apos;s New
+              </Link>
 
+              <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                Inquiries &amp; Comments
+              </Link>
+
+            </div>
+
+            {/* Mobile Hamburger Trigger */}
+            <button 
+              type="button"
+              aria-label="Open Navigation Menu"
+              className="lg:hidden shrink-0 mt-1 sm:mt-0 px-3.5 py-2 rounded-full bg-black/70 border border-white/20 text-white uppercase tracking-widest text-[11px] font-mono font-semibold drop-shadow-md z-50 flex items-center gap-2 active:scale-95 transition-transform"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span>Menu</span>
+            </button>
           </div>
-
-          {/* Mobile Hamburger Trigger */}
-          <button 
-            type="button"
-            aria-label="Open Navigation Menu"
-            className="lg:hidden shrink-0 mt-1 sm:mt-0 px-3.5 py-2 rounded-full bg-black/70 border border-white/20 text-white uppercase tracking-widest text-[11px] font-mono font-semibold drop-shadow-md z-50 flex items-center gap-2 active:scale-95 transition-transform"
-            onClick={() => setMobileMenuOpen(true)}
-          >
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <span>Menu</span>
-          </button>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       {/* --- MOBILE FULL-SCREEN OVERLAY --- */}
       <div 
