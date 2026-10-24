@@ -496,6 +496,32 @@ export function VenueGridManager({
           doc.caption && doc.caption.trim() !== ''
             ? doc.caption
             : doc.displayTitle || doc.title || '';
+        const cleanTitle = (doc.displayTitle || doc.title || 'Fine Art Photograph').trim();
+        const studyCode = (doc._id || '').replace(/^drafts\./, '').slice(-4).toUpperCase() || '0001';
+        const yearLabel = doc.year ? `${doc.year} ` : '';
+        const autoSeo =
+          doc.seo?.metaTitle && doc.seo?.metaDescription
+            ? doc.seo
+            : {
+                metaTitle: `${cleanTitle} — ${targetName} (${yearLabel}Study #${studyCode}) | The Meadow Lens`,
+                metaDescription: `Collector fine art photograph "${cleanTitle}" (${yearLabel}${targetName} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`.slice(
+                  0,
+                  160
+                ),
+                keywords: Array.from(
+                  new Set(
+                    [
+                      cleanTitle,
+                      autoSpecies && `${autoSpecies} Photography`,
+                      `${cleanTitle} ${targetName}`,
+                      targetName,
+                      'NJ Meadowlands',
+                      'David McClure',
+                      'The Meadow Lens',
+                    ].filter(Boolean)
+                  )
+                ),
+              };
 
         if (doc._id.startsWith('drafts.')) {
           const pubId = doc._id.replace(/^drafts\./, '');
@@ -504,6 +530,7 @@ export function VenueGridManager({
             ...rest,
             _id: pubId,
             slug: cleanSlug,
+            seo: autoSeo,
             ...(autoSpecies ? { species: autoSpecies } : {}),
             ...(autoCaption ? { caption: autoCaption } : {}),
             category: { _type: 'reference', _ref: targetVenueId },
@@ -515,6 +542,7 @@ export function VenueGridManager({
               .set({
                 category: { _type: 'reference', _ref: targetVenueId },
                 slug: cleanSlug,
+                seo: autoSeo,
                 ...(autoSpecies ? { species: autoSpecies } : {}),
                 ...(autoCaption ? { caption: autoCaption } : {}),
               })
