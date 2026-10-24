@@ -2047,10 +2047,48 @@ export function VenueGridManager({
                         art.species && art.species.trim() !== ''
                           ? art.species
                           : deriveCanonicalSpecies(art, art.categoryId);
+                      const cleanTitle = (art.displayTitle || art.title || 'Fine Art Study').trim();
+                      const fileSource = `${art.fileName || ''} ${art.title || ''} ${art.slug?.current || ''}`;
+                      const yearMatch = fileSource.match(/\b(1[89]|2[0-9])-[A-Z0-9]{4,}/i);
+                      const autoYear = art.year || (yearMatch ? `20${yearMatch[1]}` : '');
+                      const studyMatch = fileSource.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i);
+                      const studyCode =
+                        studyMatch && studyMatch[1]
+                          ? studyMatch[1].slice(-4)
+                          : (art._id || '').replace(/^drafts\./, '').slice(-4).toUpperCase() || '0001';
+                      const venueObj = categories.find((c) => c._id === art.categoryId);
+                      const venueTitle = venueObj ? venueObj.title : 'Fine Art Nature';
+                      const yearLabel = autoYear ? `${autoYear} ` : '';
+                      const autoSeo =
+                        art.seo?.metaTitle && art.seo?.metaDescription
+                          ? art.seo
+                          : {
+                              metaTitle: `${cleanTitle} — ${venueTitle} (${yearLabel}Study #${studyCode}) | The Meadow Lens`,
+                              metaDescription: `Collector fine art photograph "${cleanTitle}" (${yearLabel}${venueTitle} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`.slice(
+                                0,
+                                160
+                              ),
+                              keywords: Array.from(
+                                new Set(
+                                  [
+                                    cleanTitle,
+                                    autoSpecies && `${autoSpecies} Photography`,
+                                    `${cleanTitle} ${venueTitle}`,
+                                    venueTitle,
+                                    'NJ Meadowlands',
+                                    'David McClure',
+                                    'The Meadow Lens',
+                                  ].filter(Boolean)
+                                )
+                              ),
+                            };
                       setEditingArtwork({
                         ...art,
                         species: autoSpecies || '',
+                        year: autoYear,
+                        location: art.location || 'The Meadowlands, New Jersey',
                         caption: art.caption || art.displayTitle || art.title || '',
+                        seo: autoSeo,
                       });
                     }}
                     style={{
@@ -2677,11 +2715,34 @@ export function VenueGridManager({
                     value={editingVenue.title || ''}
                     onChange={(e) => {
                       const nextTitle = e.target.value;
-                      setEditingVenue((prev) => ({
-                        ...prev,
-                        title: nextTitle,
-                        slug: prev.slugManuallyEdited ? prev.slug : toSlug(nextTitle),
-                      }));
+                      setEditingVenue((prev) => {
+                        const trimmed = nextTitle.trim();
+                        const desc =
+                          prev.speciesDescription ||
+                          (trimmed
+                            ? `Explore the ${trimmed} fine art photography collection captured in the New Jersey Meadowlands by David McClure.`
+                            : '');
+                        return {
+                          ...prev,
+                          title: nextTitle,
+                          slug: prev.slugManuallyEdited ? prev.slug : toSlug(nextTitle),
+                          seo: prev.seoManuallyEdited
+                            ? prev.seo
+                            : {
+                                metaTitle: trimmed ? `${trimmed} | The Meadow Lens` : '',
+                                metaDescription: desc.slice(0, 158),
+                                keywords: trimmed
+                                  ? [
+                                      trimmed,
+                                      'NJ Meadowlands',
+                                      'Fine Art Nature Photography',
+                                      'David McClure',
+                                      'The Meadow Lens',
+                                    ]
+                                  : [],
+                              },
+                        };
+                      });
                     }}
                     style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
                     required
