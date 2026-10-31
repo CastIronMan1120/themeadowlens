@@ -20,6 +20,9 @@ export function VenueGridManager({
   const [sortOrder, setSortOrder] = useState('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [thumbSize, setThumbSize] = useState('large'); // 'medium' | 'large' | 'xlarge'
+  const [hoverMagnifierEnabled, setHoverMagnifierEnabled] = useState(true);
+  const [hoveredCardState, setHoveredCardState] = useState({ id: null, x: 50, y: 50 });
+  const [loupeArtwork, setLoupeArtwork] = useState(null);
   const [showVenueDeletionPanel, setShowVenueDeletionPanel] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState(null);
   const [editingVenue, setEditingVenue] = useState(null);
@@ -58,6 +61,7 @@ export function VenueGridManager({
         title,
         "slug": slug.current,
         speciesDescription,
+        alphabetizeBySpecies,
         seo,
         "parentId": parentCategory._ref,
         "parentTitle": parentCategory->title,
@@ -80,6 +84,7 @@ export function VenueGridManager({
             title: c.title || existing.title,
             slug: c.slug || existing.slug,
             speciesDescription: c.speciesDescription ?? existing.speciesDescription,
+            alphabetizeBySpecies: c.alphabetizeBySpecies ?? existing.alphabetizeBySpecies,
             seo: c.seo || existing.seo,
             parentId: c.parentId ?? existing.parentId,
             parentTitle: c.parentTitle ?? existing.parentTitle,
@@ -91,6 +96,7 @@ export function VenueGridManager({
             _id: cleanId,
             title: existing.title || c.title,
             slug: existing.slug || c.slug,
+            alphabetizeBySpecies: existing.alphabetizeBySpecies ?? c.alphabetizeBySpecies,
             photoCount: c.photoCount ?? existing.photoCount,
             subVenuePhotoCount: c.subVenuePhotoCount ?? existing.subVenuePhotoCount,
           });
@@ -128,7 +134,8 @@ export function VenueGridManager({
       const projection = `{
         _id,
         title,
-        fileName,
+        "fileName": coalesce(fileName, image.asset->originalFilename, title),
+        "originalFilename": coalesce(image.asset->originalFilename, fileName, title),
         slug,
         _createdAt,
         image,
@@ -196,17 +203,67 @@ export function VenueGridManager({
         (a) =>
           (a.title || '').toLowerCase().includes(q) ||
           (a.displayTitle || '').toLowerCase().includes(q) ||
+          (a.fileName || '').toLowerCase().includes(q) ||
+          (a.originalFilename || '').toLowerCase().includes(q) ||
           (a.categoryTitle || '').toLowerCase().includes(q) ||
           (a.species || '').toLowerCase().includes(q)
       );
     }
+    const useSpeciesAz =
+      sortOrder === 'species_az' ||
+      (viewMode === 'venue' && activeVenueObj?.alphabetizeBySpecies && sortOrder === 'newest');
     return list.sort((a, b) => {
-      if (sortOrder === 'az') return (a.displayTitle || a.title || '').localeCompare(b.displayTitle || b.title || '');
-      if (sortOrder === 'za') return (b.displayTitle || b.title || '').localeCompare(a.displayTitle || a.title || '');
+      if (useSpeciesAz || sortOrder === 'az') {
+        const keyA = (a.species || a.displayTitle || a.title || '').trim();
+        const keyB = (b.species || b.displayTitle || b.title || '').trim();
+        const cmp = keyA.localeCompare(keyB, undefined, { numeric: true, sensitivity: 'base' });
+        if (cmp !== 0) return cmp;
+        const fileA = (a.originalFilename || a.fileName || a.title || '').trim();
+        const fileB = (b.originalFilename || b.fileName || b.title || '').trim();
+        return fileA.localeCompare(fileB, undefined, { numeric: true, sensitivity: 'base' });
+      }
+      if (sortOrder === 'za') {
+        const keyA = (a.species || a.displayTitle || a.title || '').trim();
+        const keyB = (b.species || b.displayTitle || b.title || '').trim();
+        return keyB.localeCompare(keyA, undefined, { numeric: true, sensitivity: 'base' });
+      }
       if (sortOrder === 'oldest') return new Date(a._createdAt) - new Date(b._createdAt);
       return new Date(b._createdAt) - new Date(a._createdAt);
     });
-  }, [artworks, sortOrder, searchQuery]);
+  }, [artworks, sortOrder, searchQuery, viewMode, activeVenueObj]);
+
+  const getFullOriginalFilename = useCallback((art) => {
+    if (!art) return '';
+    return (art.originalFilename || art.fileName || art.title || '').trim();
+  }, []);
+
+  const normalizeFileKey = useCallback((rawName) => {
+    return (rawName || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }, []);
+
+  const normalizeFileBaseKey = useCallback(
+    (rawName) => {
+      return normalizeFileKey(rawName).replace(/\.[^/.]+$/, '').trim();
+    },
+    [normalizeFileKey]
+  );
+
+  const isSameFile = useCallback(
+    (nameA, nameB) => {
+      const keyA = normalizeFileKey(nameA);
+      const keyB = normalizeFileKey(nameB);
+      if (!keyA || !keyB) return false;
+      if (keyA === keyB) return true;
+      const baseA = normalizeFileBaseKey(nameA);
+      const baseB = normalizeFileBaseKey(nameB);
+      // Only treat base names as identical if they contain a camera/frame digit sequence (so generic species names like "American Goldfinch" don't collide)
+      if (baseA && baseB && baseA === baseB && /\d{3,}/.test(baseA)) {
+        return true;
+      }
+      return false;
+    },
+    [normalizeFileKey, normalizeFileBaseKey]
+  );
 
   const toggleArtwork = (id) => {
     const next = new Set(selectedArtworks);
@@ -391,21 +448,39 @@ export function VenueGridManager({
     let skippedCount = 0;
     const skippedFiles = [];
 
+    const targetCatId = viewMode === 'venue' && activeVenueId ? activeVenueId : '';
+    const venueObj = targetCatId ? categories.find((c) => c._id === targetCatId) : null;
+    const venueTitle = venueObj ? venueObj.title : 'The Meadowlands';
+
+    // Fetch existing files in the destination scope (either the specific target Venue or the Unassigned Warehouse)
+    // so duplicates within the SAME venue/warehouse are prevented, while allowing a file to exist in a different venue!
+    const existingScopeDocs = await client.fetch(
+      targetCatId
+        ? `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId)]{ _id, fileName, "originalFilename": image.asset->originalFilename, title }`
+        : `*[_type == "artwork" && !defined(category)]{ _id, fileName, "originalFilename": image.asset->originalFilename, title }`,
+      targetCatId ? { venueId: targetCatId } : {}
+    );
+    const seenInBatch = [];
+
     for (const file of files) {
-      const targetCatId = viewMode === 'venue' && activeVenueId ? activeVenueId : '';
-      const { cleanCaption, canonicalSpecies, year, rawBaseName } = extractPhotoMetadataFromFilename(
+      const { cleanCaption, canonicalSpecies, year } = extractPhotoMetadataFromFilename(
         file.name,
         targetCatId
       );
-      const exists = await client.fetch(
-        `count(*[_type == "artwork" && (fileName == $fileName || title == $rawBaseName)])`,
-        { fileName: file.name, rawBaseName }
-      );
-      if (exists > 0) {
+
+      const isDupInScope =
+        existingScopeDocs.some(
+          (doc) =>
+            isSameFile(doc.originalFilename || doc.fileName || '', file.name) ||
+            isSameFile(doc.fileName || '', file.name)
+        ) || seenInBatch.some((n) => isSameFile(n, file.name));
+
+      if (isDupInScope) {
         skippedCount++;
         skippedFiles.push(file.name);
         continue;
       }
+      seenInBatch.push(file.name);
 
       try {
         const asset = await client.assets.upload('image', file, { filename: file.name });
@@ -413,8 +488,6 @@ export function VenueGridManager({
         const targetCategoryRef = targetCatId
           ? { _type: 'reference', _ref: targetCatId }
           : undefined;
-        const venueObj = targetCatId ? categories.find((c) => c._id === targetCatId) : null;
-        const venueTitle = venueObj ? venueObj.title : 'The Meadowlands';
         const studyMatch = file.name.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i);
         const studyCode =
           studyMatch && studyMatch[1]
@@ -461,12 +534,12 @@ export function VenueGridManager({
     fetchData();
     e.target.value = null;
 
-    let msg = `Upload Complete!\nSuccessfully uploaded: ${uploadedCount} photo(s) with automatic Caption & Species tagging.`;
+    let msg = `Upload Complete!\nSuccessfully uploaded: ${uploadedCount} photo(s) with automatic Caption, Species & Full File Name tracking.`;
     if (skippedCount > 0) {
       msg +=
-        `\nSkipped ${skippedCount} duplicates:\n` +
-        skippedFiles.slice(0, 5).join(', ') +
-        (skippedFiles.length > 5 ? '...' : '');
+        `\n\nBlocked ${skippedCount} duplicate file(s) already in ${targetCatId ? `"${venueTitle}"` : 'Unassigned Warehouse'}:\n` +
+        skippedFiles.slice(0, 6).join('\n') +
+        (skippedFiles.length > 6 ? '\n...' : '');
     }
     window.alert(msg);
   };
@@ -476,15 +549,45 @@ export function VenueGridManager({
     if (!targetVenueId || selectedArtworks.size === 0) return;
     const targetCat = categories.find((c) => c._id === targetVenueId);
     const targetName = targetCat ? targetCat.title : 'selected venue';
-    const moveCount = selectedArtworks.size;
 
     setIsProcessing(true);
     try {
       const idsToMove = Array.from(selectedArtworks);
-      const fullDocs = await client.fetch(`*[_id in $ids]`, { ids: idsToMove });
+      const [fullDocs, existingInTarget] = await Promise.all([
+        client.fetch(
+          `*[_id in $ids]{ ..., "originalFilename": coalesce(image.asset->originalFilename, fileName, title) }`,
+          { ids: idsToMove }
+        ),
+        client.fetch(
+          `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId)]{ _id, fileName, "originalFilename": coalesce(image.asset->originalFilename, fileName, title), title }`,
+          { venueId: targetVenueId }
+        ),
+      ]);
+
       const transaction = client.transaction();
+      let movedCount = 0;
+      const skippedDuplicates = [];
+      const batchFileNames = [];
 
       for (const doc of fullDocs) {
+        const pubId = doc._id.replace(/^drafts\./, '');
+        const docFileName = (doc.originalFilename || doc.fileName || doc.title || '').trim();
+
+        // Check if targetVenueId ALREADY contains another artwork with this same filename
+        const duplicateInTarget =
+          existingInTarget.some(
+            (existing) =>
+              existing._id.replace(/^drafts\./, '') !== pubId &&
+              (isSameFile(existing.originalFilename || existing.fileName || '', docFileName) ||
+                isSameFile(existing.fileName || '', docFileName))
+          ) || batchFileNames.some((n) => isSameFile(n, docFileName));
+
+        if (duplicateInTarget) {
+          skippedDuplicates.push(docFileName || doc.title);
+          continue;
+        }
+        if (docFileName) batchFileNames.push(docFileName);
+
         const cleanSlug = doc.slug?.current
           ? doc.slug
           : { _type: 'slug', current: makeSlug(doc.title) };
@@ -523,12 +626,14 @@ export function VenueGridManager({
                 ),
               };
 
+        const { _rev, _updatedAt, subcategory, originalFilename, ...rest } = doc;
+        const resolvedFileName = doc.fileName || originalFilename || doc.title || '';
+
         if (doc._id.startsWith('drafts.')) {
-          const pubId = doc._id.replace(/^drafts\./, '');
-          const { _rev, _updatedAt, subcategory, ...rest } = doc;
           transaction.createOrReplace({
             ...rest,
             _id: pubId,
+            fileName: resolvedFileName,
             slug: cleanSlug,
             seo: autoSeo,
             ...(autoSpecies ? { species: autoSpecies } : {}),
@@ -541,6 +646,7 @@ export function VenueGridManager({
             p
               .set({
                 category: { _type: 'reference', _ref: targetVenueId },
+                fileName: resolvedFileName,
                 slug: cleanSlug,
                 seo: autoSeo,
                 ...(autoSpecies ? { species: autoSpecies } : {}),
@@ -549,12 +655,27 @@ export function VenueGridManager({
               .unset(['subcategory'])
           );
         }
+        movedCount++;
       }
 
-      await transaction.commit();
+      if (movedCount > 0) {
+        await transaction.commit();
+      }
       setSelectedArtworks(new Set());
       await fetchData();
-      window.alert(`Successfully moved ${moveCount} photo(s) to "${targetName}" (with automatic Species tagging)!`);
+
+      let alertMsg =
+        movedCount > 0
+          ? `Successfully moved ${movedCount} photo(s) to "${targetName}" (with automatic Species & SEO tagging)!`
+          : `No photos were moved to "${targetName}".`;
+      if (skippedDuplicates.length > 0) {
+        alertMsg +=
+          `\n\n⚠️ Blocked ${skippedDuplicates.length} duplicate photo(s) because the exact same file name is already loaded in "${targetName}":\n• ` +
+          skippedDuplicates.slice(0, 8).join('\n• ') +
+          (skippedDuplicates.length > 8 ? '\n• ...' : '') +
+          `\n(Copies in other venues are allowed, but duplicate files within the same venue are prevented.)`;
+      }
+      window.alert(alertMsg);
     } catch (error) {
       console.error(error);
       window.alert('Error moving photos: ' + error.message);
@@ -571,12 +692,33 @@ export function VenueGridManager({
 
     setIsProcessing(true);
     try {
+      const existingInTarget = await client.fetch(
+        `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId)]{ _id, fileName, "originalFilename": coalesce(image.asset->originalFilename, fileName, title), title }`,
+        { venueId: targetVenueId }
+      );
+
       const transaction = client.transaction();
       let copied = 0;
+      const skippedDuplicates = [];
+      const batchFileNames = [];
 
       for (const id of selectedArtworks) {
         const art = artworks.find((a) => a._id === id);
         if (!art || !art.image?.asset?._ref) continue;
+
+        const artFileName = getFullOriginalFilename(art);
+        const duplicateInTarget =
+          existingInTarget.some(
+            (existing) =>
+              isSameFile(existing.originalFilename || existing.fileName || '', artFileName) ||
+              isSameFile(existing.fileName || '', artFileName)
+          ) || batchFileNames.some((n) => isSameFile(n, artFileName));
+
+        if (duplicateInTarget) {
+          skippedDuplicates.push(artFileName || art.title);
+          continue;
+        }
+        if (artFileName) batchFileNames.push(artFileName);
 
         const autoSpecies =
           art.species && art.species.trim() !== ''
@@ -588,24 +730,65 @@ export function VenueGridManager({
             : art.displayTitle || art.title || '';
 
         const newId = `art-copy-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        const cleanTitle = (art.displayTitle || art.title || 'Fine Art Photograph').trim();
+        const studyCode = newId.slice(-4).toUpperCase();
+        const yearLabel = art.year ? `${art.year} ` : '';
+
         transaction.create({
           _id: newId,
           _type: 'artwork',
           title: art.title || 'Untitled',
+          fileName: artFileName || art.title || 'Untitled',
           slug: { _type: 'slug', current: makeSlug(art.title) },
           image: art.image,
           category: { _type: 'reference', _ref: targetVenueId },
+          ...(art.year ? { year: art.year } : {}),
+          ...(art.location ? { location: art.location } : {}),
           ...(autoSpecies ? { species: autoSpecies } : {}),
           ...(autoCaption ? { caption: autoCaption } : {}),
           ...(art.displayTitle ? { displayTitle: art.displayTitle } : {}),
+          seo: {
+            metaTitle: `${cleanTitle} — ${targetName} (${yearLabel}Study #${studyCode}) | The Meadow Lens`,
+            metaDescription: `Collector fine art photograph "${cleanTitle}" (${yearLabel}${targetName} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`.slice(
+              0,
+              160
+            ),
+            keywords: Array.from(
+              new Set(
+                [
+                  cleanTitle,
+                  autoSpecies && `${autoSpecies} Photography`,
+                  `${cleanTitle} ${targetName}`,
+                  targetName,
+                  'NJ Meadowlands',
+                  'David McClure',
+                  'The Meadow Lens',
+                ].filter(Boolean)
+              )
+            ),
+          },
         });
         copied++;
       }
 
-      await transaction.commit();
+      if (copied > 0) {
+        await transaction.commit();
+      }
       setSelectedArtworks(new Set());
       await fetchData();
-      window.alert(`Copied ${copied} photo(s) into "${targetName}" (0 extra storage used)!`);
+
+      let alertMsg =
+        copied > 0
+          ? `Copied ${copied} photo(s) into "${targetName}" (0 extra storage used)!`
+          : `No photos were copied into "${targetName}".`;
+      if (skippedDuplicates.length > 0) {
+        alertMsg +=
+          `\n\n⚠️ Blocked ${skippedDuplicates.length} duplicate photo(s) because the exact same file name is already loaded in "${targetName}":\n• ` +
+          skippedDuplicates.slice(0, 8).join('\n• ') +
+          (skippedDuplicates.length > 8 ? '\n• ...' : '') +
+          `\n(Copies in other venues are allowed, but duplicate files within the same venue are prevented.)`;
+      }
+      window.alert(alertMsg);
     } catch (error) {
       console.error(error);
       window.alert('Error copying photos: ' + error.message);
@@ -826,6 +1009,32 @@ export function VenueGridManager({
 
     setIsProcessing(true);
     try {
+      const pubId = editingArtwork._id.replace(/^drafts\./, '');
+      const resolvedFileName = getFullOriginalFilename(editingArtwork);
+
+      // Per-Venue duplicate check when assigning/changing venue in the SEO modal
+      if (editingArtwork.categoryId && resolvedFileName) {
+        const existingInVenue = await client.fetch(
+          `*[_type == "artwork" && (category._ref == $venueId || subcategory._ref == $venueId)]{ _id, fileName, "originalFilename": coalesce(image.asset->originalFilename, fileName, title), title }`,
+          { venueId: editingArtwork.categoryId }
+        );
+        const dupInTarget = existingInVenue.find(
+          (doc) =>
+            doc._id.replace(/^drafts\./, '') !== pubId &&
+            (isSameFile(doc.originalFilename || doc.fileName || '', resolvedFileName) ||
+              isSameFile(doc.fileName || '', resolvedFileName))
+        );
+        if (dupInTarget) {
+          const targetCatObj = categories.find((c) => c._id === editingArtwork.categoryId);
+          const targetCatTitle = targetCatObj ? targetCatObj.title : 'this venue';
+          window.alert(
+            `⚠️ Duplicate Blocked:\nThe file "${resolvedFileName}" is already loaded in "${targetCatTitle}".\n\nCopies are allowed in other venues, but duplicate files within the same venue are prevented.`
+          );
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       const slugCurrent = editingArtwork.slug?.current
         ? editingArtwork.slug.current
             .toLowerCase()
@@ -849,6 +1058,7 @@ export function VenueGridManager({
 
       const patchData = {
         title: editingArtwork.title || 'Untitled',
+        fileName: resolvedFileName || editingArtwork.title || 'Untitled',
         displayTitle: typeof editingArtwork.displayTitle === 'string' ? editingArtwork.displayTitle : '',
         slug: { _type: 'slug', current: slugCurrent },
         species: resolvedSpecies || '',
@@ -875,7 +1085,6 @@ export function VenueGridManager({
       // If the document is currently a draft (drafts.*), publish it live if it has a category
       if (editingArtwork._id.startsWith('drafts.') && editingArtwork.categoryId) {
         const fullDoc = await client.fetch(`*[_id == $id][0]`, { id: editingArtwork._id });
-        const pubId = editingArtwork._id.replace(/^drafts\./, '');
         const { _rev, _updatedAt, ...rest } = fullDoc || {};
         const tx = client.transaction();
         tx.createOrReplace({
@@ -931,6 +1140,7 @@ export function VenueGridManager({
         title: cleanTitle,
         slug: { _type: 'slug', current: finalSlug },
         speciesDescription: editingVenue.speciesDescription || '',
+        alphabetizeBySpecies: Boolean(editingVenue.alphabetizeBySpecies),
         seo: {
           metaTitle: editingVenue.seo?.metaTitle || `${cleanTitle} | The Meadow Lens`,
           metaDescription:
@@ -1644,7 +1854,7 @@ export function VenueGridManager({
         {/* SEARCH & THUMBNAIL SIZE CONTROLS */}
         <input
           type="text"
-          placeholder="Search by photo title or species..."
+          placeholder="Search by photo title, species, or original file name..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
@@ -1668,7 +1878,12 @@ export function VenueGridManager({
             background: '#fff',
           }}
         >
-          <option value="newest">Newest First</option>
+          <option value="newest">
+            {viewMode === 'venue' && activeVenueObj?.alphabetizeBySpecies
+              ? 'Venue Default: Species (A-Z)'
+              : 'Newest First'}
+          </option>
+          <option value="species_az">Species / Title (A-Z)</option>
           <option value="oldest">Oldest First</option>
           <option value="az">Title (A-Z)</option>
           <option value="za">Title (Z-A)</option>
@@ -1690,6 +1905,27 @@ export function VenueGridManager({
           <option value="large">Large ID Thumbnails</option>
           <option value="xlarge">Extra-Large ID Thumbnails</option>
         </select>
+
+        <button
+          type="button"
+          onClick={() => setHoverMagnifierEnabled((prev) => !prev)}
+          style={{
+            padding: '0.55rem 0.85rem',
+            borderRadius: '6px',
+            border: hoverMagnifierEnabled ? '1px solid #0284c7' : '1px solid #cbd5e1',
+            background: hoverMagnifierEnabled ? '#e0f2fe' : '#ffffff',
+            color: hoverMagnifierEnabled ? '#0369a1' : '#475569',
+            fontWeight: 700,
+            fontSize: '0.82rem',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+          }}
+          title="Toggle interactive 2.6x hover magnification on photo thumbnails for close inspection of focus and composition"
+        >
+          🔍 Hover Magnifier: {hoverMagnifierEnabled ? 'ON (2.6×)' : 'OFF'}
+        </button>
       </div>
 
       {/* BATCH ACTION BAR (MOVE-TO, COPY-TO, DECATEGORIZE, DELETE) */}
@@ -1864,9 +2100,31 @@ export function VenueGridManager({
 
       {/* PHOTO COUNT STATUS & COLOR LEGEND */}
       <div style={{ marginBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', color: '#475569', fontSize: '0.9rem' }}>
-        <span>
-          Showing <strong>{filteredArtworks.length}</strong> photo(s)
-          {viewMode === 'venue' && activeVenueObj ? ` in "${activeVenueObj.title}"` : ''}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <span>
+            Showing <strong>{filteredArtworks.length}</strong> photo(s)
+            {viewMode === 'venue' && activeVenueObj ? ` in "${activeVenueObj.title}"` : ''}
+          </span>
+          {viewMode === 'venue' && activeVenueObj?.alphabetizeBySpecies && (
+            <span
+              style={{
+                background: '#ede9fe',
+                color: '#5b21b6',
+                border: '1px solid #c4b5fd',
+                borderRadius: '999px',
+                padding: '2px 10px',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+              }}
+            >
+              🔤 Alphabetized by Species (A–Z)
+            </span>
+          )}
+          {hoverMagnifierEnabled && (
+            <span style={{ fontSize: '0.76rem', color: '#0369a1', fontWeight: 600 }}>
+              • Hover over any photo to magnify (2.6×) or click 🔎 Loupe for full-screen inspection
+            </span>
+          )}
         </span>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', fontSize: '0.78rem' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -1974,19 +2232,91 @@ export function VenueGridManager({
                 {badgeText}
               </div>
 
-              {/* LARGE CRISP THUMBNAIL FOR EASY IDENTIFICATION */}
+              {/* LARGE CRISP THUMBNAIL WITH INTERACTIVE HOVER MAGNIFICATION & FULL-SIZE LOUPE */}
               {art.imageUrl ? (
-                <div style={{ width: '100%', height: imgHeight, background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div
+                  onMouseEnter={(e) => {
+                    if (!hoverMagnifierEnabled) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+                    setHoveredCardState({ id: art._id, x, y });
+                  }}
+                  onMouseMove={(e) => {
+                    if (!hoverMagnifierEnabled) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+                    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+                    setHoveredCardState({ id: art._id, x, y });
+                  }}
+                  onMouseLeave={() => {
+                    if (hoveredCardState.id === art._id) {
+                      setHoveredCardState({ id: null, x: 50, y: 50 });
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    height: imgHeight,
+                    background: '#0f172a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    cursor: hoverMagnifierEnabled ? 'zoom-in' : 'pointer',
+                  }}
+                >
                   <img
-                    src={`${art.imageUrl}?w=600&fit=max`}
+                    src={
+                      hoverMagnifierEnabled && hoveredCardState.id === art._id
+                        ? `${art.imageUrl}?w=1800&fit=max&q=90`
+                        : `${art.imageUrl}?w=800&fit=max&q=85`
+                    }
                     alt={art.title || 'Artwork'}
                     loading="lazy"
                     style={{
                       width: '100%',
                       height: '100%',
                       objectFit: 'contain',
+                      transformOrigin:
+                        hoverMagnifierEnabled && hoveredCardState.id === art._id
+                          ? `${hoveredCardState.x}% ${hoveredCardState.y}%`
+                          : '50% 50%',
+                      transform:
+                        hoverMagnifierEnabled && hoveredCardState.id === art._id
+                          ? 'scale(2.6)'
+                          : 'scale(1)',
+                      transition:
+                        hoverMagnifierEnabled && hoveredCardState.id === art._id
+                          ? 'transform 0.08s ease-out'
+                          : 'transform 0.2s ease-out',
                     }}
                   />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLoupeArtwork(art);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      bottom: '8px',
+                      right: '8px',
+                      background: 'rgba(15, 23, 42, 0.85)',
+                      color: '#f8fafc',
+                      border: '1px solid rgba(148, 163, 184, 0.5)',
+                      borderRadius: '6px',
+                      padding: '4px 8px',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      zIndex: 12,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                    }}
+                    title="Open high-resolution full-screen Loupe inspection"
+                  >
+                    🔎 Loupe
+                  </button>
                 </div>
               ) : (
                 <div
@@ -2039,18 +2369,24 @@ export function VenueGridManager({
                 >
                   {art.displayTitle || art.title || 'Untitled'}
                 </div>
-                {art.displayTitle && art.displayTitle !== art.title && (
+                {getFullOriginalFilename(art) && (
                   <div
                     style={{
-                      fontSize: '0.72rem',
-                      color: '#64748b',
+                      fontSize: '0.71rem',
+                      color: '#334155',
+                      fontFamily: 'monospace',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '4px',
+                      padding: '2px 5px',
+                      marginTop: '3px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                     }}
-                    title={art.title}
+                    title={`Full Original File Name: ${getFullOriginalFilename(art)}`}
                   >
-                    File: {art.title}
+                    📄 {getFullOriginalFilename(art)}
                   </div>
                 )}
                 {art.guestPhotographer && (
@@ -2353,6 +2689,70 @@ export function VenueGridManager({
             )}
 
             <form onSubmit={handleSaveArtworkDetails} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* 0. FULL ORIGINAL FILE NAME (EXACT PHOTO VERSION & DATE REFERENCE) */}
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #94a3b8',
+                  borderRadius: '8px',
+                  padding: '0.75rem 0.95rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: '240px' }}>
+                  <div
+                    style={{
+                      fontSize: '0.73rem',
+                      fontWeight: 800,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      color: '#475569',
+                      marginBottom: '0.2rem',
+                    }}
+                  >
+                    📄 Original File Name (Exact Photo Version &amp; Processing Date Reference)
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      fontFamily: 'monospace',
+                      wordBreak: 'break-all',
+                    }}
+                  >
+                    {getFullOriginalFilename(editingArtwork) || 'No filename recorded'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fn = getFullOriginalFilename(editingArtwork);
+                    if (fn) {
+                      navigator.clipboard?.writeText(fn);
+                      window.alert(`Copied full original file name to clipboard:\n${fn}`);
+                    }
+                  }}
+                  style={{
+                    padding: '0.4rem 0.75rem',
+                    background: '#e2e8f0',
+                    color: '#0f172a',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  📋 Copy File Name
+                </button>
+              </div>
+
               {/* 1. TITLES, SLUG & VENUE */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
                 <div>
@@ -2868,6 +3268,51 @@ export function VenueGridManager({
                 />
               </div>
 
+              {/* ALPHABETIZE SPECIES WITHIN VENUE CHECKBOX */}
+              <div
+                style={{
+                  background: '#f5f3ff',
+                  border: '1px solid #c4b5fd',
+                  borderRadius: '8px',
+                  padding: '0.85rem 1rem',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.65rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editingVenue.alphabetizeBySpecies)}
+                    onChange={(e) =>
+                      setEditingVenue((prev) => ({
+                        ...prev,
+                        alphabetizeBySpecies: e.target.checked,
+                      }))
+                    }
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      marginTop: '2px',
+                      cursor: 'pointer',
+                      accentColor: '#6d28d9',
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#4c1d95' }}>
+                      🔤 Alphabetize Species in This Venue (Sort photos A–Z by Species / Title on Website)
+                    </div>
+                    <div style={{ fontSize: '0.77rem', color: '#5b21b6', marginTop: '0.2rem', lineHeight: 1.45 }}>
+                      Ideal for multi-species sub-venues like <strong>Warblers</strong> (with 30+ species) so all photos of each species are grouped together in alphabetical order (A–Z) for visitors.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.9rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e40af' }}>
@@ -3289,6 +3734,111 @@ export function VenueGridManager({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* HIGH-RESOLUTION FULL-SCREEN LOUPE INSPECTION MODAL */}
+      {loupeArtwork && (
+        <div
+          onClick={() => setLoupeArtwork(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(2, 6, 23, 0.94)',
+            zIndex: 10000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '1600px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.75rem',
+              color: '#f8fafc',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 700 }}>
+                {loupeArtwork.displayTitle || loupeArtwork.title || 'Untitled'}
+                {loupeArtwork.species ? ` — ${loupeArtwork.species}` : ''}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#94a3b8', fontFamily: 'monospace', marginTop: '2px' }}>
+                📄 Original File: {getFullOriginalFilename(loupeArtwork)}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const art = loupeArtwork;
+                  setLoupeArtwork(null);
+                  setEditingArtwork(art);
+                }}
+                style={{
+                  padding: '0.5rem 0.95rem',
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                }}
+              >
+                ✨ Optimize / Edit SEO
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoupeArtwork(null)}
+                style={{
+                  padding: '0.5rem 0.95rem',
+                  background: '#334155',
+                  color: '#fff',
+                  border: '1px solid #64748b',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕ Close Loupe
+              </button>
+            </div>
+          </div>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              flex: 1,
+              width: '100%',
+              maxWidth: '1600px',
+              maxHeight: '82vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+            }}
+          >
+            <img
+              src={`${loupeArtwork.imageUrl}?w=2400&fit=max&q=95`}
+              alt={loupeArtwork.displayTitle || loupeArtwork.title}
+              style={{
+                width: '100%',
+                height: '82vh',
+                objectFit: 'contain',
+                borderRadius: '6px',
+              }}
+            />
           </div>
         </div>
       )}

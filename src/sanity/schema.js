@@ -268,6 +268,14 @@ const category = {
       type: 'text',
       group: 'content',
       description: 'A biological or general description of this species. This automatically displays over every photograph in this category!'
+    },
+    {
+      name: 'alphabetizeBySpecies',
+      title: 'Alphabetize Photos by Species / Title (A–Z)',
+      type: 'boolean',
+      group: 'content',
+      initialValue: false,
+      description: 'When enabled, photos in this Venue or Sub-Venue are sorted alphabetically (A–Z) by species/title so visitors can browse multi-species galleries (like Warblers) in alphabetical order.'
     }
   ],
   preview: {

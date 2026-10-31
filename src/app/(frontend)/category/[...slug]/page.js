@@ -106,6 +106,19 @@ export default async function CategoryPage({ params }) {
   let artworks = []
   if (category && !isRootWithSubvenues) {
     artworks = await client.fetch(artworksQuery, { currentSlug })
+    if (category.alphabetizeBySpecies && Array.isArray(artworks)) {
+      artworks = [...artworks].sort((a, b) => {
+        const speciesA = (a.species || a.displayTitle || a.title || '').trim()
+        const speciesB = (b.species || b.displayTitle || b.title || '').trim()
+        const cmp = speciesA.localeCompare(speciesB, undefined, { numeric: true, sensitivity: 'base' })
+        if (cmp !== 0) return cmp
+        const titleA = (a.displayTitle || a.title || '').trim()
+        const titleB = (b.displayTitle || b.title || '').trim()
+        const titleCmp = titleA.localeCompare(titleB, undefined, { numeric: true, sensitivity: 'base' })
+        if (titleCmp !== 0) return titleCmp
+        return (a.fileName || '').localeCompare(b.fileName || '', undefined, { numeric: true, sensitivity: 'base' })
+      })
+    }
   }
 
   if (!category) {
@@ -137,10 +150,22 @@ export default async function CategoryPage({ params }) {
           </div>
         )}
         {subcategorySlug && (
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <Link href={`/category/${categorySlug}`} className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-neutral-900 border border-white/10 text-xs sm:text-sm text-neutral-300 hover:text-white uppercase tracking-widest font-mono transition-colors">
               &larr; Back to {categorySlug.replace(/-/g, ' ')}
             </Link>
+            {category.alphabetizeBySpecies && (
+              <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[11px] sm:text-xs text-emerald-300 uppercase tracking-widest font-mono">
+                Alphabetical by Species (A&ndash;Z)
+              </span>
+            )}
+          </div>
+        )}
+        {!subcategorySlug && category.alphabetizeBySpecies && (
+          <div className="mt-4">
+            <span className="inline-flex items-center px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[11px] sm:text-xs text-emerald-300 uppercase tracking-widest font-mono">
+              Alphabetical by Species (A&ndash;Z)
+            </span>
           </div>
         )}
       </section>
