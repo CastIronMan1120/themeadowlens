@@ -126,16 +126,16 @@ export default async function Home() {
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
                   style={{ backgroundImage: `url('${venue.imageUrl || heroImageUrl}')` }}
                 />
-                <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition-colors duration-500" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl text-white font-light tracking-widest uppercase drop-shadow-2xl shadow-black group-hover:scale-110 transition-transform duration-500">
-                    {venue.title}
-                  </h3>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent opacity-90 group-hover:opacity-75 transition-opacity duration-500" />
+                <div className="absolute inset-0 flex flex-col items-center justify-end p-4 sm:p-5 md:p-6 pb-4 sm:pb-5 md:pb-6 text-center">
                   {isGuestVenue && (
-                    <span className="mt-2.5 sm:mt-3 px-3 py-1 bg-black/70 border border-emerald-500/40 text-emerald-400 font-mono text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em]">
+                    <span className="mb-2 px-3 py-0.5 bg-black/75 border border-emerald-500/40 text-emerald-400 font-mono text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em]">
                       Curated By Invitation
                     </span>
                   )}
+                  <h3 className="text-lg sm:text-xl md:text-2xl text-white font-semibold tracking-wider sm:tracking-widest uppercase drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] leading-snug group-hover:scale-[1.03] transition-transform duration-500">
+                    {venue.title}
+                  </h3>
                 </div>
               </Link>
             )
