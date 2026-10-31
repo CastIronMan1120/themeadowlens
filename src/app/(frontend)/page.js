@@ -32,8 +32,8 @@ export default async function Home() {
   const sliderArtworks = await client.fetch(sliderQuery)
   
   // Default to Sanity CDN composite image if CMS isn't filled out yet
-  const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/289873d73005a6da8561b8161744538ce97d0718-1376x768.jpg"
-  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/289873d73005a6da8561b8161744538ce97d0718-1376x768.jpg"
+  const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/a7ac6e0559f1889b283327685912ccc9d1a4dfc3-1376x768.jpg"
+  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/a7ac6e0559f1889b283327685912ccc9d1a4dfc3-1376x768.jpg"
   
   const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
   const sliderImages = sliderArtworks.length > 0 ? sliderArtworks : [defaultSliderImage]
@@ -45,15 +45,15 @@ export default async function Home() {
       {/* 1. THE WELCOME ENTRANCE */}
       <section className="relative w-full pt-4 sm:pt-6 md:pt-8 pb-10 sm:pb-16 px-4 sm:px-6 md:px-10 lg:px-14 max-w-[2100px] mx-auto">
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-8 xl:gap-10 items-stretch w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-8 xl:gap-10 items-start w-full">
           
-          {/* Left Column: Bright Rectangular 600mm Meadow Lens Panorama (Matched 50/50 Twin 16:9 Rectangle) */}
-          <div className="flex items-stretch justify-center w-full">
+          {/* Left Column: 100% Round Circular Lens in 16:9 Rectangular Panorama (Matched 50/50 Twin 16:9 Rectangle) */}
+          <div className="w-full">
             <div className="w-full aspect-[16/9] relative rounded-xl overflow-hidden border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-neutral-950">
               <img 
                 src={`${heroImageUrl}?w=1600&q=95&auto=format`} 
                 alt="The Meadow Lens — Through the 600mm Lens" 
-                className="w-full h-full object-cover object-center select-none block"
+                className="w-full h-full object-contain select-none block"
               />
             </div>
           </div>
