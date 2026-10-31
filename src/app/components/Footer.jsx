@@ -2,16 +2,23 @@ import Link from 'next/link'
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-black border-t border-white/10 pt-12 sm:pt-16 pb-8 px-5 sm:px-12 md:px-24 text-neutral-400 relative z-10">
-      <div className="max-w-[2000px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12 items-start">
+    <footer className="w-full bg-black border-t border-white/10 pt-8 sm:pt-12 pb-6 sm:pb-8 text-neutral-400 relative z-10">
+      <div className="max-w-[2100px] mx-auto px-4 sm:px-6 md:px-10 lg:px-14 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-start">
         
         {/* 1. The Branding */}
         <div className="flex flex-col">
-          <Link href="/" className="text-xl sm:text-2xl md:text-3xl font-light text-white tracking-widest uppercase hover:opacity-80 transition-opacity">
+          <Link
+            href="/"
+            className="text-2xl sm:text-3xl md:text-4xl font-normal text-white tracking-normal hover:opacity-80 transition-opacity leading-snug"
+            style={{ fontFamily: 'var(--font-logo)' }}
+          >
             The Meadow Lens
           </Link>
-          <p className="text-xs uppercase tracking-[0.3em] mt-2 font-semibold text-neutral-500">Naturally.</p>
-          <p className="text-xs text-neutral-500 mt-4 max-w-xs leading-relaxed">
+          <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.14em] sm:tracking-[0.16em] mt-1.5 text-neutral-300 leading-snug">
+            <span className="block">Extraordinary Photography of Birds, Wildlife &amp; Nature</span>
+            <span className="block mt-0.5 text-neutral-400">&mdash; Centered on the New Jersey Meadowlands</span>
+          </p>
+          <p className="text-xs text-neutral-500 mt-3 max-w-sm leading-relaxed">
             Fine art nature &amp; wildlife photography by Northern NJ native David McClure.
           </p>
         </div>
@@ -44,7 +51,7 @@ export default function Footer() {
       </div>
 
       {/* Copyright */}
-      <div className="max-w-[2000px] mx-auto mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-white/10 text-[11px] sm:text-xs font-mono uppercase tracking-wider sm:tracking-widest flex flex-col md:flex-row justify-between items-center text-center md:text-left opacity-50 gap-2">
+      <div className="max-w-[2100px] mx-auto px-4 sm:px-6 md:px-10 lg:px-14 mt-8 sm:mt-10 pt-5 sm:pt-6 border-t border-white/10 text-[11px] sm:text-xs font-mono uppercase tracking-wider sm:tracking-widest flex flex-col md:flex-row justify-between items-center text-center md:text-left opacity-50 gap-2">
         <p>&copy; {new Date().getFullYear()} The Meadow Lens — David McClure. All rights reserved.</p>
         <p>Exit 16W • The Meadowlands, New Jersey</p>
       </div>
