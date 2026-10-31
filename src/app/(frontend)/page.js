@@ -32,8 +32,8 @@ export default async function Home() {
   const sliderArtworks = await client.fetch(sliderQuery)
   
   // Default to Sanity CDN composite image if CMS isn't filled out yet
-  const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/a7ac6e0559f1889b283327685912ccc9d1a4dfc3-1376x768.jpg"
-  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/a7ac6e0559f1889b283327685912ccc9d1a4dfc3-1376x768.jpg"
+  const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg"
+  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg"
   
   const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
   const sliderImages = sliderArtworks.length > 0 ? sliderArtworks : [defaultSliderImage]
