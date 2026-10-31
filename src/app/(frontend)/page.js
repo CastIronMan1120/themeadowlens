@@ -32,8 +32,8 @@ export default async function Home() {
   const sliderArtworks = await client.fetch(sliderQuery)
   
   // Default to Sanity CDN composite image if CMS isn't filled out yet
-  const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/e9e353906b85748121aaa9747813c81f602079e6-515x432.png"
-  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/e9e353906b85748121aaa9747813c81f602079e6-515x432.png"
+  const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/7e56392a6cff844ff2f7be95542cbb0594fbf9f2-1019x1024.jpg"
+  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/7e56392a6cff844ff2f7be95542cbb0594fbf9f2-1019x1024.jpg"
   
   const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
   const sliderImages = sliderArtworks.length > 0 ? sliderArtworks : [defaultSliderImage]
@@ -43,32 +43,32 @@ export default async function Home() {
     <main className="min-h-screen bg-black">
       
       {/* 1. THE WELCOME ENTRANCE */}
-      <section className="relative w-full pt-4 sm:pt-6 md:pt-8 pb-10 sm:pb-16 px-4 sm:px-6 md:px-12 lg:px-24 max-w-[2400px] mx-auto flex items-center">
+      <section className="relative w-full pt-4 sm:pt-6 md:pt-8 pb-10 sm:pb-16 px-4 sm:px-6 md:px-10 lg:px-14 max-w-[1920px] mx-auto">
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-12 items-stretch w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-8 xl:gap-10 items-stretch w-full">
           
-          {/* Left Column: Branding & Lens */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="w-full max-w-md sm:max-w-lg shadow-2xl relative aspect-square bg-transparent">
+          {/* Left Column: 600mm Meadow Lens Emblem (5 of 12 columns on desktop, perfectly matched in height & framing) */}
+          <div className="lg:col-span-5 flex items-stretch justify-center">
+            <div className="w-full max-w-xl lg:max-w-none aspect-square relative rounded-xl overflow-hidden border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-neutral-950">
               <img 
-                src={heroImageUrl} 
-                alt="The Meadow Lens Composite" 
-                className="absolute inset-0 w-full h-full object-cover"
+                src={`${heroImageUrl}?w=1400&q=95&auto=format`} 
+                alt="The Meadow Lens — Through the 600mm Lens" 
+                className="absolute inset-0 w-full h-full object-cover select-none"
               />
             </div>
           </div>
 
-          {/* Right Column: Slider with Overlay Text (Stacked cleanly on smartphones, overlaid on tablet/desktop) */}
-          <div className="w-full relative overflow-hidden rounded-md shadow-2xl md:min-h-[600px] flex flex-col md:block bg-neutral-950 border border-white/10 md:border-0">
+          {/* Right Column: Live Exhibition Slider with Overlay Welcome Card (7 of 12 columns on desktop, flush top/bottom alignment) */}
+          <div className="lg:col-span-7 w-full relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] md:min-h-[520px] lg:min-h-0 flex flex-col md:block bg-neutral-950 border border-white/15">
             <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] md:aspect-auto md:absolute md:inset-0">
               <HeroSlider images={sliderImages} />
             </div>
             
             {/* Welcome Card: Below slider on smartphones so photos are 100% visible; Top-Right overlay on md+ */}
-            <div className="relative md:absolute md:top-0 md:right-0 w-full md:w-3/4 lg:w-4/5 xl:w-2/3 bg-neutral-950/95 md:bg-black/60 md:backdrop-blur-md p-6 sm:p-8 md:p-10 border-t md:border-t-0 md:border-l md:border-b border-neutral-800 z-20 md:rounded-bl-3xl">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl text-white mb-4 sm:mb-6 font-light">{welcomeHeadline}</h2>
+            <div className="relative md:absolute md:top-0 md:right-0 w-full md:w-[72%] lg:w-[68%] xl:w-[62%] bg-neutral-950/95 md:bg-slate-950/75 md:backdrop-blur-md p-6 sm:p-8 md:p-9 border-t md:border-t-0 md:border-l md:border-b border-white/15 z-20 md:rounded-bl-2xl shadow-2xl">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl text-white mb-3 sm:mb-5 font-light tracking-wide">{welcomeHeadline}</h2>
               
-              <div className="space-y-3 sm:space-y-4 text-neutral-200 text-sm md:text-base leading-relaxed">
+              <div className="space-y-3 sm:space-y-3.5 text-neutral-100 text-sm md:text-[15px] leading-relaxed font-light">
                 {homepage?.welcomeText ? (
                   <PortableText value={homepage.welcomeText} />
                 ) : (
