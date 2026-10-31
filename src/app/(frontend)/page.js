@@ -43,9 +43,9 @@ export default async function Home() {
     <main className="min-h-screen bg-black">
       
       {/* 1. THE WELCOME ENTRANCE */}
-      <section className="relative w-full pt-4 sm:pt-6 md:pt-8 pb-10 sm:pb-16 px-4 sm:px-6 md:px-10 lg:px-14 max-w-[2100px] mx-auto">
+      <section className="relative w-full pt-1 sm:pt-1.5 md:pt-2 pb-5 sm:pb-7 px-4 sm:px-6 md:px-10 lg:px-14 max-w-[2100px] mx-auto">
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-8 xl:gap-10 items-start w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 items-start w-full">
           
           {/* Left Column: 100% Round Circular Lens in 16:9 Rectangular Panorama (Matched 50/50 Twin 16:9 Rectangle) */}
           <div className="w-full">
@@ -94,24 +94,24 @@ export default async function Home() {
 
       {/* 2. FEATURED TICKER */}
       {homepage?.featuredPhotos && homepage.featuredPhotos.length > 0 && (
-        <div className="w-full bg-neutral-950 border-t border-b border-neutral-800 pt-10 sm:pt-16 pb-4 sm:pb-6 text-center relative z-30">
+        <div className="w-full bg-neutral-950 border-t border-b border-neutral-800 pt-5 sm:pt-7 pb-3 sm:pb-4 text-center relative z-30">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-light text-white tracking-[0.25em] sm:tracking-[0.3em] uppercase text-xs sm:text-sm">Featured Works</h2>
-          <div className="w-12 h-[1px] bg-emerald-600 mx-auto mt-3 sm:mt-4 mb-6 sm:mb-8"></div>
+          <div className="w-12 h-[1px] bg-emerald-600 mx-auto mt-2 mb-4"></div>
           <FeaturedTicker artworks={homepage.featuredPhotos} speed={homepage?.featuredTickerSpeed || 60} />
         </div>
       )}
 
       {/* 3. VENUES TILE GRID */}
-      <section id="venues" className="min-h-screen p-4 sm:p-8 md:p-16 max-w-[2400px] mx-auto bg-neutral-950 relative z-20">
+      <section id="venues" className="py-6 sm:py-8 px-4 sm:px-6 md:px-10 lg:px-14 max-w-[2100px] mx-auto bg-neutral-950 relative z-20">
         
-        <div className="max-w-4xl mx-auto text-center mb-10 sm:mb-16 mt-6 sm:mt-12 px-2">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-light text-white mb-4 sm:mb-6 tracking-wide">Explore The Venues</h2>
+        <div className="max-w-4xl mx-auto text-center mb-5 sm:mb-7 mt-1 sm:mt-2 px-2">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-light text-white mb-1.5 sm:mb-2 tracking-wide">Explore The Venues</h2>
           <p className="text-neutral-400 font-light text-sm sm:text-base md:text-lg">
             Step into our digital halls. Select a venue below to explore the collection.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {venues.map((venue) => {
             const isGuestVenue = venue.slug?.current === 'guest-photos'
             return (
@@ -143,7 +143,7 @@ export default async function Home() {
         </div>
 
         {/* 4. INTERNAL PAGES & CURATED DIRECTORY STRIP */}
-        <div className="mt-16 sm:mt-24 pt-12 sm:pt-16 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Link
             href="/category/guest-photos"
             className="group p-6 sm:p-8 bg-neutral-900/60 border border-emerald-500/20 hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between"

@@ -40,12 +40,12 @@ export default function Navigation({ categories }) {
   return (
     <>
       {/* Constant-height layout spacer prevents fixed header compacting from ever altering window.scrollY */}
-      <header className="h-[92px] sm:h-[108px] md:h-[124px] w-full shrink-0 bg-black">
+      <header className="h-[70px] sm:h-[80px] md:h-[90px] w-full shrink-0 bg-black">
         <nav 
           className={`fixed top-0 left-0 w-full z-50 transition-[background-color,padding,box-shadow] duration-300 ${
             scrolled
-              ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
-              : 'bg-black py-3 sm:py-3.5 md:py-4'
+              ? 'bg-black/95 backdrop-blur-xl py-1.5 md:py-2 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
+              : 'bg-black py-1.5 sm:py-2 md:py-2.5'
           }`}
         >
           <div className="max-w-[2100px] mx-auto px-4 sm:px-6 md:px-10 lg:px-14 flex flex-col">
@@ -55,7 +55,7 @@ export default function Navigation({ categories }) {
               {/* Brand Title */}
               <Link href="/" className="group relative z-50 min-w-0 shrink-0 pr-2">
                 <h1 
-                  className="leading-none whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-85 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
+                  className="leading-[0.82] whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-85 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
                   style={{ fontFamily: 'var(--font-logo)' }}
                 >
                   The Meadow Lens
@@ -109,8 +109,8 @@ export default function Navigation({ categories }) {
             <Link
               href="/"
               tabIndex={-1}
-              className={`block text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-[11.5px] xl:text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] drop-shadow-md max-w-none lg:whitespace-nowrap leading-snug transition-[max-height,opacity,margin] duration-300 overflow-hidden hover:text-white ${
-                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-14 opacity-100 mt-1.5 sm:mt-2'
+              className={`block text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-[11.5px] xl:text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] drop-shadow-md max-w-none lg:whitespace-nowrap leading-none transition-[max-height,opacity,margin] duration-300 overflow-hidden hover:text-white ${
+                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-10 opacity-100 -mt-0.5 sm:-mt-1'
               }`}
             >
               Extraordinary Photography of Birds, Wildlife &amp; Nature &mdash; Centered on the New Jersey Meadowlands
