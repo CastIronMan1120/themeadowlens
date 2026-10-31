@@ -109,11 +109,11 @@ export default function Navigation({ categories }) {
             <Link
               href="/"
               tabIndex={-1}
-              className={`block pl-0.5 text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-[11.5px] xl:text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] drop-shadow-md max-w-none lg:whitespace-nowrap leading-snug transition-[max-height,opacity,margin] duration-300 overflow-hidden hover:text-white ${
+              className={`block text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-[11.5px] xl:text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] drop-shadow-md max-w-none lg:whitespace-nowrap leading-snug transition-[max-height,opacity,margin] duration-300 overflow-hidden hover:text-white ${
                 scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-14 opacity-100 mt-1.5 sm:mt-2'
               }`}
             >
-              &ldquo;Wow-factor&rdquo; photography of birds, nature and more with particular focus on the NJ &ldquo;Meadowlands&rdquo; !
+              Extraordinary Photography of Birds, Wildlife &amp; Nature &mdash; Centered on the New Jersey Meadowlands
             </Link>
 
           </div>
