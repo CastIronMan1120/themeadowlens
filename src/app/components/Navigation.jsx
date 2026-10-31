@@ -113,7 +113,7 @@ export default function Navigation({ categories }) {
                 scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-16 opacity-100 mt-0.5'
               }`}
             >
-              <span className="block">Extraordinary Photography of Birds, Wildlife &amp; Nature</span>
+              <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
               <span className="block mt-0.5">&mdash; Centered on the New Jersey Meadowlands</span>
             </Link>
 

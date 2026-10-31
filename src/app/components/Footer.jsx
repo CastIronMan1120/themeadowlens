@@ -15,7 +15,7 @@ export default function Footer() {
             The Meadow Lens
           </Link>
           <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.14em] sm:tracking-[0.16em] mt-1.5 text-neutral-300 leading-snug">
-            <span className="block">Extraordinary Photography of Birds, Wildlife &amp; Nature</span>
+            <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
             <span className="block mt-0.5 text-neutral-400">&mdash; Centered on the New Jersey Meadowlands</span>
           </p>
           <p className="text-xs text-neutral-500 mt-3 max-w-sm leading-relaxed">
