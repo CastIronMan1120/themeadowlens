@@ -1,10 +1,29 @@
 import { client } from '../../sanity/lib/client'
 import Link from 'next/link'
-import HeroSlider from '../components/HeroSlider'
 import FeaturedTicker from '../components/FeaturedTicker'
 import { PortableText } from '@portabletext/react'
 
 export const revalidate = 0 
+
+function hexToRgba(hex, opacityPercent = 75) {
+  const cleanHex = String(hex || '#0B1528').replace('#', '').trim()
+  let r = 11, g = 21, b = 40
+  if (cleanHex.length === 3) {
+    r = parseInt(cleanHex[0] + cleanHex[0], 16)
+    g = parseInt(cleanHex[1] + cleanHex[1], 16)
+    b = parseInt(cleanHex[2] + cleanHex[2], 16)
+  } else if (cleanHex.length === 6) {
+    r = parseInt(cleanHex.slice(0, 2), 16)
+    g = parseInt(cleanHex.slice(2, 4), 16)
+    b = parseInt(cleanHex.slice(4, 6), 16)
+  }
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+    r = 11; g = 21; b = 40
+  }
+  const clampedOpacity = Math.max(0, Math.min(100, Number(opacityPercent ?? 75)))
+  const alpha = Number((clampedOpacity / 100).toFixed(3))
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 export default async function Home() {
   const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything"])] {
@@ -22,38 +41,48 @@ export default async function Home() {
     return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' })
   })
 
-  // 1. Fetch Homepage Settings
+  // 1. Fetch Homepage Settings (Left & Right Static Panels + Customizable Welcome Overlay)
   const homepage = await client.fetch(`*[_type == "homepage"][0] {
     welcomeHeadline,
     welcomeText,
     quote,
     featuredTickerSpeed,
     showWelcomeOverlay,
+    rightPanelFit,
+    welcomeBgColor,
+    welcomeBgOpacity,
+    welcomeTextColor,
+    welcomeBackdropBlur,
     "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
     "heroImageUrl": heroImage.asset->url,
     "rightPanelImageUrl": rightPanelImage.asset->url
   }`)
-
-  // 2. Fetch Hero Slider Photos (Most recently added)
-  const sliderQuery = `*[_type == "artwork" && defined(image.asset)] | order(_createdAt desc)[0...15] { 
-    _id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url 
-  }`
-  const sliderArtworks = await client.fetch(sliderQuery)
   
-  // Default to Sanity CDN composite image if CMS isn't filled out yet
+  // Default Left & Right Static Images if CMS isn't filled out yet
   const defaultHeroLogo = "https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg"
-  const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg"
+  const defaultRightStaticImage = "https://cdn.sanity.io/images/h7ncr8cq/production/5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567.jpg"
   
   const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
-  const rightPanelStaticUrl = homepage?.rightPanelImageUrl || null
+  const rightPanelStaticUrl =
+    homepage?.rightPanelImageUrl ||
+    homepage?.featuredPhotos?.[0]?.url ||
+    defaultRightStaticImage
+  const rightPanelFit = homepage?.rightPanelFit === 'contain' ? 'object-contain' : 'object-cover'
   const showWelcomeOverlay = homepage?.showWelcomeOverlay !== false
-  const sliderImages = sliderArtworks.length > 0 ? sliderArtworks : [defaultSliderImage]
-  const welcomeHeadline = homepage?.welcomeHeadline || "Welcome!"
+  const welcomeHeadline = homepage?.welcomeHeadline || "Welcome to The Meadow Lens"
+  const welcomeBgColor = homepage?.welcomeBgColor || '#0B1528'
+  const welcomeBgOpacity =
+    typeof homepage?.welcomeBgOpacity === 'number' && !Number.isNaN(homepage.welcomeBgOpacity)
+      ? Math.max(0, Math.min(100, homepage.welcomeBgOpacity))
+      : 75
+  const welcomeTextColor = homepage?.welcomeTextColor || '#F8FAFC'
+  const welcomeBackdropBlur = homepage?.welcomeBackdropBlur !== false && welcomeBgOpacity > 0
+  const welcomeOverlayBgRgba = hexToRgba(welcomeBgColor, welcomeBgOpacity)
 
   return (
     <main className="min-h-screen bg-black">
       
-      {/* 1. THE WELCOME ENTRANCE */}
+      {/* 1. THE WELCOME ENTRANCE (Twin 50/50 16:9 Static Panels + Optional Customizable Welcome Overlay) */}
       <section className="relative w-full pt-1 sm:pt-1.5 md:pt-2 pb-5 sm:pb-7 px-4 sm:px-6 md:px-10 lg:px-14 max-w-[2100px] mx-auto">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 items-start w-full">
@@ -69,26 +98,42 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Right Column: Static Photo or Live Exhibition Slider with Optional Overlay Welcome Card (Matched 50/50 Twin 16:9 Rectangle) */}
+          {/* Right Column: Static Photograph with Optional Customizable Welcome Content Overlay (Matched 50/50 Twin 16:9 Rectangle) */}
           <div className="w-full lg:aspect-[16/9] relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col md:block bg-neutral-950 border border-white/15">
-            <div className="relative w-full aspect-[16/9] md:aspect-auto md:absolute md:inset-0">
-              {rightPanelStaticUrl ? (
-                <img
-                  src={`${rightPanelStaticUrl}?w=1600&q=95&auto=format`}
-                  alt="Featured Photography by David McClure — The Meadow Lens"
-                  className="w-full h-full object-cover object-center select-none block"
-                />
-              ) : (
-                <HeroSlider images={sliderImages} />
-              )}
+            <div className="relative w-full aspect-[16/9] md:aspect-auto md:absolute md:inset-0 bg-neutral-950">
+              <img
+                src={`${rightPanelStaticUrl}?w=1600&q=95&auto=format`}
+                alt="Featured Photography by David McClure — The Meadow Lens"
+                className={`w-full h-full ${rightPanelFit} object-center select-none block`}
+              />
             </div>
             
-            {/* Welcome Card: Rendered only when showWelcomeOverlay is enabled */}
+            {/* Welcome Card: Rendered when showWelcomeOverlay is enabled, with customizable Background Color & Transparency */}
             {showWelcomeOverlay && (
-              <div className="relative md:absolute md:top-0 md:right-0 w-full md:w-[70%] lg:w-[68%] xl:w-[64%] max-h-full overflow-y-auto bg-neutral-950/95 md:bg-slate-950/75 md:backdrop-blur-md p-5 sm:p-6 md:p-6 xl:p-7 border-t md:border-t-0 md:border-l md:border-b border-white/15 z-20 md:rounded-bl-2xl shadow-2xl">
-                <h2 className="text-xl sm:text-2xl xl:text-3xl text-white mb-2 sm:mb-3 font-light tracking-wide">{welcomeHeadline}</h2>
+              <div
+                style={{
+                  backgroundColor: welcomeOverlayBgRgba,
+                  color: welcomeTextColor,
+                }}
+                className={`relative md:absolute md:top-0 md:right-0 w-full md:w-[70%] lg:w-[68%] xl:w-[64%] max-h-full overflow-y-auto p-5 sm:p-6 md:p-6 xl:p-7 z-20 md:rounded-bl-2xl transition-colors duration-300 ${
+                  welcomeBackdropBlur ? 'md:backdrop-blur-md' : ''
+                } ${
+                  welcomeBgOpacity > 5
+                    ? 'border-t md:border-t-0 md:border-l md:border-b border-white/15 shadow-2xl'
+                    : ''
+                }`}
+              >
+                <h2
+                  style={{ color: welcomeTextColor }}
+                  className="text-xl sm:text-2xl xl:text-3xl mb-2 sm:mb-3 font-light tracking-wide"
+                >
+                  {welcomeHeadline}
+                </h2>
                 
-                <div className="space-y-2 sm:space-y-2.5 text-neutral-100 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light">
+                <div
+                  style={{ color: welcomeTextColor }}
+                  className="space-y-2 sm:space-y-2.5 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light opacity-95"
+                >
                   {homepage?.welcomeText ? (
                     <PortableText value={homepage.welcomeText} />
                   ) : (
@@ -100,7 +145,7 @@ export default async function Home() {
                       <p>
                         This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
                       </p>
-                      <p className="italic pt-2 text-white">
+                      <p className="italic pt-2">
                         After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
                       </p>
                     </>

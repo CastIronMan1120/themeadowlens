@@ -30,12 +30,25 @@ export function VenueGridManager({
   const [orderScope, setOrderScope] = useState('root'); // 'root' or parentCategory._id
   const [orderedVenuesList, setOrderedVenuesList] = useState([]);
   const [showHomepageModal, setShowHomepageModal] = useState(false);
+  const [homepageGalleryOptions, setHomepageGalleryOptions] = useState([]);
+  const [homepageGallerySearch, setHomepageGallerySearch] = useState('');
   const [homepageForm, setHomepageForm] = useState({
     _id: 'homepage',
+    heroImageAssetId: 'image-eeb19431e524e43391ed803793c9a8f076b20756-1376x768-jpg',
+    heroImageUrl:
+      'https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg',
+    rightPanelImageAssetId: 'image-5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567-jpg',
+    rightPanelImageUrl:
+      'https://cdn.sanity.io/images/h7ncr8cq/production/5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567.jpg',
+    rightPanelFit: 'cover',
     showWelcomeOverlay: true,
-    rightPanelImageAssetId: '',
-    rightPanelImageUrl: '',
     welcomeHeadline: 'Welcome to The Meadow Lens',
+    welcomeBodyText:
+      "I am David McClure, a fine art photographer with a lifelong passion for capturing the raw, uninterrupted beauty of nature. For years, I have explored the hidden depths of the New Jersey Meadowlands and beyond, waiting for those fleeting moments of perfection.\n\nThis gallery is a curated exhibition of my life's work — from the aggressive grace of birds of prey to the tranquil stillness of untouched vistas. I invite you to step into these digital halls and explore the world through my lens.",
+    welcomeBgColor: '#0B1528',
+    welcomeBgOpacity: 75,
+    welcomeTextColor: '#F8FAFC',
+    welcomeBackdropBlur: true,
   });
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
   const [guestForm, setGuestForm] = useState({
@@ -127,17 +140,56 @@ export function VenueGridManager({
       const hpDoc = await client.fetch(`*[_type == "homepage"][0]{
         _id,
         welcomeHeadline,
+        welcomeText,
         showWelcomeOverlay,
-        "rightPanelImageAssetId": rightPanelImage.asset._ref,
-        "rightPanelImageUrl": rightPanelImage.asset->url
+        rightPanelFit,
+        welcomeBgColor,
+        welcomeBgOpacity,
+        welcomeTextColor,
+        welcomeBackdropBlur,
+        "heroImageAssetId": heroImage.asset._ref,
+        "heroImageUrl": heroImage.asset->url,
+        "rightPanelImageAssetId": coalesce(rightPanelImage.asset._ref, featuredArtworks[0]->image.asset._ref),
+        "rightPanelImageUrl": coalesce(rightPanelImage.asset->url, featuredArtworks[0]->image.asset->url)
       }`);
       if (hpDoc) {
+        const extractedText = Array.isArray(hpDoc.welcomeText)
+          ? hpDoc.welcomeText
+              .map((block) =>
+                Array.isArray(block?.children)
+                  ? block.children.map((ch) => ch?.text || '').join('')
+                  : ''
+              )
+              .filter(Boolean)
+              .join('\n\n')
+          : '';
         setHomepageForm({
           _id: hpDoc._id || 'homepage',
+          heroImageAssetId:
+            hpDoc.heroImageAssetId ||
+            'image-eeb19431e524e43391ed803793c9a8f076b20756-1376x768-jpg',
+          heroImageUrl:
+            hpDoc.heroImageUrl ||
+            'https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg',
+          rightPanelImageAssetId:
+            hpDoc.rightPanelImageAssetId ||
+            'image-5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567-jpg',
+          rightPanelImageUrl:
+            hpDoc.rightPanelImageUrl ||
+            'https://cdn.sanity.io/images/h7ncr8cq/production/5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567.jpg',
+          rightPanelFit: hpDoc.rightPanelFit || 'cover',
           showWelcomeOverlay: hpDoc.showWelcomeOverlay !== false,
-          rightPanelImageAssetId: hpDoc.rightPanelImageAssetId || '',
-          rightPanelImageUrl: hpDoc.rightPanelImageUrl || '',
           welcomeHeadline: hpDoc.welcomeHeadline || 'Welcome to The Meadow Lens',
+          welcomeBodyText:
+            extractedText ||
+            "I am David McClure, a fine art photographer with a lifelong passion for capturing the raw, uninterrupted beauty of nature. For years, I have explored the hidden depths of the New Jersey Meadowlands and beyond, waiting for those fleeting moments of perfection.\n\nThis gallery is a curated exhibition of my life's work — from the aggressive grace of birds of prey to the tranquil stillness of untouched vistas. I invite you to step into these digital halls and explore the world through my lens.",
+          welcomeBgColor: hpDoc.welcomeBgColor || '#0B1528',
+          welcomeBgOpacity:
+            typeof hpDoc.welcomeBgOpacity === 'number' && !Number.isNaN(hpDoc.welcomeBgOpacity)
+              ? Math.max(0, Math.min(100, hpDoc.welcomeBgOpacity))
+              : 75,
+          welcomeTextColor: hpDoc.welcomeTextColor || '#F8FAFC',
+          welcomeBackdropBlur: hpDoc.welcomeBackdropBlur !== false,
         });
       }
 
@@ -1317,7 +1369,71 @@ export function VenueGridManager({
     }
   };
 
-  // --- 9D. HOMEPAGE RIGHT PANEL STATIC PHOTO & BIO OVERLAY SETTINGS ---
+  // --- 9D. HOMEPAGE DUAL STATIC PANELS & CUSTOMIZABLE WELCOME OVERLAY DESIGNER ---
+  const convertHexToRgbaPreview = (hex, opacityPercent = 75) => {
+    const cleanHex = String(hex || '#0B1528').replace('#', '').trim();
+    let r = 11,
+      g = 21,
+      b = 40;
+    if (cleanHex.length === 3) {
+      r = parseInt(cleanHex[0] + cleanHex[0], 16);
+      g = parseInt(cleanHex[1] + cleanHex[1], 16);
+      b = parseInt(cleanHex[2] + cleanHex[2], 16);
+    } else if (cleanHex.length === 6) {
+      r = parseInt(cleanHex.slice(0, 2), 16);
+      g = parseInt(cleanHex.slice(2, 4), 16);
+      b = parseInt(cleanHex.slice(4, 6), 16);
+    }
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+      r = 11;
+      g = 21;
+      b = 40;
+    }
+    const clamped = Math.max(0, Math.min(100, Number(opacityPercent ?? 75)));
+    return `rgba(${r}, ${g}, ${b}, ${Number((clamped / 100).toFixed(3))})`;
+  };
+
+  const openHomepageDesignerModal = async () => {
+    setShowHomepageModal(true);
+    if (homepageGalleryOptions.length === 0) {
+      try {
+        const list = await client.fetch(
+          `*[_type == "artwork" && !(_id in path("drafts.**")) && defined(image.asset)] | order(title asc)[0...300] {
+            _id,
+            title,
+            species,
+            "fileName": coalesce(fileName, image.asset->originalFilename, title),
+            "assetId": image.asset._ref,
+            "imageUrl": image.asset->url,
+            "venueTitle": category->title
+          }`
+        );
+        setHomepageGalleryOptions(list || []);
+      } catch (err) {
+        console.error('Error loading gallery options for homepage picker:', err);
+      }
+    }
+  };
+
+  const handleUploadHomepageLeftImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const asset = await client.assets.upload('image', file, { filename: file.name });
+      setHomepageForm((prev) => ({
+        ...prev,
+        heroImageAssetId: asset._id,
+        heroImageUrl: asset.url,
+      }));
+    } catch (err) {
+      console.error('Error uploading left panel image:', err);
+      window.alert('Failed to upload left panel image: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleUploadHomepageRightImage = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1337,6 +1453,18 @@ export function VenueGridManager({
     }
   };
 
+  const handleResetHomepageOverlayDefaults = () => {
+    setHomepageForm((prev) => ({
+      ...prev,
+      showWelcomeOverlay: true,
+      rightPanelFit: 'cover',
+      welcomeBgColor: '#0B1528',
+      welcomeBgOpacity: 75,
+      welcomeTextColor: '#F8FAFC',
+      welcomeBackdropBlur: true,
+    }));
+  };
+
   const handleSaveHomepageSettings = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
@@ -1347,17 +1475,50 @@ export function VenueGridManager({
       delete baseHp._rev;
       delete baseHp._updatedAt;
 
+      if (homepageForm.heroImageAssetId) {
+        baseHp.heroImage = {
+          _type: 'image',
+          asset: { _type: 'reference', _ref: homepageForm.heroImageAssetId },
+        };
+      }
       if (homepageForm.rightPanelImageAssetId) {
         baseHp.rightPanelImage = {
           _type: 'image',
           asset: { _type: 'reference', _ref: homepageForm.rightPanelImageAssetId },
         };
-      } else {
-        delete baseHp.rightPanelImage;
       }
+
+      baseHp.rightPanelFit = homepageForm.rightPanelFit === 'contain' ? 'contain' : 'cover';
       baseHp.showWelcomeOverlay = Boolean(homepageForm.showWelcomeOverlay);
-      if (homepageForm.welcomeHeadline) {
-        baseHp.welcomeHeadline = homepageForm.welcomeHeadline;
+      baseHp.welcomeHeadline =
+        (homepageForm.welcomeHeadline || '').trim() || 'Welcome to The Meadow Lens';
+      baseHp.welcomeBgColor = homepageForm.welcomeBgColor || '#0B1528';
+      baseHp.welcomeBgOpacity = Math.max(
+        0,
+        Math.min(100, Number(homepageForm.welcomeBgOpacity ?? 75))
+      );
+      baseHp.welcomeTextColor = homepageForm.welcomeTextColor || '#F8FAFC';
+      baseHp.welcomeBackdropBlur = Boolean(homepageForm.welcomeBackdropBlur);
+
+      const paragraphs = String(homepageForm.welcomeBodyText || '')
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (paragraphs.length > 0) {
+        baseHp.welcomeText = paragraphs.map((para, idx) => ({
+          _key: `wb_${idx + 1}`,
+          _type: 'block',
+          style: 'normal',
+          markDefs: [],
+          children: [
+            {
+              _key: `ws_${idx + 1}`,
+              _type: 'span',
+              marks: [],
+              text: para,
+            },
+          ],
+        }));
       }
 
       const tx = client.transaction();
@@ -1366,7 +1527,9 @@ export function VenueGridManager({
       await tx.commit();
       setShowHomepageModal(false);
       await fetchData();
-      window.alert('Saved & Published Homepage Right Panel & Bio Overlay Settings Live!');
+      window.alert(
+        'Saved & Published Homepage Left/Right Static Panels & Welcome Overlay Settings Live!'
+      );
     } catch (err) {
       console.error('Error saving homepage settings:', err);
       window.alert('Error saving homepage settings: ' + err.message);
@@ -1815,7 +1978,7 @@ export function VenueGridManager({
 
           <button
             type="button"
-            onClick={() => setShowHomepageModal(true)}
+            onClick={openHomepageDesignerModal}
             style={{
               padding: '0.7rem 1.05rem',
               background: '#1e3a8a',
@@ -1827,7 +1990,7 @@ export function VenueGridManager({
               fontSize: '0.83rem',
             }}
           >
-            🏠 Homepage Right Panel & Bio Overlay
+            🏠 Homepage Panels & Welcome Designer
           </button>
 
           <button
@@ -4307,186 +4470,779 @@ export function VenueGridManager({
         </div>
       )}
 
-      {/* HOMEPAGE RIGHT PANEL STATIC PHOTO & BIO OVERLAY MODAL */}
+      {/* HOMEPAGE LEFT & RIGHT STATIC PANELS + CUSTOMIZABLE WELCOME OVERLAY DESIGNER MODAL */}
       {showHomepageModal && (
         <div
           onClick={() => setShowHomepageModal(false)}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.78)',
+            background: 'rgba(15, 23, 42, 0.82)',
             zIndex: 10000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.25rem',
+            padding: '1rem',
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: '#ffffff',
-              borderRadius: '12px',
-              maxWidth: '640px',
+              borderRadius: '14px',
+              maxWidth: '980px',
               width: '100%',
-              padding: '1.65rem',
-              maxHeight: '90vh',
+              padding: '1.5rem 1.75rem',
+              maxHeight: '92vh',
               overflowY: 'auto',
-              boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.45)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
-                🏠 Homepage Right Panel Photo & Bio Overlay
-              </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#0f172a' }}>
+                  🏠 Homepage Left & Right Static Panels + Welcome Overlay Designer
+                </h2>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: '#475569' }}>
+                  Manage both homepage 16:9 static panels and customize the Right Panel&apos;s Welcome Content, Background Color, and Transparency.
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowHomepageModal(false)}
-                style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.35rem', cursor: 'pointer', color: '#64748b' }}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveHomepageSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+            <form onSubmit={handleSaveHomepageSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+              {/* 1. REAL-TIME SIDE-BY-SIDE 50/50 LIVE PREVIEW */}
               <div
                 style={{
-                  background: '#eff6ff',
-                  border: '1px solid #93c5fd',
-                  borderRadius: '8px',
-                  padding: '1rem',
+                  background: '#050505',
+                  borderRadius: '12px',
+                  padding: '0.9rem',
+                  border: '1px solid #334155',
                 }}
               >
-                <label
+                <div
                   style={{
                     display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.7rem',
-                    cursor: 'pointer',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.55rem',
+                    color: '#cbd5e1',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={Boolean(homepageForm.showWelcomeOverlay)}
-                    onChange={(e) =>
-                      setHomepageForm((prev) => ({
-                        ...prev,
-                        showWelcomeOverlay: e.target.checked,
-                      }))
-                    }
-                    style={{ width: '19px', height: '19px', marginTop: '2px', accentColor: '#1d4ed8', cursor: 'pointer' }}
-                  />
-                  <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e3a8a' }}>
-                      ☑️ Display Welcome / Short Bio Text Overlay on Right Panel
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: '#1e40af', marginTop: '0.2rem', lineHeight: 1.45 }}>
-                      When checked, your Welcome & short bio box overlays on the top-right of the right homepage photo. Uncheck this box if you want the right-panel photograph displayed 100% unobstructed without any text overlay.
+                  <span>✨ Real-Time Homepage Hero Preview (50/50 Twin 16:9 Static Panels)</span>
+                  <span style={{ color: '#9AB17A' }}>
+                    {homepageForm.showWelcomeOverlay
+                      ? `Welcome Overlay: ON | Bg: ${homepageForm.welcomeBgColor} | Opacity: ${homepageForm.welcomeBgOpacity}% (${100 - Number(homepageForm.welcomeBgOpacity || 0)}% Transparent)`
+                      : 'Welcome Overlay: OFF (Pure Static Photo)'}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: '0.85rem',
+                  }}
+                >
+                  {/* Left Static Panel Preview */}
+                  <div
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '16 / 9',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      background: '#0a0a0a',
+                    }}
+                  >
+                    <img
+                      src={`${homepageForm.heroImageUrl}?w=900&q=85&auto=format`}
+                      alt="Left Panel Preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '8px',
+                        left: '8px',
+                        background: 'rgba(0,0,0,0.75)',
+                        color: '#e2e8f0',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.68rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Left Panel Static Image (16:9)
                     </div>
                   </div>
-                </label>
-              </div>
 
-              <div
-                style={{
-                  background: '#f8fafc',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                }}
-              >
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.35rem' }}>
-                  🖼️ Right Panel Static Photo (Replaces Slideshow When Set)
-                </div>
-                <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '0.75rem', lineHeight: 1.45 }}>
-                  Upload a static photo here to lock a single featured photograph on the right-hand panel of the homepage. Or click &ldquo;Use Rotating Slideshow Instead&rdquo; to cycle through your newest uploads.
-                </div>
-
-                {homepageForm.rightPanelImageUrl ? (
-                  <div style={{ marginBottom: '0.75rem' }}>
+                  {/* Right Static Panel + Live Welcome Overlay Preview */}
+                  <div
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '16 / 9',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      background: '#0a0a0a',
+                    }}
+                  >
                     <img
                       src={`${homepageForm.rightPanelImageUrl}?w=900&q=85&auto=format`}
                       alt="Right Panel Static Preview"
                       style={{
                         width: '100%',
-                        maxHeight: '220px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        border: '1px solid #cbd5e1',
+                        height: '100%',
+                        objectFit: homepageForm.rightPanelFit === 'contain' ? 'contain' : 'cover',
+                        display: 'block',
                       }}
                     />
-                    <div style={{ marginTop: '0.4rem', fontSize: '0.76rem', color: '#059669', fontWeight: 700 }}>
-                      ✓ Static Right-Panel Photo Active
+                    {homepageForm.showWelcomeOverlay && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: '65%',
+                          maxHeight: '100%',
+                          overflowY: 'auto',
+                          padding: '0.75rem 0.85rem',
+                          backgroundColor: convertHexToRgbaPreview(
+                            homepageForm.welcomeBgColor,
+                            homepageForm.welcomeBgOpacity
+                          ),
+                          color: homepageForm.welcomeTextColor || '#F8FAFC',
+                          backdropFilter:
+                            homepageForm.welcomeBackdropBlur && Number(homepageForm.welcomeBgOpacity) > 0
+                              ? 'blur(10px)'
+                              : 'none',
+                          WebkitBackdropFilter:
+                            homepageForm.welcomeBackdropBlur && Number(homepageForm.welcomeBgOpacity) > 0
+                              ? 'blur(10px)'
+                              : 'none',
+                          borderBottomLeftRadius: '12px',
+                          borderLeft:
+                            Number(homepageForm.welcomeBgOpacity) > 5
+                              ? '1px solid rgba(255,255,255,0.16)'
+                              : 'none',
+                          borderBottom:
+                            Number(homepageForm.welcomeBgOpacity) > 5
+                              ? '1px solid rgba(255,255,255,0.16)'
+                              : 'none',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '0.92rem',
+                            fontWeight: 400,
+                            marginBottom: '0.35rem',
+                            color: homepageForm.welcomeTextColor || '#F8FAFC',
+                          }}
+                        >
+                          {homepageForm.welcomeHeadline || 'Welcome to The Meadow Lens'}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.66rem',
+                            lineHeight: 1.42,
+                            color: homepageForm.welcomeTextColor || '#F8FAFC',
+                            opacity: 0.95,
+                            whiteSpace: 'pre-line',
+                          }}
+                        >
+                          {homepageForm.welcomeBodyText}
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '8px',
+                        left: '8px',
+                        background: 'rgba(0,0,0,0.75)',
+                        color: '#e2e8f0',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.68rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Right Panel Static Image {homepageForm.showWelcomeOverlay ? '+ Welcome Overlay' : '(No Overlay)'}
                     </div>
                   </div>
-                ) : (
-                  <div
-                    style={{
-                      padding: '1rem',
-                      borderRadius: '6px',
-                      background: '#f1f5f9',
-                      color: '#475569',
-                      fontSize: '0.8rem',
-                      textAlign: 'center',
-                      marginBottom: '0.75rem',
-                    }}
-                  >
-                    Currently using Rotating Slideshow (No static override photo set)
+                </div>
+              </div>
+
+              {/* 2. STATIC PANEL PHOTO CONTROLS (LEFT & RIGHT SIDE-BY-SIDE) */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+                  gap: '1rem',
+                }}
+              >
+                {/* Left Panel Static Image Control */}
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '10px',
+                    padding: '0.95rem',
+                  }}
+                >
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem' }}>
+                    🖼️ Left Panel Static Image (16:9 Frame)
                   </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    id="homepage-right-static-upload"
-                    onChange={handleUploadHomepageRightImage}
-                    disabled={isUploading}
-                    style={{ display: 'none' }}
-                  />
-                  <label
-                    htmlFor="homepage-right-static-upload"
-                    style={{
-                      padding: '0.55rem 1rem',
-                      borderRadius: '6px',
-                      background: '#2563eb',
-                      color: '#ffffff',
-                      fontWeight: 700,
-                      fontSize: '0.82rem',
-                      cursor: isUploading ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {isUploading ? 'Uploading Photo...' : '📤 Upload / Replace Static Right-Panel Photo'}
-                  </label>
-
-                  {homepageForm.rightPanelImageAssetId && (
+                  <div style={{ fontSize: '0.76rem', color: '#475569', marginBottom: '0.65rem', lineHeight: 1.4 }}>
+                    Controls the left-hand static panel (currently the 600mm Lens Panorama). You can replace it anytime or restore the default lens graphic.
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="homepage-left-static-upload"
+                      onChange={handleUploadHomepageLeftImage}
+                      disabled={isUploading}
+                      style={{ display: 'none' }}
+                    />
+                    <label
+                      htmlFor="homepage-left-static-upload"
+                      style={{
+                        padding: '0.48rem 0.85rem',
+                        borderRadius: '6px',
+                        background: '#334155',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        cursor: isUploading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {isUploading ? 'Uploading...' : '📤 Upload / Replace Left Image'}
+                    </label>
                     <button
                       type="button"
                       onClick={() =>
                         setHomepageForm((prev) => ({
                           ...prev,
-                          rightPanelImageAssetId: '',
-                          rightPanelImageUrl: '',
+                          heroImageAssetId:
+                            'image-eeb19431e524e43391ed803793c9a8f076b20756-1376x768-jpg',
+                          heroImageUrl:
+                            'https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg',
                         }))
                       }
                       style={{
-                        padding: '0.55rem 0.95rem',
+                        padding: '0.48rem 0.75rem',
                         borderRadius: '6px',
                         border: '1px solid #cbd5e1',
                         background: '#ffffff',
-                        color: '#dc2626',
+                        color: '#334155',
                         fontWeight: 600,
-                        fontSize: '0.8rem',
+                        fontSize: '0.75rem',
                         cursor: 'pointer',
                       }}
                     >
-                      🔄 Clear Static Photo (Use Rotating Slideshow Instead)
+                      ↺ Restore 600mm Lens Graphic
                     </button>
-                  )}
+                  </div>
+                </div>
+
+                {/* Right Panel Static Image Control */}
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border: '1px solid #86efac',
+                    borderRadius: '10px',
+                    padding: '0.95rem',
+                  }}
+                >
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#065f46', marginBottom: '0.25rem' }}>
+                    🖼️ Right Panel Static Image (16:9 Frame — Replaces Old Slider)
+                  </div>
+                  <div style={{ fontSize: '0.76rem', color: '#047857', marginBottom: '0.65rem', lineHeight: 1.4 }}>
+                    Upload a new photo from your computer OR select any existing photograph from your gallery below.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="homepage-right-static-upload"
+                      onChange={handleUploadHomepageRightImage}
+                      disabled={isUploading}
+                      style={{ display: 'none' }}
+                    />
+                    <label
+                      htmlFor="homepage-right-static-upload"
+                      style={{
+                        padding: '0.5rem 0.9rem',
+                        borderRadius: '6px',
+                        background: '#059669',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: isUploading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {isUploading ? 'Uploading Photo...' : '📤 Upload New Right-Panel Static Photo'}
+                    </label>
+
+                    <select
+                      value={homepageForm.rightPanelFit || 'cover'}
+                      onChange={(e) =>
+                        setHomepageForm((prev) => ({
+                          ...prev,
+                          rightPanelFit: e.target.value,
+                        }))
+                      }
+                      style={{
+                        padding: '0.45rem 0.6rem',
+                        borderRadius: '6px',
+                        border: '1px solid #86efac',
+                        background: '#ffffff',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        color: '#064e3b',
+                      }}
+                    >
+                      <option value="cover">Fill 16:9 Frame (Cover — Standard)</option>
+                      <option value="contain">Fit Full Photo Uncropped (Contain)</option>
+                    </select>
+                  </div>
+
+                  {/* Quick Picker from Existing Gallery Photos */}
+                  <div>
+                    <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#065f46', marginBottom: '0.25rem' }}>
+                      Or Pick an Existing Photo From Your Gallery:
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <input
+                        type="text"
+                        placeholder="Filter gallery photos by species/title..."
+                        value={homepageGallerySearch}
+                        onChange={(e) => setHomepageGallerySearch(e.target.value)}
+                        style={{
+                          flex: '0 0 42%',
+                          padding: '0.4rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.76rem',
+                        }}
+                      />
+                      <select
+                        value={homepageForm.rightPanelImageAssetId || ''}
+                        onChange={(e) => {
+                          const chosenAssetId = e.target.value;
+                          const found = homepageGalleryOptions.find((o) => o.assetId === chosenAssetId);
+                          if (found) {
+                            setHomepageForm((prev) => ({
+                              ...prev,
+                              rightPanelImageAssetId: found.assetId,
+                              rightPanelImageUrl: found.imageUrl,
+                            }));
+                          }
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '0.4rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.76rem',
+                          background: '#ffffff',
+                        }}
+                      >
+                        <option value="">-- Select a Gallery Photograph --</option>
+                        {homepageGalleryOptions
+                          .filter((opt) => {
+                            if (!homepageGallerySearch.trim()) return true;
+                            const q = homepageGallerySearch.toLowerCase();
+                            return (
+                              (opt.title || '').toLowerCase().includes(q) ||
+                              (opt.species || '').toLowerCase().includes(q) ||
+                              (opt.fileName || '').toLowerCase().includes(q) ||
+                              (opt.venueTitle || '').toLowerCase().includes(q)
+                            );
+                          })
+                          .slice(0, 120)
+                          .map((opt) => (
+                            <option key={opt._id} value={opt.assetId}>
+                              {opt.title} {opt.venueTitle ? `(${opt.venueTitle})` : ''} — {opt.fileName}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
+              {/* 3. WELCOME CONTENT OVERLAY CHECKBOX, BACKGROUND COLOR & TRANSPARENCY DESIGNER */}
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #93c5fd',
+                  borderRadius: '10px',
+                  padding: '1.05rem',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(homepageForm.showWelcomeOverlay)}
+                      onChange={(e) =>
+                        setHomepageForm((prev) => ({
+                          ...prev,
+                          showWelcomeOverlay: e.target.checked,
+                        }))
+                      }
+                      style={{ width: '20px', height: '20px', accentColor: '#1d4ed8', cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e3a8a' }}>
+                        ☑️ Display &ldquo;Welcome&rdquo; Content Overlay on Right Panel
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: '#1e40af' }}>
+                        Check to show the Welcome bio overlay on the right-hand static image. Uncheck to display the right-hand static photo 100% unobstructed (just like the left side).
+                      </div>
+                    </div>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={handleResetHomepageOverlayDefaults}
+                    style={{
+                      padding: '0.42rem 0.8rem',
+                      borderRadius: '6px',
+                      border: '1px solid #60a5fa',
+                      background: '#ffffff',
+                      color: '#1e3a8a',
+                      fontWeight: 700,
+                      fontSize: '0.76rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ↺ Reset Overlay to Industry Standard Defaults
+                  </button>
+                </div>
+
+                {homepageForm.showWelcomeOverlay && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                      gap: '1rem',
+                      background: '#ffffff',
+                      padding: '0.95rem',
+                      borderRadius: '8px',
+                      border: '1px solid #bfdbfe',
+                    }}
+                  >
+                    {/* Left Sub-Column: Background Color, Transparency Slider, Text Color & Blur */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {/* Background Color Picker & Curated Swatches */}
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.35rem' }}>
+                          🎨 Welcome Overlay Background Color
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.45rem' }}>
+                          <input
+                            type="color"
+                            value={homepageForm.welcomeBgColor || '#0B1528'}
+                            onChange={(e) =>
+                              setHomepageForm((prev) => ({
+                                ...prev,
+                                welcomeBgColor: e.target.value.toUpperCase(),
+                              }))
+                            }
+                            style={{ width: '42px', height: '34px', padding: 0, border: '1px solid #94a3b8', borderRadius: '6px', cursor: 'pointer' }}
+                          />
+                          <input
+                            type="text"
+                            value={homepageForm.welcomeBgColor || '#0B1528'}
+                            onChange={(e) =>
+                              setHomepageForm((prev) => ({
+                                ...prev,
+                                welcomeBgColor: e.target.value,
+                              }))
+                            }
+                            style={{
+                              width: '105px',
+                              padding: '0.4rem 0.55rem',
+                              borderRadius: '6px',
+                              border: '1px solid #cbd5e1',
+                              fontFamily: 'monospace',
+                              fontSize: '0.82rem',
+                              fontWeight: 700,
+                            }}
+                          />
+                          <span style={{ fontSize: '0.73rem', color: '#64748b' }}>
+                            (Default: <code>#0B1528</code> Deep Midnight Slate)
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                          {[
+                            { label: 'Midnight Slate (Default)', hex: '#0B1528', text: '#F8FAFC' },
+                            { label: 'Obsidian Black', hex: '#0A0A0A', text: '#F8FAFC' },
+                            { label: 'Marsh Green', hex: '#13261C', text: '#F8FAFC' },
+                            { label: 'Espresso Bronze', hex: '#211A16', text: '#F8FAFC' },
+                            { label: 'Classic Slate', hex: '#1E293B', text: '#F8FAFC' },
+                            { label: 'Frosted Ivory', hex: '#F8FAFC', text: '#0F172A' },
+                          ].map((preset) => (
+                            <button
+                              key={preset.hex}
+                              type="button"
+                              onClick={() =>
+                                setHomepageForm((prev) => ({
+                                  ...prev,
+                                  welcomeBgColor: preset.hex,
+                                  welcomeTextColor: preset.text,
+                                }))
+                              }
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '5px',
+                                border:
+                                  (homepageForm.welcomeBgColor || '').toUpperCase() === preset.hex
+                                    ? '2px solid #2563eb'
+                                    : '1px solid #cbd5e1',
+                                background: '#f8fafc',
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                color: '#1e293b',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: '12px',
+                                  height: '12px',
+                                  borderRadius: '3px',
+                                  background: preset.hex,
+                                  border: '1px solid rgba(0,0,0,0.25)',
+                                }}
+                              />
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Background Transparency / Opacity Slider */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                          <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a' }}>
+                            🌗 Background Transparency & Opacity
+                          </label>
+                          <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#1d4ed8' }}>
+                            Opacity: {homepageForm.welcomeBgOpacity}% &nbsp;|&nbsp; Transparency: {100 - Number(homepageForm.welcomeBgOpacity || 0)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={homepageForm.welcomeBgOpacity ?? 75}
+                          onChange={(e) =>
+                            setHomepageForm((prev) => ({
+                              ...prev,
+                              welcomeBgOpacity: Number(e.target.value),
+                            }))
+                          }
+                          style={{ width: '100%', accentColor: '#2563eb', cursor: 'pointer' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#64748b', marginBottom: '0.4rem' }}>
+                          <span>0% Opacity (100% Transparent)</span>
+                          <span>75% (Industry Standard)</span>
+                          <span>100% Opacity (Solid)</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                          {[
+                            { label: 'Fully Transparent (0%)', val: 0 },
+                            { label: 'Light Veil (50%)', val: 50 },
+                            { label: 'Industry Standard (75%)', val: 75 },
+                            { label: 'Deep Contrast (88%)', val: 88 },
+                            { label: 'Solid Opaque (100%)', val: 100 },
+                          ].map((opt) => (
+                            <button
+                              key={opt.val}
+                              type="button"
+                              onClick={() =>
+                                setHomepageForm((prev) => ({
+                                  ...prev,
+                                  welcomeBgOpacity: opt.val,
+                                }))
+                              }
+                              style={{
+                                padding: '0.24rem 0.5rem',
+                                borderRadius: '5px',
+                                border:
+                                  Number(homepageForm.welcomeBgOpacity) === opt.val
+                                    ? '2px solid #2563eb'
+                                    : '1px solid #cbd5e1',
+                                background:
+                                  Number(homepageForm.welcomeBgOpacity) === opt.val
+                                    ? '#eff6ff'
+                                    : '#f8fafc',
+                                fontSize: '0.69rem',
+                                fontWeight: 600,
+                                color: '#1e293b',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Text Color & Soft Optical Glass Blur */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.6rem', paddingTop: '0.25rem', borderTop: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>
+                            ✍️ Text Color:
+                          </label>
+                          <input
+                            type="color"
+                            value={homepageForm.welcomeTextColor || '#F8FAFC'}
+                            onChange={(e) =>
+                              setHomepageForm((prev) => ({
+                                ...prev,
+                                welcomeTextColor: e.target.value.toUpperCase(),
+                              }))
+                            }
+                            style={{ width: '32px', height: '28px', padding: 0, border: '1px solid #94a3b8', borderRadius: '5px', cursor: 'pointer' }}
+                          />
+                          {[
+                            { label: 'Ivory', hex: '#F8FAFC' },
+                            { label: 'Gold', hex: '#F7C873' },
+                            { label: 'Sage', hex: '#9AB17A' },
+                            { label: 'Dark', hex: '#0F172A' },
+                          ].map((tc) => (
+                            <button
+                              key={tc.hex}
+                              type="button"
+                              onClick={() =>
+                                setHomepageForm((prev) => ({
+                                  ...prev,
+                                  welcomeTextColor: tc.hex,
+                                }))
+                              }
+                              style={{
+                                padding: '0.2rem 0.42rem',
+                                borderRadius: '4px',
+                                border: '1px solid #cbd5e1',
+                                background: '#f8fafc',
+                                fontSize: '0.68rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {tc.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.76rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(homepageForm.welcomeBackdropBlur)}
+                            onChange={(e) =>
+                              setHomepageForm((prev) => ({
+                                ...prev,
+                                welcomeBackdropBlur: e.target.checked,
+                              }))
+                            }
+                            style={{ accentColor: '#2563eb' }}
+                          />
+                          Frosted Glass Blur (Standard)
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Right Sub-Column: Editable Welcome Headline & Welcome Content Text */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem' }}>
+                          📝 Welcome Headline
+                        </label>
+                        <input
+                          type="text"
+                          value={homepageForm.welcomeHeadline || ''}
+                          onChange={(e) =>
+                            setHomepageForm((prev) => ({
+                              ...prev,
+                              welcomeHeadline: e.target.value,
+                            }))
+                          }
+                          placeholder="Welcome to The Meadow Lens"
+                          style={{
+                            width: '100%',
+                            padding: '0.48rem 0.65rem',
+                            borderRadius: '6px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem' }}>
+                          📖 Welcome Content / Bio Paragraphs (Separate paragraphs with a blank line)
+                        </label>
+                        <textarea
+                          rows={6}
+                          value={homepageForm.welcomeBodyText || ''}
+                          onChange={(e) =>
+                            setHomepageForm((prev) => ({
+                              ...prev,
+                              welcomeBodyText: e.target.value,
+                            }))
+                          }
+                          style={{
+                            width: '100%',
+                            flex: 1,
+                            padding: '0.55rem 0.65rem',
+                            borderRadius: '6px',
+                            border: '1px solid #cbd5e1',
+                            fontSize: '0.8rem',
+                            lineHeight: 1.45,
+                            resize: 'vertical',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.15rem' }}>
                 <button
                   type="button"
                   onClick={() => setShowHomepageModal(false)}
@@ -4497,9 +5253,9 @@ export function VenueGridManager({
                 <button
                   type="submit"
                   disabled={isProcessing || isUploading}
-                  style={{ padding: '0.65rem 1.4rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '0.65rem 1.5rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}
                 >
-                  {isProcessing ? 'Saving...' : '💾 Save Homepage Right Panel Live'}
+                  {isProcessing ? 'Saving & Publishing...' : '💾 Save & Publish Homepage Panels Live'}
                 </button>
               </div>
             </form>
