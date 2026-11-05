@@ -50,12 +50,12 @@ export default function Navigation({ categories }) {
         >
           <div className="max-w-[2100px] mx-auto px-4 sm:px-6 md:px-10 lg:px-14 flex flex-col">
             
-            {/* Row 1: Primary Title & Desktop Navigation aligned to the bottom baseline of the Page Title */}
+            {/* Row 1: Primary Title & Desktop Navigation aligned to the exact visual bottom of the letters */}
             <div className="flex items-end justify-between gap-4">
               {/* Brand Title: "The" (White), "Meadow" (Sage Marsh Green #9AB17A), "Lens" (Dusk Gold #F7C873) */}
               <Link href="/" className="group relative z-50 min-w-0 shrink-0 pr-2">
                 <h1 
-                  className="leading-[1.04] pt-0.5 whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
+                  className="leading-[1.04] pt-0.5 -mb-[6px] sm:-mb-[8px] md:-mb-[9px] xl:-mb-[11px] whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
                   style={{ fontFamily: 'var(--font-logo)' }}
                 >
                   <span className="text-white">The </span>
@@ -64,30 +64,30 @@ export default function Navigation({ categories }) {
                 </h1>
               </Link>
 
-              {/* Desktop Navigation — moved down to align with the bottom of the page title */}
-              <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0 pb-1">
+              {/* Desktop Navigation — visual bottom of text aligned on the exact same horizontal line as the bottom of "The Meadow Lens" */}
+              <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0 leading-none">
                 
-                <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
+                <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold leading-none hover:text-[#9AB17A] transition-colors">
                   HOME
                 </Link>
 
-                <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
+                <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold leading-none hover:text-[#9AB17A] transition-colors">
                   Species Index
                 </Link>
 
-                <Link href="/category/guest-photos" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
+                <Link href="/category/guest-photos" className="text-white uppercase tracking-widest text-xs font-semibold leading-none hover:text-[#9AB17A] transition-colors">
                   Guest Photos
                 </Link>
 
-                <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
+                <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold leading-none hover:text-[#9AB17A] transition-colors">
                   The Artist
                 </Link>
 
-                <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
+                <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold leading-none hover:text-[#9AB17A] transition-colors">
                   What&apos;s New
                 </Link>
 
-                <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
+                <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold leading-none hover:text-[#9AB17A] transition-colors">
                   Inquiries &amp; Comments
                 </Link>
 
@@ -110,7 +110,7 @@ export default function Navigation({ categories }) {
             {/* Full-width light gray separating line (6pt / 6px) below the page title and right-hand menu */}
             <div
               aria-hidden="true"
-              className="w-full h-[6px] bg-neutral-400/85 mt-1.5 rounded-[1px]"
+              className="w-full h-[6px] bg-neutral-400/85 mt-2 rounded-[1px]"
             />
 
             {/* Row 2: Tightened, wider-tracked 2-line Slogan + [Explore The Venues] [Meet David] + Shutter Blade Icon */}
