@@ -110,13 +110,13 @@ export default async function Home() {
             
             {/* Welcome Card: Centered both horizontally & vertically inside the Right Panel 16:9 image */}
             {showWelcomeOverlay && (
-              <div className="relative md:absolute md:inset-0 md:flex md:items-center md:justify-center md:p-5 lg:p-6 z-20 pointer-events-none">
+              <div className="relative md:absolute md:inset-0 md:flex md:items-center md:justify-center md:p-3.5 lg:p-4 xl:p-5 z-20 pointer-events-none">
                 <div
                   style={{
                     backgroundColor: welcomeOverlayBgRgba,
                     color: welcomeTextColor,
                   }}
-                  className={`pointer-events-auto w-full md:w-[82%] lg:w-[80%] xl:w-[76%] max-h-full overflow-y-auto p-5 sm:p-6 md:px-7 md:py-5 xl:px-8 xl:py-6 md:rounded-2xl text-center transition-colors duration-300 ${
+                  className={`pointer-events-auto w-full md:w-[88%] lg:w-[86%] xl:w-[84%] max-h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-4 sm:p-5 md:px-6 md:py-4 xl:px-7 xl:py-5 md:rounded-2xl text-center transition-colors duration-300 ${
                     welcomeBackdropBlur ? 'md:backdrop-blur-md' : ''
                   } ${
                     welcomeBgOpacity > 5
@@ -126,14 +126,14 @@ export default async function Home() {
                 >
                   <h2
                     style={{ color: welcomeTextColor }}
-                    className="text-xl sm:text-2xl xl:text-3xl mb-2 sm:mb-3 font-light tracking-wide text-center"
+                    className="text-lg sm:text-xl lg:text-[22px] xl:text-2xl mb-1.5 sm:mb-2 font-light tracking-wide text-center"
                   >
                     {welcomeHeadline}
                   </h2>
                   
                   <div
                     style={{ color: welcomeTextColor }}
-                    className="space-y-2 sm:space-y-2.5 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light opacity-95 text-center"
+                    className="space-y-1.5 sm:space-y-2 text-xs sm:text-[12.5px] xl:text-[13.5px] leading-snug sm:leading-relaxed font-light opacity-95 text-center"
                   >
                     {homepage?.welcomeText ? (
                       <PortableText value={homepage.welcomeText} />
@@ -146,7 +146,7 @@ export default async function Home() {
                         <p>
                           This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
                         </p>
-                        <p className="italic pt-2">
+                        <p className="italic pt-1">
                           After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
                         </p>
                       </>
