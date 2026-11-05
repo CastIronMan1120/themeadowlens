@@ -270,6 +270,13 @@ const category = {
       description: 'A biological or general description of this species. This automatically displays over every photograph in this category!'
     },
     {
+      name: 'sortOrder',
+      title: 'Tile Display Order (1, 2, 3...)',
+      type: 'number',
+      group: 'content',
+      description: 'Optional custom order for arranging Root Venue tiles on the homepage or Sub-Venue tiles inside a Root Venue (lower numbers appear first; leave blank for A–Z).'
+    },
+    {
       name: 'alphabetizeBySpecies',
       title: 'Alphabetize Photos by Species / Title (A–Z)',
       type: 'boolean',

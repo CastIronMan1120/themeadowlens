@@ -32,7 +32,7 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
     (artwork.caption && artwork.caption !== cleanTitle ? artwork.caption : '')
 
   return (
-    <div className="group relative overflow-hidden rounded-sm mb-6 sm:mb-8 break-inside-avoid bg-neutral-950 border border-white/10 hover:border-white/25 transition-colors duration-300 flex flex-col">
+    <div className="group relative overflow-hidden rounded-sm bg-neutral-950 border border-white/10 hover:border-white/25 transition-colors duration-300 flex flex-col">
       {/* 1. Unobstructed Photograph Container (Never covered by text or popups on scroll/hover) */}
       <div className="relative w-full aspect-[4/3] bg-neutral-900 overflow-hidden">
         {artwork.guestPhotographer && (

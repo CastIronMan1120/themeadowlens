@@ -26,6 +26,17 @@ export function VenueGridManager({
   const [showVenueDeletionPanel, setShowVenueDeletionPanel] = useState(false);
   const [editingArtwork, setEditingArtwork] = useState(null);
   const [editingVenue, setEditingVenue] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderScope, setOrderScope] = useState('root'); // 'root' or parentCategory._id
+  const [orderedVenuesList, setOrderedVenuesList] = useState([]);
+  const [showHomepageModal, setShowHomepageModal] = useState(false);
+  const [homepageForm, setHomepageForm] = useState({
+    _id: 'homepage',
+    showWelcomeOverlay: true,
+    rightPanelImageAssetId: '',
+    rightPanelImageUrl: '',
+    welcomeHeadline: 'Welcome to The Meadow Lens',
+  });
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
   const [guestForm, setGuestForm] = useState({
     file: null,
@@ -62,6 +73,7 @@ export function VenueGridManager({
         "slug": slug.current,
         speciesDescription,
         alphabetizeBySpecies,
+        sortOrder,
         seo,
         "parentId": parentCategory._ref,
         "parentTitle": parentCategory->title,
@@ -85,6 +97,7 @@ export function VenueGridManager({
             slug: c.slug || existing.slug,
             speciesDescription: c.speciesDescription ?? existing.speciesDescription,
             alphabetizeBySpecies: c.alphabetizeBySpecies ?? existing.alphabetizeBySpecies,
+            sortOrder: c.sortOrder ?? existing.sortOrder,
             seo: c.seo || existing.seo,
             parentId: c.parentId ?? existing.parentId,
             parentTitle: c.parentTitle ?? existing.parentTitle,
@@ -97,15 +110,36 @@ export function VenueGridManager({
             title: existing.title || c.title,
             slug: existing.slug || c.slug,
             alphabetizeBySpecies: existing.alphabetizeBySpecies ?? c.alphabetizeBySpecies,
+            sortOrder: existing.sortOrder ?? c.sortOrder,
             photoCount: c.photoCount ?? existing.photoCount,
             subVenuePhotoCount: c.subVenuePhotoCount ?? existing.subVenuePhotoCount,
           });
         }
       }
-      const cats = Array.from(catMap.values()).sort((a, b) =>
-        (a.title || '').localeCompare(b.title || '')
-      );
+      const cats = Array.from(catMap.values()).sort((a, b) => {
+        const orderA = typeof a.sortOrder === 'number' && !Number.isNaN(a.sortOrder) ? a.sortOrder : 9999;
+        const orderB = typeof b.sortOrder === 'number' && !Number.isNaN(b.sortOrder) ? b.sortOrder : 9999;
+        if (orderA !== orderB) return orderA - orderB;
+        return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
       setCategories(cats);
+
+      const hpDoc = await client.fetch(`*[_type == "homepage"][0]{
+        _id,
+        welcomeHeadline,
+        showWelcomeOverlay,
+        "rightPanelImageAssetId": rightPanelImage.asset._ref,
+        "rightPanelImageUrl": rightPanelImage.asset->url
+      }`);
+      if (hpDoc) {
+        setHomepageForm({
+          _id: hpDoc._id || 'homepage',
+          showWelcomeOverlay: hpDoc.showWelcomeOverlay !== false,
+          rightPanelImageAssetId: hpDoc.rightPanelImageAssetId || '',
+          rightPanelImageUrl: hpDoc.rightPanelImageUrl || '',
+          welcomeHeadline: hpDoc.welcomeHeadline || 'Welcome to The Meadow Lens',
+        });
+      }
 
       // If the user clicked the '+' button in Sanity Structure to create a new Root Venue or Sub-Venue,
       // cleanDocId will be a brand-new ID not yet in categories (or lacking a title). Automatically open the Add/Edit Venue Modal!
@@ -1136,11 +1170,21 @@ export function VenueGridManager({
       const cleanVenueId = rawId.replace(/^drafts\./, '');
       const existingDoc = await client.fetch(`*[_id == $id][0]`, { id: cleanVenueId });
 
+      const parsedSortOrder =
+        editingVenue.sortOrder !== undefined &&
+        editingVenue.sortOrder !== null &&
+        String(editingVenue.sortOrder).trim() !== ''
+          ? Number(editingVenue.sortOrder)
+          : undefined;
+
       const docData = {
         title: cleanTitle,
         slug: { _type: 'slug', current: finalSlug },
         speciesDescription: editingVenue.speciesDescription || '',
         alphabetizeBySpecies: Boolean(editingVenue.alphabetizeBySpecies),
+        ...(typeof parsedSortOrder === 'number' && !Number.isNaN(parsedSortOrder)
+          ? { sortOrder: parsedSortOrder }
+          : {}),
         seo: {
           metaTitle: editingVenue.seo?.metaTitle || `${cleanTitle} | The Meadow Lens`,
           metaDescription:
@@ -1159,6 +1203,9 @@ export function VenueGridManager({
       delete baseDoc._updatedAt;
       if (!editingVenue.parentId) {
         delete baseDoc.parentCategory;
+      }
+      if (parsedSortOrder === undefined) {
+        delete baseDoc.sortOrder;
       }
 
       tx.createOrReplace({
@@ -1182,6 +1229,147 @@ export function VenueGridManager({
     } catch (error) {
       console.error('Error saving venue details:', error);
       window.alert('Error saving venue details: ' + error.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 9B. 1-CLICK TOGGLE ALPHABETIZE BY SPECIES ON ACTIVE VENUE ---
+  const handleToggleVenueAlphabetize = async (venueObj) => {
+    if (!venueObj?._id) return;
+    const cleanId = venueObj._id.replace(/^drafts\./, '');
+    const nextValue = !Boolean(venueObj.alphabetizeBySpecies);
+    setIsProcessing(true);
+    try {
+      const tx = client.transaction();
+      tx.patch(cleanId, (p) => p.set({ alphabetizeBySpecies: nextValue }));
+      tx.delete(`drafts.${cleanId}`);
+      await tx.commit();
+      await fetchData();
+      window.alert(
+        `Alphabetize by Species (A–Z) is now ${nextValue ? 'ENABLED (ON)' : 'DISABLED (OFF)'} for "${venueObj.title}" on both the live thumbnail grid and page-turn sequence!`
+      );
+    } catch (err) {
+      console.error('Error toggling alphabetizeBySpecies:', err);
+      window.alert('Error updating Alphabetize setting: ' + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 9C. ARRANGE ROOT & SUB-VENUE TILES IN PREFERRED ORDER ---
+  const openOrderModal = (initialScope = 'root') => {
+    const scope =
+      initialScope ||
+      (viewMode === 'venue' && activeVenueObj
+        ? activeVenueObj.parentId || activeVenueObj._id
+        : 'root');
+    const resolvedScope =
+      scope !== 'root' && categories.some((c) => c.parentId === scope) ? scope : 'root';
+    setOrderScope(resolvedScope);
+    const list =
+      resolvedScope === 'root'
+        ? categories.filter((c) => !c.parentId && c.title !== 'Everything')
+        : categories.filter((c) => c.parentId === resolvedScope);
+    setOrderedVenuesList(list.map((c, i) => ({ ...c, sortOrder: i + 1 })));
+    setShowOrderModal(true);
+  };
+
+  const handleChangeOrderScope = (nextScope) => {
+    setOrderScope(nextScope);
+    const list =
+      nextScope === 'root'
+        ? categories.filter((c) => !c.parentId && c.title !== 'Everything')
+        : categories.filter((c) => c.parentId === nextScope);
+    setOrderedVenuesList(list.map((c, i) => ({ ...c, sortOrder: i + 1 })));
+  };
+
+  const moveTileInOrder = (index, direction) => {
+    setOrderedVenuesList((prev) => {
+      const next = [...prev];
+      const targetIdx = index + direction;
+      if (targetIdx < 0 || targetIdx >= next.length) return prev;
+      const temp = next[index];
+      next[index] = next[targetIdx];
+      next[targetIdx] = temp;
+      return next.map((item, idx) => ({ ...item, sortOrder: idx + 1 }));
+    });
+  };
+
+  const handleSaveTileOrder = async () => {
+    setIsProcessing(true);
+    try {
+      const tx = client.transaction();
+      orderedVenuesList.forEach((cat, idx) => {
+        const cleanId = cat._id.replace(/^drafts\./, '');
+        tx.patch(cleanId, (p) => p.set({ sortOrder: idx + 1 }));
+        tx.delete(`drafts.${cleanId}`);
+      });
+      await tx.commit();
+      setShowOrderModal(false);
+      await fetchData();
+      window.alert('Saved & Published Preferred Venue Tile Order Live to Website!');
+    } catch (err) {
+      console.error('Error saving tile order:', err);
+      window.alert('Error saving tile order: ' + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // --- 9D. HOMEPAGE RIGHT PANEL STATIC PHOTO & BIO OVERLAY SETTINGS ---
+  const handleUploadHomepageRightImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const asset = await client.assets.upload('image', file, { filename: file.name });
+      setHomepageForm((prev) => ({
+        ...prev,
+        rightPanelImageAssetId: asset._id,
+        rightPanelImageUrl: asset.url,
+      }));
+    } catch (err) {
+      console.error('Error uploading right panel image:', err);
+      window.alert('Failed to upload image: ' + err.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveHomepageSettings = async (e) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    try {
+      const hpId = (homepageForm._id || 'homepage').replace(/^drafts\./, '');
+      const existingHp = await client.fetch(`*[_id == $id][0]`, { id: hpId });
+      const baseHp = existingHp ? { ...existingHp } : { _id: hpId, _type: 'homepage' };
+      delete baseHp._rev;
+      delete baseHp._updatedAt;
+
+      if (homepageForm.rightPanelImageAssetId) {
+        baseHp.rightPanelImage = {
+          _type: 'image',
+          asset: { _type: 'reference', _ref: homepageForm.rightPanelImageAssetId },
+        };
+      } else {
+        delete baseHp.rightPanelImage;
+      }
+      baseHp.showWelcomeOverlay = Boolean(homepageForm.showWelcomeOverlay);
+      if (homepageForm.welcomeHeadline) {
+        baseHp.welcomeHeadline = homepageForm.welcomeHeadline;
+      }
+
+      const tx = client.transaction();
+      tx.createOrReplace(baseHp);
+      tx.delete(`drafts.${hpId}`);
+      await tx.commit();
+      setShowHomepageModal(false);
+      await fetchData();
+      window.alert('Saved & Published Homepage Right Panel & Bio Overlay Settings Live!');
+    } catch (err) {
+      console.error('Error saving homepage settings:', err);
+      window.alert('Error saving homepage settings: ' + err.message);
     } finally {
       setIsProcessing(false);
     }
@@ -1425,6 +1613,27 @@ export function VenueGridManager({
                   ✏️ Rename / Edit Venue & SEO
                 </button>
 
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={() => handleToggleVenueAlphabetize(activeVenueObj)}
+                  title="Toggle whether species thumbnails on the live venue page are arranged alphabetically from A to Z (left-to-right across rows) and during page-turn scrolling"
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    background: activeVenueObj.alphabetizeBySpecies ? '#6d28d9' : '#f1f5f9',
+                    color: activeVenueObj.alphabetizeBySpecies ? '#ffffff' : '#334155',
+                    border: activeVenueObj.alphabetizeBySpecies ? '1px solid #5b21b6' : '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                  }}
+                >
+                  {activeVenueObj.alphabetizeBySpecies
+                    ? '🔤 Alphabetize Species (A–Z): ON ✓'
+                    : '🔤 Alphabetize Species (A–Z): OFF'}
+                </button>
+
                 {!activeVenueObj.parentId && (
                   <button
                     type="button"
@@ -1585,6 +1794,40 @@ export function VenueGridManager({
             }}
           >
             ★ + Add Invited Guest Photo
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openOrderModal()}
+            style={{
+              padding: '0.7rem 1.05rem',
+              background: '#0f172a',
+              color: '#f8fafc',
+              border: '1px solid #334155',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.83rem',
+            }}
+          >
+            ↕️ Arrange Venue Tile Order
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowHomepageModal(true)}
+            style={{
+              padding: '0.7rem 1.05rem',
+              background: '#1e3a8a',
+              color: '#ffffff',
+              border: '1px solid #2563eb',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '0.83rem',
+            }}
+          >
+            🏠 Homepage Right Panel & Bio Overlay
           </button>
 
           <button
@@ -3268,49 +3511,80 @@ export function VenueGridManager({
                 />
               </div>
 
-              {/* ALPHABETIZE SPECIES WITHIN VENUE CHECKBOX */}
-              <div
-                style={{
-                  background: '#f5f3ff',
-                  border: '1px solid #c4b5fd',
-                  borderRadius: '8px',
-                  padding: '0.85rem 1rem',
-                }}
-              >
-                <label
+              {/* ALPHABETIZE SPECIES WITHIN VENUE CHECKBOX + TILE ORDER */}
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.85rem', alignItems: 'stretch' }}>
+                <div
                   style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '0.65rem',
-                    cursor: 'pointer',
+                    background: '#f5f3ff',
+                    border: '1px solid #c4b5fd',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1rem',
                   }}
                 >
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.65rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(editingVenue.alphabetizeBySpecies)}
+                      onChange={(e) =>
+                        setEditingVenue((prev) => ({
+                          ...prev,
+                          alphabetizeBySpecies: e.target.checked,
+                        }))
+                      }
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        marginTop: '2px',
+                        cursor: 'pointer',
+                        accentColor: '#6d28d9',
+                      }}
+                    />
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#4c1d95' }}>
+                        🔤 Alphabetize Species in This Venue (Arranges Thumbnail Grid Left-to-Right A–Z & Page-Turn Sequence)
+                      </div>
+                      <div style={{ fontSize: '0.77rem', color: '#5b21b6', marginTop: '0.2rem', lineHeight: 1.45 }}>
+                        Ideal for multi-species sub-venues like <strong>Warblers</strong> so both the photo thumbnail grid and the full-screen picture sequence are grouped A–Z by species.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '0.85rem 1rem',
+                  }}
+                >
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                    ↕️ Preferred Tile Order #
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={Boolean(editingVenue.alphabetizeBySpecies)}
+                    type="number"
+                    min="1"
+                    placeholder="e.g., 1, 2, 3 (Blank = A–Z)"
+                    value={editingVenue.sortOrder ?? ''}
                     onChange={(e) =>
                       setEditingVenue((prev) => ({
                         ...prev,
-                        alphabetizeBySpecies: e.target.checked,
+                        sortOrder: e.target.value === '' ? '' : Number(e.target.value),
                       }))
                     }
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      marginTop: '2px',
-                      cursor: 'pointer',
-                      accentColor: '#6d28d9',
-                    }}
+                    style={{ width: '100%', padding: '0.45rem 0.6rem', borderRadius: '6px', border: '1px solid #94a3b8', fontSize: '0.85rem' }}
                   />
-                  <div>
-                    <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#4c1d95' }}>
-                      🔤 Alphabetize Species in This Venue (Sort photos A–Z by Species / Title on Website)
-                    </div>
-                    <div style={{ fontSize: '0.77rem', color: '#5b21b6', marginTop: '0.2rem', lineHeight: 1.45 }}>
-                      Ideal for multi-species sub-venues like <strong>Warblers</strong> (with 30+ species) so all photos of each species are grouped together in alphabetical order (A–Z) for visitors.
-                    </div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.25rem', lineHeight: 1.35 }}>
+                    Controls tile position on the Homepage (for Root Venues) or Category page (for Sub-Venues).
                   </div>
-                </label>
+                </div>
               </div>
 
               <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.9rem' }}>
@@ -3839,6 +4113,396 @@ export function VenueGridManager({
                 borderRadius: '6px',
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* ARRANGE ROOT & SUB-VENUE TILE ORDER MODAL */}
+      {showOrderModal && (
+        <div
+          onClick={() => setShowOrderModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.78)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '720px',
+              width: '100%',
+              padding: '1.6rem',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
+                ↕️ Arrange Root & Sub-Venue Tiles in Preferred Order
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowOrderModal(false)}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.35rem' }}>
+                Select Which Tile Grid to Arrange:
+              </label>
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <select
+                  value={orderScope}
+                  onChange={(e) => handleChangeOrderScope(e.target.value)}
+                  style={{ flex: 1, minWidth: '260px', padding: '0.55rem 0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', fontWeight: 600 }}
+                >
+                  <option value="root">★ Root Venues (Homepage "Explore The Venues" Tiles)</option>
+                  {rootVenues
+                    .filter((r) => categories.some((c) => c.parentId === r._id))
+                    .map((r) => (
+                      <option key={r._id} value={r._id}>
+                        ↳ Sub-Venues inside: {r.title}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOrderedVenuesList((prev) =>
+                      [...prev]
+                        .sort((a, b) => (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' }))
+                        .map((item, idx) => ({ ...item, sortOrder: idx + 1 }))
+                    )
+                  }
+                  style={{
+                    padding: '0.5rem 0.85rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#f8fafc',
+                    color: '#334155',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  🔤 Sort List A–Z
+                </button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.6rem', background: '#f8fafc' }}>
+              {orderedVenuesList.map((item, idx) => (
+                <div
+                  key={item._id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    padding: '0.55rem 0.75rem',
+                    marginBottom: '0.4rem',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '6px',
+                        background: '#0f172a',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        flexShrink: 0,
+                      }}
+                    >
+                      #{idx + 1}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.title}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#64748b', fontFamily: 'monospace' }}>
+                        /category/{item.parentSlug ? `${item.parentSlug}/` : ''}{item.slug}
+                        {item.alphabetizeBySpecies ? ' • 🔤 Species A–Z ON' : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => moveTileInOrder(idx, -1)}
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '5px',
+                        border: '1px solid #cbd5e1',
+                        background: idx === 0 ? '#f1f5f9' : '#ffffff',
+                        color: idx === 0 ? '#94a3b8' : '#0f172a',
+                        fontWeight: 700,
+                        cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      ⬆️ Up
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === orderedVenuesList.length - 1}
+                      onClick={() => moveTileInOrder(idx, 1)}
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '5px',
+                        border: '1px solid #cbd5e1',
+                        background: idx === orderedVenuesList.length - 1 ? '#f1f5f9' : '#ffffff',
+                        color: idx === orderedVenuesList.length - 1 ? '#94a3b8' : '#0f172a',
+                        fontWeight: 700,
+                        cursor: idx === orderedVenuesList.length - 1 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      ⬇️ Down
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => setShowOrderModal(false)}
+                style={{ padding: '0.6rem 1.15rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isProcessing}
+                onClick={handleSaveTileOrder}
+                style={{ padding: '0.65rem 1.4rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+              >
+                {isProcessing ? 'Saving Order...' : '💾 Save Preferred Tile Order Live'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HOMEPAGE RIGHT PANEL STATIC PHOTO & BIO OVERLAY MODAL */}
+      {showHomepageModal && (
+        <div
+          onClick={() => setShowHomepageModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.78)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.25rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '640px',
+              width: '100%',
+              padding: '1.65rem',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#0f172a' }}>
+                🏠 Homepage Right Panel Photo & Bio Overlay
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowHomepageModal(false)}
+                style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveHomepageSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+              <div
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #93c5fd',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.7rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(homepageForm.showWelcomeOverlay)}
+                    onChange={(e) =>
+                      setHomepageForm((prev) => ({
+                        ...prev,
+                        showWelcomeOverlay: e.target.checked,
+                      }))
+                    }
+                    style={{ width: '19px', height: '19px', marginTop: '2px', accentColor: '#1d4ed8', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e3a8a' }}>
+                      ☑️ Display Welcome / Short Bio Text Overlay on Right Panel
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#1e40af', marginTop: '0.2rem', lineHeight: 1.45 }}>
+                      When checked, your Welcome & short bio box overlays on the top-right of the right homepage photo. Uncheck this box if you want the right-panel photograph displayed 100% unobstructed without any text overlay.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                }}
+              >
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.35rem' }}>
+                  🖼️ Right Panel Static Photo (Replaces Slideshow When Set)
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '0.75rem', lineHeight: 1.45 }}>
+                  Upload a static photo here to lock a single featured photograph on the right-hand panel of the homepage. Or click &ldquo;Use Rotating Slideshow Instead&rdquo; to cycle through your newest uploads.
+                </div>
+
+                {homepageForm.rightPanelImageUrl ? (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <img
+                      src={`${homepageForm.rightPanelImageUrl}?w=900&q=85&auto=format`}
+                      alt="Right Panel Static Preview"
+                      style={{
+                        width: '100%',
+                        maxHeight: '220px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                      }}
+                    />
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.76rem', color: '#059669', fontWeight: 700 }}>
+                      ✓ Static Right-Panel Photo Active
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: '1rem',
+                      borderRadius: '6px',
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      fontSize: '0.8rem',
+                      textAlign: 'center',
+                      marginBottom: '0.75rem',
+                    }}
+                  >
+                    Currently using Rotating Slideshow (No static override photo set)
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="homepage-right-static-upload"
+                    onChange={handleUploadHomepageRightImage}
+                    disabled={isUploading}
+                    style={{ display: 'none' }}
+                  />
+                  <label
+                    htmlFor="homepage-right-static-upload"
+                    style={{
+                      padding: '0.55rem 1rem',
+                      borderRadius: '6px',
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      cursor: isUploading ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {isUploading ? 'Uploading Photo...' : '📤 Upload / Replace Static Right-Panel Photo'}
+                  </label>
+
+                  {homepageForm.rightPanelImageAssetId && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHomepageForm((prev) => ({
+                          ...prev,
+                          rightPanelImageAssetId: '',
+                          rightPanelImageUrl: '',
+                        }))
+                      }
+                      style={{
+                        padding: '0.55rem 0.95rem',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        background: '#ffffff',
+                        color: '#dc2626',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🔄 Clear Static Photo (Use Rotating Slideshow Instead)
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowHomepageModal(false)}
+                  style={{ padding: '0.6rem 1.15rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessing || isUploading}
+                  style={{ padding: '0.65rem 1.4rem', borderRadius: '6px', border: 'none', background: '#059669', color: '#fff', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isProcessing ? 'Saving...' : '💾 Save Homepage Right Panel Live'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -12,9 +12,24 @@ export const homepage = {
     },
     {
       name: 'heroImage',
-      title: 'Circular Logo Image',
+      title: 'Left Panel Image (600mm Lens Panorama)',
       type: 'image',
-      description: 'The circular image displayed on the left side of the homepage header.'
+      options: { hotspot: true },
+      description: 'The 16:9 lens illustration displayed on the left side of the homepage hero.'
+    },
+    {
+      name: 'rightPanelImage',
+      title: 'Right Panel Static Photo (Optional — Replaces Slideshow When Set)',
+      type: 'image',
+      options: { hotspot: true },
+      description: 'Upload or select a static photograph to display on the right-hand panel of the homepage. Clear this field if you prefer the rotating slideshow.'
+    },
+    {
+      name: 'showWelcomeOverlay',
+      title: 'Show Bio / Welcome Text Overlay on Right Panel',
+      type: 'boolean',
+      initialValue: true,
+      description: 'Check this box to display the Welcome / Short Bio overlay card on the right homepage panel. Uncheck to hide the text overlay and show the right-panel photograph 100% unobstructed.'
     },
     {
       name: 'welcomeHeadline',

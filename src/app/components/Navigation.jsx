@@ -40,52 +40,54 @@ export default function Navigation({ categories }) {
   return (
     <>
       {/* Constant-height layout spacer prevents fixed header compacting from ever altering window.scrollY */}
-      <header className="h-[96px] sm:h-[108px] md:h-[120px] w-full shrink-0 bg-black">
+      <header className="h-[126px] sm:h-[140px] md:h-[154px] w-full shrink-0 bg-black">
         <nav 
           className={`fixed top-0 left-0 w-full z-50 transition-[background-color,padding,box-shadow] duration-300 ${
             scrolled
-              ? 'bg-black/95 backdrop-blur-xl py-2.5 md:py-3 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
-              : 'bg-black pt-3.5 sm:pt-4 md:pt-5 pb-2'
+              ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
+              : 'bg-black pt-3 sm:pt-3.5 md:pt-4 pb-2'
           }`}
         >
           <div className="max-w-[2100px] mx-auto px-4 sm:px-6 md:px-10 lg:px-14 flex flex-col">
             
-            {/* Row 1: Primary Title & Desktop Navigation aligned on a single horizontal axis */}
-            <div className="flex items-center justify-between gap-4">
-              {/* Brand Title */}
+            {/* Row 1: Primary Title & Desktop Navigation aligned to the bottom baseline of the Page Title */}
+            <div className="flex items-end justify-between gap-4">
+              {/* Brand Title: "The" (White), "Meadow" (Sage Marsh Green #9AB17A), "Lens" (Dusk Gold #F7C873) */}
               <Link href="/" className="group relative z-50 min-w-0 shrink-0 pr-2">
                 <h1 
-                  className="leading-[1.08] pt-0.5 whitespace-nowrap text-white tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-85 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
+                  className="leading-[1.04] pt-0.5 whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
                   style={{ fontFamily: 'var(--font-logo)' }}
                 >
-                  The Meadow Lens
+                  <span className="text-white">The </span>
+                  <span style={{ color: '#9AB17A' }}>Meadow </span>
+                  <span style={{ color: '#F7C873' }}>Lens</span>
                 </h1>
               </Link>
 
-              {/* Desktop Navigation */}
-              <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0">
+              {/* Desktop Navigation — moved down to align with the bottom of the page title */}
+              <div className="hidden lg:flex items-center space-x-6 xl:space-x-9 shrink-0 pb-1">
                 
-                <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                <Link href="/" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
                   HOME
                 </Link>
 
-                <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                <Link href="/bird-index" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
                   Species Index
                 </Link>
 
-                <Link href="/category/guest-photos" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                <Link href="/category/guest-photos" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
                   Guest Photos
                 </Link>
 
-                <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                <Link href="/artist" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
                   The Artist
                 </Link>
 
-                <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                <Link href="/news" className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
                   What&apos;s New
                 </Link>
 
-                <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold hover:text-neutral-400 transition-colors">
+                <Link href="?inquire=true" scroll={false} className="text-white uppercase tracking-widest text-xs font-semibold hover:text-[#9AB17A] transition-colors">
                   Inquiries &amp; Comments
                 </Link>
 
@@ -95,7 +97,7 @@ export default function Navigation({ categories }) {
               <button 
                 type="button"
                 aria-label="Open Navigation Menu"
-                className="lg:hidden shrink-0 px-3.5 py-2 rounded-full bg-black/70 border border-white/20 text-white uppercase tracking-widest text-[11px] font-mono font-semibold drop-shadow-md z-50 flex items-center gap-2 active:scale-95 transition-transform"
+                className="lg:hidden shrink-0 mb-0.5 px-3.5 py-2 rounded-full bg-black/70 border border-white/20 text-white uppercase tracking-widest text-[11px] font-mono font-semibold drop-shadow-md z-50 flex items-center gap-2 active:scale-95 transition-transform"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,17 +107,69 @@ export default function Navigation({ categories }) {
               </button>
             </div>
 
-            {/* Row 2: Two-line Slogan aligned to the exact left edge of the Title & Hero Artwork */}
-            <Link
-              href="/"
-              tabIndex={-1}
-              className={`block text-neutral-300 font-mono text-[9px] sm:text-[10px] md:text-[11.5px] xl:text-xs uppercase tracking-[0.14em] sm:tracking-[0.18em] drop-shadow-md max-w-none leading-snug transition-[max-height,opacity,margin] duration-300 overflow-hidden hover:text-white ${
-                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-16 opacity-100 mt-0.5'
+            {/* Full-width light gray separating line (6pt / 6px) below the page title and right-hand menu */}
+            <div
+              aria-hidden="true"
+              className="w-full h-[6px] bg-neutral-400/85 mt-1.5 rounded-[1px]"
+            />
+
+            {/* Row 2: Tightened, wider-tracked 2-line Slogan + [Explore The Venues] [Meet David] + Shutter Blade Icon */}
+            <div
+              className={`transition-[max-height,opacity,margin] duration-300 overflow-hidden ${
+                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-28 opacity-100 mt-1.5'
               }`}
             >
-              <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
-              <span className="block mt-0.5">&mdash; Centered on the New Jersey Meadowlands</span>
-            </Link>
+              <div className="inline-flex flex-col">
+                <Link
+                  href="/"
+                  tabIndex={-1}
+                  className="block text-neutral-200 font-mono text-[9px] sm:text-[10.5px] md:text-[11.5px] xl:text-[12.5px] uppercase tracking-[0.20em] sm:tracking-[0.25em] md:tracking-[0.27em] drop-shadow-md leading-[1.15] hover:text-white transition-colors"
+                >
+                  <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
+                  <span className="block pl-2 sm:pl-3">&mdash; Centered on the New Jersey Meadowlands</span>
+                </Link>
+
+                {/* Action Buttons + Tiny Shutter Blade Graphic under the Slogan */}
+                <div className="flex items-center gap-4 sm:gap-6 mt-1.5 pl-4 sm:pl-10">
+                  <Link
+                    href="/#venues"
+                    className="text-white hover:text-[#9AB17A] font-sans text-xs sm:text-sm md:text-[15px] font-medium tracking-wide transition-colors"
+                  >
+                    [Explore The Venues]
+                  </Link>
+                  <Link
+                    href="/artist"
+                    className="text-white hover:text-[#F7C873] font-sans text-xs sm:text-sm md:text-[15px] font-medium tracking-wide transition-colors"
+                  >
+                    [Meet David]
+                  </Link>
+                  {/* Tiny Camera Shutter Blade Graphic */}
+                  <span
+                    title="The Meadow Lens Aperture"
+                    aria-hidden="true"
+                    className="inline-flex items-center justify-center w-5 h-5 sm:w-[22px] sm:h-[22px] rounded-full bg-neutral-800/90 border border-neutral-400/80 shadow-sm shrink-0"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" className="text-neutral-300" />
+                      <line x1="14.31" y1="8" x2="20.05" y2="17.94" />
+                      <line x1="9.69" y1="8" x2="21.17" y2="8" />
+                      <line x1="7.38" y1="12" x2="13.12" y2="2.06" />
+                      <line x1="9.69" y1="16" x2="3.95" y2="6.06" />
+                      <line x1="14.31" y1="16" x2="2.83" y2="16" />
+                      <line x1="16.62" y1="12" x2="10.88" y2="21.94" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
 
           </div>
         </nav>
@@ -131,10 +185,12 @@ export default function Navigation({ categories }) {
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-3xl sm:text-4xl text-white drop-shadow-md whitespace-nowrap"
+            className="text-3xl sm:text-4xl drop-shadow-md whitespace-nowrap"
             style={{ fontFamily: 'var(--font-logo)' }}
           >
-            The Meadow Lens
+            <span className="text-white">The </span>
+            <span style={{ color: '#9AB17A' }}>Meadow </span>
+            <span style={{ color: '#F7C873' }}>Lens</span>
           </Link>
           <button
             type="button"

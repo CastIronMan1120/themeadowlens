@@ -9,15 +9,25 @@ export default function Footer() {
         <div className="flex flex-col">
           <Link
             href="/"
-            className="text-2xl sm:text-3xl md:text-4xl font-normal text-white tracking-normal hover:opacity-80 transition-opacity leading-snug"
+            className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-normal hover:opacity-85 transition-opacity leading-snug"
             style={{ fontFamily: 'var(--font-logo)' }}
           >
-            The Meadow Lens
+            <span className="text-white">The </span>
+            <span style={{ color: '#9AB17A' }}>Meadow </span>
+            <span style={{ color: '#F7C873' }}>Lens</span>
           </Link>
-          <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.14em] sm:tracking-[0.16em] mt-1.5 text-neutral-300 leading-snug">
+          <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.20em] sm:tracking-[0.23em] mt-1.5 text-neutral-200 leading-[1.18]">
             <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
-            <span className="block mt-0.5 text-neutral-400">&mdash; Centered on the New Jersey Meadowlands</span>
+            <span className="block pl-2 text-neutral-400">&mdash; Centered on the New Jersey Meadowlands</span>
           </p>
+          <div className="flex items-center gap-4 mt-2.5">
+            <Link href="/#venues" className="text-xs text-white/90 hover:text-[#9AB17A] transition-colors">
+              [Explore The Venues]
+            </Link>
+            <Link href="/artist" className="text-xs text-white/90 hover:text-[#F7C873] transition-colors">
+              [Meet David]
+            </Link>
+          </div>
           <p className="text-xs text-neutral-500 mt-3 max-w-sm leading-relaxed">
             Fine art nature &amp; wildlife photography by Northern NJ native David McClure.
           </p>

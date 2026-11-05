@@ -7,13 +7,20 @@ import { PortableText } from '@portabletext/react'
 export const revalidate = 0 
 
 export default async function Home() {
-  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything"])] | order(title asc) {
+  const query = `*[_type == "category" && !defined(parentCategory) && !(title in ["Everything"])] {
     _id,
     title,
     slug,
+    sortOrder,
     "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || category->parentCategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
   }`
-  const venues = await client.fetch(query)
+  const rawVenues = await client.fetch(query)
+  const venues = [...(rawVenues || [])].sort((a, b) => {
+    const orderA = typeof a.sortOrder === 'number' && !Number.isNaN(a.sortOrder) ? a.sortOrder : 9999
+    const orderB = typeof b.sortOrder === 'number' && !Number.isNaN(b.sortOrder) ? b.sortOrder : 9999
+    if (orderA !== orderB) return orderA - orderB
+    return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' })
+  })
 
   // 1. Fetch Homepage Settings
   const homepage = await client.fetch(`*[_type == "homepage"][0] {
@@ -21,8 +28,10 @@ export default async function Home() {
     welcomeText,
     quote,
     featuredTickerSpeed,
+    showWelcomeOverlay,
     "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
-    "heroImageUrl": heroImage.asset->url
+    "heroImageUrl": heroImage.asset->url,
+    "rightPanelImageUrl": rightPanelImage.asset->url
   }`)
 
   // 2. Fetch Hero Slider Photos (Most recently added)
@@ -36,6 +45,8 @@ export default async function Home() {
   const defaultSliderImage = "https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg"
   
   const heroImageUrl = homepage?.heroImageUrl || defaultHeroLogo
+  const rightPanelStaticUrl = homepage?.rightPanelImageUrl || null
+  const showWelcomeOverlay = homepage?.showWelcomeOverlay !== false
   const sliderImages = sliderArtworks.length > 0 ? sliderArtworks : [defaultSliderImage]
   const welcomeHeadline = homepage?.welcomeHeadline || "Welcome!"
 
@@ -58,35 +69,45 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Right Column: Live Exhibition Slider with Overlay Welcome Card (Matched 50/50 Twin 16:9 Rectangle) */}
+          {/* Right Column: Static Photo or Live Exhibition Slider with Optional Overlay Welcome Card (Matched 50/50 Twin 16:9 Rectangle) */}
           <div className="w-full lg:aspect-[16/9] relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col md:block bg-neutral-950 border border-white/15">
             <div className="relative w-full aspect-[16/9] md:aspect-auto md:absolute md:inset-0">
-              <HeroSlider images={sliderImages} />
+              {rightPanelStaticUrl ? (
+                <img
+                  src={`${rightPanelStaticUrl}?w=1600&q=95&auto=format`}
+                  alt="Featured Photography by David McClure — The Meadow Lens"
+                  className="w-full h-full object-cover object-center select-none block"
+                />
+              ) : (
+                <HeroSlider images={sliderImages} />
+              )}
             </div>
             
-            {/* Welcome Card: Below slider on smartphones so photos are 100% visible; Top-Right overlay on md+ */}
-            <div className="relative md:absolute md:top-0 md:right-0 w-full md:w-[70%] lg:w-[68%] xl:w-[64%] max-h-full overflow-y-auto bg-neutral-950/95 md:bg-slate-950/75 md:backdrop-blur-md p-5 sm:p-6 md:p-6 xl:p-7 border-t md:border-t-0 md:border-l md:border-b border-white/15 z-20 md:rounded-bl-2xl shadow-2xl">
-              <h2 className="text-xl sm:text-2xl xl:text-3xl text-white mb-2 sm:mb-3 font-light tracking-wide">{welcomeHeadline}</h2>
-              
-              <div className="space-y-2 sm:space-y-2.5 text-neutral-100 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light">
-                {homepage?.welcomeText ? (
-                  <PortableText value={homepage.welcomeText} />
-                ) : (
-                  <>
-                    <p>Hello! I&apos;m photographer and Northern NJ native David McClure.</p>
-                    <p>
-                      Thank you for visiting my gallery, where I showcase the allure of nature&apos;s living creatures...
-                    </p>
-                    <p>
-                      This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
-                    </p>
-                    <p className="italic pt-2 text-white">
-                      After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
-                    </p>
-                  </>
-                )}
+            {/* Welcome Card: Rendered only when showWelcomeOverlay is enabled */}
+            {showWelcomeOverlay && (
+              <div className="relative md:absolute md:top-0 md:right-0 w-full md:w-[70%] lg:w-[68%] xl:w-[64%] max-h-full overflow-y-auto bg-neutral-950/95 md:bg-slate-950/75 md:backdrop-blur-md p-5 sm:p-6 md:p-6 xl:p-7 border-t md:border-t-0 md:border-l md:border-b border-white/15 z-20 md:rounded-bl-2xl shadow-2xl">
+                <h2 className="text-xl sm:text-2xl xl:text-3xl text-white mb-2 sm:mb-3 font-light tracking-wide">{welcomeHeadline}</h2>
+                
+                <div className="space-y-2 sm:space-y-2.5 text-neutral-100 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light">
+                  {homepage?.welcomeText ? (
+                    <PortableText value={homepage.welcomeText} />
+                  ) : (
+                    <>
+                      <p>Hello! I&apos;m photographer and Northern NJ native David McClure.</p>
+                      <p>
+                        Thank you for visiting my gallery, where I showcase the allure of nature&apos;s living creatures...
+                      </p>
+                      <p>
+                        This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
+                      </p>
+                      <p className="italic pt-2 text-white">
+                        After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
         </div>

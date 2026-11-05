@@ -84,16 +84,23 @@ export default async function CategoryPage({ params }) {
 
   const currentSlug = subcategorySlug || categorySlug
   
-  const categoryQuery = `*[_type == "category" && slug.current == $currentSlug][0]`
+  const categoryQuery = `*[_type == "category" && slug.current == $currentSlug] | order(_updatedAt desc)[0]`
   const category = await client.fetch(categoryQuery, { currentSlug })
 
-  const subcategoriesQuery = `*[_type == "category" && parentCategory->slug.current == $currentSlug] | order(title asc) {
+  const subcategoriesQuery = `*[_type == "category" && parentCategory->slug.current == $currentSlug] {
     _id,
     title,
     slug,
+    sortOrder,
     "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
   }`
-  const subcategories = await client.fetch(subcategoriesQuery, { currentSlug })
+  const rawSubcategories = await client.fetch(subcategoriesQuery, { currentSlug })
+  const subcategories = [...(rawSubcategories || [])].sort((a, b) => {
+    const orderA = typeof a.sortOrder === 'number' && !Number.isNaN(a.sortOrder) ? a.sortOrder : 9999
+    const orderB = typeof b.sortOrder === 'number' && !Number.isNaN(b.sortOrder) ? b.sortOrder : 9999
+    if (orderA !== orderB) return orderA - orderB
+    return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' })
+  })
 
   const isRootWithSubvenues = !subcategorySlug && subcategories.length > 0
 
