@@ -1,7 +1,7 @@
 import { defineConfig } from 'sanity'
 import { deskTool } from 'sanity/desk'
 import { schemaTypes } from './src/sanity/schema'
-import { BulkCategorizer, AllPhotosGrid, VenuePhotoGridPane } from './src/sanity/components/BulkCategorizer'
+import { BulkCategorizer, AllPhotosGrid, VenuePhotoGridPane, HomepageDesignerPane } from './src/sanity/components/BulkCategorizer'
 import { SystemMetrics } from './src/sanity/components/SystemMetrics'
 
 export default defineConfig({
@@ -16,15 +16,25 @@ export default defineConfig({
         S.list()
           .title('Content Management')
           .items([
-            // 0. Global Settings
+            // 0. Global Settings (Visual Designer + Standard Form Editor)
             S.listItem()
               .title('Homepage Settings')
               .child(
-                S.editor()
+                S.document()
                   .id('homepage')
                   .schemaType('homepage')
                   .documentId('homepage')
-                  .title('Homepage Details')
+                  .title('Homepage Settings & Welcome Designer')
+                  .views([
+                    S.view
+                      .component(HomepageDesignerPane)
+                      .title('🎨 Visual Welcome & Homepage Designer')
+                      .id('homepage-visual-designer'),
+                    S.view
+                      .form()
+                      .title('⚙️ Form Editor & Featured Ticker')
+                      .id('homepage-form-editor')
+                  ])
               ),
               
             S.divider(),
@@ -151,6 +161,11 @@ export default defineConfig({
       name: 'bulk-categorizer',
       title: 'Warehouse & Venue Manager',
       component: BulkCategorizer
+    },
+    {
+      name: 'homepage-designer',
+      title: '🏠 Homepage & Welcome Designer',
+      component: HomepageDesignerPane
     },
     {
       name: 'system-metrics',

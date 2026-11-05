@@ -1,3 +1,156 @@
+import React from 'react'
+import { set } from 'sanity'
+
+function WelcomeColorInput(props) {
+  const { value = '#0B1528', onChange, schemaType } = props
+  const isText = schemaType?.name === 'welcomeTextColor'
+  const presets = isText
+    ? [
+        { label: 'Gallery Ivory (Default)', hex: '#F8FAFC' },
+        { label: 'Pure White', hex: '#FFFFFF' },
+        { label: 'Dusk Gold', hex: '#F7C873' },
+        { label: 'Sage Marsh Green', hex: '#9AB17A' },
+        { label: 'Deep Charcoal', hex: '#0F172A' },
+      ]
+    : [
+        { label: 'Midnight Slate (Default)', hex: '#0B1528' },
+        { label: 'Obsidian Black', hex: '#0A0A0A' },
+        { label: 'Marsh Green', hex: '#13261C' },
+        { label: 'Espresso Bronze', hex: '#211A16' },
+        { label: 'Classic Slate', hex: '#1E293B' },
+        { label: 'Frosted Ivory', hex: '#F8FAFC' },
+      ]
+
+  const handleColorChange = (nextHex) => {
+    onChange(set(nextHex))
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', padding: '0.5rem 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        <input
+          type="color"
+          value={/^#[0-9A-Fa-f]{6}$/.test(value) ? value : isText ? '#F8FAFC' : '#0B1528'}
+          onChange={(e) => handleColorChange(e.target.value.toUpperCase())}
+          style={{
+            width: '48px',
+            height: '38px',
+            padding: 0,
+            border: '1px solid #94a3b8',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        />
+        <input
+          type="text"
+          value={value || ''}
+          onChange={(e) => handleColorChange(e.target.value)}
+          placeholder={isText ? '#F8FAFC' : '#0B1528'}
+          style={{
+            width: '130px',
+            padding: '0.45rem 0.65rem',
+            borderRadius: '6px',
+            border: '1px solid #cbd5e1',
+            fontFamily: 'monospace',
+            fontSize: '0.9rem',
+            fontWeight: 700,
+          }}
+        />
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+        {presets.map((p) => (
+          <button
+            key={p.hex}
+            type="button"
+            onClick={() => handleColorChange(p.hex)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.3rem 0.6rem',
+              borderRadius: '6px',
+              border: (value || '').toUpperCase() === p.hex ? '2px solid #2563eb' : '1px solid #cbd5e1',
+              background: '#f8fafc',
+              color: '#0f172a',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <span
+              style={{
+                width: '13px',
+                height: '13px',
+                borderRadius: '3px',
+                background: p.hex,
+                border: '1px solid rgba(0,0,0,0.25)',
+              }}
+            />
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WelcomeOpacityInput(props) {
+  const { value = 75, onChange } = props
+  const numVal = typeof value === 'number' && !Number.isNaN(value) ? Math.max(0, Math.min(100, value)) : 75
+  const transparency = 100 - numVal
+
+  const updateVal = (nextNum) => {
+    const clamped = Math.max(0, Math.min(100, Number(nextNum)))
+    onChange(set(clamped))
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', padding: '0.5rem 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1d4ed8' }}>
+          Background Opacity: {numVal}% &nbsp;|&nbsp; Background Transparency: {transparency}%
+        </span>
+      </div>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value={numVal}
+        onChange={(e) => updateVal(e.target.value)}
+        style={{ width: '100%', accentColor: '#2563eb', cursor: 'pointer' }}
+      />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+        {[
+          { label: '100% Transparent / Text Only (0% Opacity)', val: 0 },
+          { label: '50% Transparent (50% Opacity)', val: 50 },
+          { label: 'Industry Standard (75% Opacity / 25% Transparent)', val: 75 },
+          { label: 'Deep Contrast (88% Opacity)', val: 88 },
+          { label: 'Solid Opaque (100% Opacity)', val: 100 },
+        ].map((opt) => (
+          <button
+            key={opt.val}
+            type="button"
+            onClick={() => updateVal(opt.val)}
+            style={{
+              padding: '0.3rem 0.6rem',
+              borderRadius: '6px',
+              border: numVal === opt.val ? '2px solid #2563eb' : '1px solid #cbd5e1',
+              background: numVal === opt.val ? '#eff6ff' : '#f8fafc',
+              color: '#0f172a',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export const homepage = {
   name: 'homepage',
   title: 'Homepage Settings',
@@ -12,10 +165,10 @@ export const homepage = {
     },
     {
       name: 'rightPanelImage',
-      title: 'Right Panel Static Image (16:9 Frame)',
+      title: 'Right Panel Static Welcome Image (16:9 Frame)',
       type: 'image',
       options: { hotspot: true },
-      description: 'The static 16:9 photograph displayed on the right side of the homepage hero, matching the left-side panel.'
+      description: 'The static 16:9 photograph displayed on the right side of the homepage hero (Welcome section).'
     },
     {
       name: 'rightPanelFit',
@@ -54,25 +207,34 @@ export const homepage = {
     },
     {
       name: 'welcomeBgColor',
-      title: 'Welcome Overlay Background Color (Hex)',
+      title: 'Welcome Overlay Background Color',
       type: 'string',
       initialValue: '#0B1528',
-      description: 'Hex color code for the Welcome overlay background (Industry Standard Default: #0B1528 Deep Midnight Slate).'
+      components: {
+        input: WelcomeColorInput,
+      },
+      description: 'Color picker and presets for the Welcome overlay background (Industry Standard Default: #0B1528 Deep Midnight Slate).'
     },
     {
       name: 'welcomeBgOpacity',
-      title: 'Welcome Overlay Background Opacity % (0 = Fully Transparent, 100 = Solid Opaque)',
+      title: 'Welcome Overlay Background Transparency & Opacity (%)',
       type: 'number',
       initialValue: 75,
+      components: {
+        input: WelcomeOpacityInput,
+      },
       validation: (Rule) => Rule.min(0).max(100),
-      description: 'Controls background transparency/opacity from 0% (completely transparent background) to 100% (solid background). Industry Standard Default: 75% Opacity (25% Transparency).'
+      description: 'Controls background transparency/opacity from 0% Opacity (100% Transparent) to 100% Opacity (Solid). Industry Standard Default: 75% Opacity (25% Transparency).'
     },
     {
       name: 'welcomeTextColor',
-      title: 'Welcome Overlay Text Color (Hex)',
+      title: 'Welcome Overlay Text Color',
       type: 'string',
       initialValue: '#F8FAFC',
-      description: 'Hex color code for the Welcome headline and body text (Industry Standard Default: #F8FAFC Crisp Gallery Ivory).'
+      components: {
+        input: WelcomeColorInput,
+      },
+      description: 'Color picker and presets for the Welcome headline and body text (Industry Standard Default: #F8FAFC Crisp Gallery Ivory).'
     },
     {
       name: 'welcomeBackdropBlur',
