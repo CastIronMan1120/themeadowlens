@@ -4617,56 +4617,67 @@ export function VenueGridManager({
                       <div
                         style={{
                           position: 'absolute',
-                          top: 0,
-                          right: 0,
-                          width: '65%',
-                          maxHeight: '100%',
-                          overflowY: 'auto',
-                          padding: '0.75rem 0.85rem',
-                          backgroundColor: convertHexToRgbaPreview(
-                            homepageForm.welcomeBgColor,
-                            homepageForm.welcomeBgOpacity
-                          ),
-                          color: homepageForm.welcomeTextColor || '#F8FAFC',
-                          backdropFilter:
-                            homepageForm.welcomeBackdropBlur && Number(homepageForm.welcomeBgOpacity) > 0
-                              ? 'blur(10px)'
-                              : 'none',
-                          WebkitBackdropFilter:
-                            homepageForm.welcomeBackdropBlur && Number(homepageForm.welcomeBgOpacity) > 0
-                              ? 'blur(10px)'
-                              : 'none',
-                          borderBottomLeftRadius: '12px',
-                          borderLeft:
-                            Number(homepageForm.welcomeBgOpacity) > 5
-                              ? '1px solid rgba(255,255,255,0.16)'
-                              : 'none',
-                          borderBottom:
-                            Number(homepageForm.welcomeBgOpacity) > 5
-                              ? '1px solid rgba(255,255,255,0.16)'
-                              : 'none',
+                          inset: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0.75rem',
                         }}
                       >
                         <div
                           style={{
-                            fontSize: '0.92rem',
-                            fontWeight: 400,
-                            marginBottom: '0.35rem',
+                            width: '78%',
+                            maxHeight: '92%',
+                            overflowY: 'auto',
+                            padding: '0.7rem 0.9rem',
+                            textAlign: 'center',
+                            backgroundColor: convertHexToRgbaPreview(
+                              homepageForm.welcomeBgColor,
+                              homepageForm.welcomeBgOpacity
+                            ),
                             color: homepageForm.welcomeTextColor || '#F8FAFC',
+                            backdropFilter:
+                              homepageForm.welcomeBackdropBlur && Number(homepageForm.welcomeBgOpacity) > 0
+                                ? 'blur(10px)'
+                                : 'none',
+                            WebkitBackdropFilter:
+                              homepageForm.welcomeBackdropBlur && Number(homepageForm.welcomeBgOpacity) > 0
+                                ? 'blur(10px)'
+                                : 'none',
+                            borderRadius: '12px',
+                            border:
+                              Number(homepageForm.welcomeBgOpacity) > 5
+                                ? '1px solid rgba(255,255,255,0.18)'
+                                : 'none',
+                            boxShadow:
+                              Number(homepageForm.welcomeBgOpacity) > 5
+                                ? '0 10px 30px rgba(0,0,0,0.55)'
+                                : 'none',
                           }}
                         >
-                          {homepageForm.welcomeHeadline || 'Welcome to The Meadow Lens'}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '0.66rem',
-                            lineHeight: 1.42,
-                            color: homepageForm.welcomeTextColor || '#F8FAFC',
-                            opacity: 0.95,
-                            whiteSpace: 'pre-line',
-                          }}
-                        >
-                          {homepageForm.welcomeBodyText}
+                          <div
+                            style={{
+                              fontSize: '0.92rem',
+                              fontWeight: 400,
+                              marginBottom: '0.3rem',
+                              color: homepageForm.welcomeTextColor || '#F8FAFC',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {homepageForm.welcomeHeadline || 'Welcome to The Meadow Lens'}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '0.64rem',
+                              lineHeight: 1.4,
+                              color: homepageForm.welcomeTextColor || '#F8FAFC',
+                              opacity: 0.95,
+                              whiteSpace: 'pre-line',
+                              textAlign: 'center',
+                            }}
+                          >
+                            {homepageForm.welcomeBodyText}
+                          </div>
                         </div>
                       </div>
                     )}

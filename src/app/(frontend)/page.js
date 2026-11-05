@@ -108,48 +108,50 @@ export default async function Home() {
               />
             </div>
             
-            {/* Welcome Card: Rendered when showWelcomeOverlay is enabled, with customizable Background Color & Transparency */}
+            {/* Welcome Card: Centered both horizontally & vertically inside the Right Panel 16:9 image */}
             {showWelcomeOverlay && (
-              <div
-                style={{
-                  backgroundColor: welcomeOverlayBgRgba,
-                  color: welcomeTextColor,
-                }}
-                className={`relative md:absolute md:top-0 md:right-0 w-full md:w-[70%] lg:w-[68%] xl:w-[64%] max-h-full overflow-y-auto p-5 sm:p-6 md:p-6 xl:p-7 z-20 md:rounded-bl-2xl transition-colors duration-300 ${
-                  welcomeBackdropBlur ? 'md:backdrop-blur-md' : ''
-                } ${
-                  welcomeBgOpacity > 5
-                    ? 'border-t md:border-t-0 md:border-l md:border-b border-white/15 shadow-2xl'
-                    : ''
-                }`}
-              >
-                <h2
-                  style={{ color: welcomeTextColor }}
-                  className="text-xl sm:text-2xl xl:text-3xl mb-2 sm:mb-3 font-light tracking-wide"
-                >
-                  {welcomeHeadline}
-                </h2>
-                
+              <div className="relative md:absolute md:inset-0 md:flex md:items-center md:justify-center md:p-5 lg:p-6 z-20 pointer-events-none">
                 <div
-                  style={{ color: welcomeTextColor }}
-                  className="space-y-2 sm:space-y-2.5 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light opacity-95"
+                  style={{
+                    backgroundColor: welcomeOverlayBgRgba,
+                    color: welcomeTextColor,
+                  }}
+                  className={`pointer-events-auto w-full md:w-[82%] lg:w-[80%] xl:w-[76%] max-h-full overflow-y-auto p-5 sm:p-6 md:px-7 md:py-5 xl:px-8 xl:py-6 md:rounded-2xl text-center transition-colors duration-300 ${
+                    welcomeBackdropBlur ? 'md:backdrop-blur-md' : ''
+                  } ${
+                    welcomeBgOpacity > 5
+                      ? 'border-t md:border border-white/15 shadow-[0_18px_45px_rgba(0,0,0,0.65)]'
+                      : ''
+                  }`}
                 >
-                  {homepage?.welcomeText ? (
-                    <PortableText value={homepage.welcomeText} />
-                  ) : (
-                    <>
-                      <p>Hello! I&apos;m photographer and Northern NJ native David McClure.</p>
-                      <p>
-                        Thank you for visiting my gallery, where I showcase the allure of nature&apos;s living creatures...
-                      </p>
-                      <p>
-                        This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
-                      </p>
-                      <p className="italic pt-2">
-                        After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
-                      </p>
-                    </>
-                  )}
+                  <h2
+                    style={{ color: welcomeTextColor }}
+                    className="text-xl sm:text-2xl xl:text-3xl mb-2 sm:mb-3 font-light tracking-wide text-center"
+                  >
+                    {welcomeHeadline}
+                  </h2>
+                  
+                  <div
+                    style={{ color: welcomeTextColor }}
+                    className="space-y-2 sm:space-y-2.5 text-xs sm:text-[13.5px] xl:text-sm leading-relaxed font-light opacity-95 text-center"
+                  >
+                    {homepage?.welcomeText ? (
+                      <PortableText value={homepage.welcomeText} />
+                    ) : (
+                      <>
+                        <p>Hello! I&apos;m photographer and Northern NJ native David McClure.</p>
+                        <p>
+                          Thank you for visiting my gallery, where I showcase the allure of nature&apos;s living creatures...
+                        </p>
+                        <p>
+                          This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
+                        </p>
+                        <p className="italic pt-2">
+                          After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

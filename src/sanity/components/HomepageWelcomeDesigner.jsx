@@ -440,53 +440,64 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
                 <div
                   style={{
                     position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    width: '65%',
-                    maxHeight: '100%',
-                    overflowY: 'auto',
-                    padding: '0.75rem 0.85rem',
-                    backgroundColor: convertHexToRgba(form.welcomeBgColor, form.welcomeBgOpacity),
-                    color: form.welcomeTextColor || '#F8FAFC',
-                    backdropFilter:
-                      form.welcomeBackdropBlur && Number(form.welcomeBgOpacity) > 0
-                        ? 'blur(10px)'
-                        : 'none',
-                    WebkitBackdropFilter:
-                      form.welcomeBackdropBlur && Number(form.welcomeBgOpacity) > 0
-                        ? 'blur(10px)'
-                        : 'none',
-                    borderBottomLeftRadius: '12px',
-                    borderLeft:
-                      Number(form.welcomeBgOpacity) > 5
-                        ? '1px solid rgba(255,255,255,0.16)'
-                        : 'none',
-                    borderBottom:
-                      Number(form.welcomeBgOpacity) > 5
-                        ? '1px solid rgba(255,255,255,0.16)'
-                        : 'none',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.75rem',
                   }}
                 >
                   <div
                     style={{
-                      fontSize: '0.92rem',
-                      fontWeight: 400,
-                      marginBottom: '0.35rem',
+                      width: '78%',
+                      maxHeight: '92%',
+                      overflowY: 'auto',
+                      padding: '0.7rem 0.9rem',
+                      textAlign: 'center',
+                      backgroundColor: convertHexToRgba(form.welcomeBgColor, form.welcomeBgOpacity),
                       color: form.welcomeTextColor || '#F8FAFC',
+                      backdropFilter:
+                        form.welcomeBackdropBlur && Number(form.welcomeBgOpacity) > 0
+                          ? 'blur(10px)'
+                          : 'none',
+                      WebkitBackdropFilter:
+                        form.welcomeBackdropBlur && Number(form.welcomeBgOpacity) > 0
+                          ? 'blur(10px)'
+                          : 'none',
+                      borderRadius: '12px',
+                      border:
+                        Number(form.welcomeBgOpacity) > 5
+                          ? '1px solid rgba(255,255,255,0.18)'
+                          : 'none',
+                      boxShadow:
+                        Number(form.welcomeBgOpacity) > 5
+                          ? '0 10px 30px rgba(0,0,0,0.55)'
+                          : 'none',
                     }}
                   >
-                    {form.welcomeHeadline || 'Welcome to The Meadow Lens'}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '0.66rem',
-                      lineHeight: 1.42,
-                      color: form.welcomeTextColor || '#F8FAFC',
-                      opacity: 0.95,
-                      whiteSpace: 'pre-line',
-                    }}
-                  >
-                    {form.welcomeBodyText}
+                    <div
+                      style={{
+                        fontSize: '0.92rem',
+                        fontWeight: 400,
+                        marginBottom: '0.3rem',
+                        color: form.welcomeTextColor || '#F8FAFC',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {form.welcomeHeadline || 'Welcome to The Meadow Lens'}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.64rem',
+                        lineHeight: 1.4,
+                        color: form.welcomeTextColor || '#F8FAFC',
+                        opacity: 0.95,
+                        whiteSpace: 'pre-line',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {form.welcomeBodyText}
+                    </div>
                   </div>
                 </div>
               )}
