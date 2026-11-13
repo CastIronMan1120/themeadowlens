@@ -6,10 +6,9 @@ export const revalidate = 0
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const categorySlug = slug[0]
-  const subcategorySlug = slug[1]
-  const currentSlug = subcategorySlug || categorySlug
-  const canonicalPath = subcategorySlug ? `/category/${categorySlug}/${subcategorySlug}` : `/category/${categorySlug}`
+  const slugArray = Array.isArray(slug) ? slug : [slug]
+  const currentSlug = slugArray[slugArray.length - 1]
+  const canonicalPath = `/category/${slugArray.join('/')}`
 
   const query = `*[_type == "category" && slug.current == $currentSlug][0]{
     title,
@@ -79,12 +78,16 @@ export async function generateMetadata({ params }) {
 
 export default async function CategoryPage({ params }) {
   const { slug } = await params
-  const categorySlug = slug[0]
-  const subcategorySlug = slug[1]
-
-  const currentSlug = subcategorySlug || categorySlug
+  const slugArray = Array.isArray(slug) ? slug : [slug]
+  const currentSlug = slugArray[slugArray.length - 1]
+  const currentPathPrefix = `/category/${slugArray.join('/')}`
+  const parentPath = slugArray.length > 1 ? `/category/${slugArray.slice(0, -1).join('/')}` : null
+  const parentSlugLabel = slugArray.length > 1 ? slugArray[slugArray.length - 2].replace(/-/g, ' ') : ''
   
-  const categoryQuery = `*[_type == "category" && slug.current == $currentSlug] | order(_updatedAt desc)[0]`
+  const categoryQuery = `*[_type == "category" && slug.current == $currentSlug] | order(_updatedAt desc)[0]{
+    ...,
+    "parentTitle": parentCategory->title
+  }`
   const category = await client.fetch(categoryQuery, { currentSlug })
 
   const subcategoriesQuery = `*[_type == "category" && parentCategory->slug.current == $currentSlug] {
@@ -92,7 +95,7 @@ export default async function CategoryPage({ params }) {
     title,
     slug,
     sortOrder,
-    "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
+    "imageUrl": coalesce(menuImage.asset->url, *[_type == "artwork" && (category._ref == ^._id || subcategory._ref == ^._id || category->parentCategory._ref == ^._id) && defined(image.asset)][0].image.asset->url)
   }`
   const rawSubcategories = await client.fetch(subcategoriesQuery, { currentSlug })
   const subcategories = [...(rawSubcategories || [])].sort((a, b) => {
@@ -102,7 +105,7 @@ export default async function CategoryPage({ params }) {
     return (a.title || '').localeCompare(b.title || '', undefined, { numeric: true, sensitivity: 'base' })
   })
 
-  const isRootWithSubvenues = !subcategorySlug && subcategories.length > 0
+  const hasChildVenues = subcategories.length > 0
 
   const groqConditions = `_type == "artwork" && !(_id in path("drafts.**")) && (category->slug.current == $currentSlug || subcategory->slug.current == $currentSlug)`
   const artworksQuery = `*[${groqConditions}] | order(_createdAt desc) {
@@ -111,7 +114,7 @@ export default async function CategoryPage({ params }) {
   }`
   
   let artworks = []
-  if (category && !isRootWithSubvenues) {
+  if (category && !hasChildVenues) {
     artworks = await client.fetch(artworksQuery, { currentSlug })
     if (category.alphabetizeBySpecies && Array.isArray(artworks)) {
       artworks = [...artworks].sort((a, b) => {
@@ -141,58 +144,62 @@ export default async function CategoryPage({ params }) {
     <main className="min-h-screen bg-neutral-950 pt-4 sm:pt-8 md:pt-10 pb-16 sm:pb-24 px-3.5 sm:px-6 md:px-12 w-full max-w-[2000px] mx-auto">
       
       <section className="px-1 sm:px-6 md:px-12 text-center mb-7 sm:mb-12 md:mb-14">
-        <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-light tracking-wide mb-2.5 sm:mb-4 break-words leading-snug">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-light tracking-wide mb-2.5 sm:mb-4 break-words leading-snug">
           {category.title}
         </h1>
         {category.speciesDescription && (
-          <p className="text-neutral-400 font-light text-xs xs:text-sm sm:text-base md:text-lg max-w-3xl mx-auto mt-2.5 sm:mt-4 leading-relaxed">
+          <p className="text-neutral-300 font-light text-sm sm:text-base md:text-lg max-w-3xl mx-auto mt-2.5 sm:mt-4 leading-relaxed">
             {category.speciesDescription}
           </p>
         )}
         {currentSlug === 'guest-photos' && (
           <div className="mt-3.5 sm:mt-4 inline-block px-3.5 sm:px-4 py-1 sm:py-1.5 bg-emerald-950/40 border border-emerald-500/30 rounded-full">
-            <span className="text-emerald-300 uppercase tracking-widest text-[10px] sm:text-xs font-mono">
+            <span className="text-emerald-300 uppercase tracking-widest text-[11px] sm:text-xs font-mono">
               Curated By Invitation Only
             </span>
           </div>
         )}
-        {subcategorySlug && (
+        {parentPath ? (
           <div className="mt-3.5 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <Link href={`/category/${categorySlug}`} className="inline-flex items-center min-h-[36px] px-3 sm:px-3.5 py-1.5 rounded-full bg-neutral-900 border border-white/15 text-[11px] sm:text-sm text-neutral-200 hover:text-white uppercase tracking-wider sm:tracking-widest font-mono transition-colors">
-              &larr; Back to {categorySlug.replace(/-/g, ' ')}
+            <Link href={parentPath} className="inline-flex items-center min-h-[38px] px-3.5 py-1.5 rounded-full bg-neutral-900 border border-white/15 text-xs sm:text-sm text-neutral-200 hover:text-white uppercase tracking-wider sm:tracking-widest font-mono transition-colors">
+              &larr; Back to {category.parentTitle || parentSlugLabel}
             </Link>
             {category.alphabetizeBySpecies && (
-              <span className="inline-flex items-center min-h-[36px] px-3 sm:px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[10px] sm:text-xs text-emerald-300 uppercase tracking-wider sm:tracking-widest font-mono">
+              <span className="inline-flex items-center min-h-[38px] px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[11px] sm:text-xs text-emerald-300 uppercase tracking-wider sm:tracking-widest font-mono">
                 Alphabetical by Species (A&ndash;Z)
               </span>
             )}
           </div>
-        )}
-        {!subcategorySlug && category.alphabetizeBySpecies && (
-          <div className="mt-3.5 sm:mt-4">
-            <span className="inline-flex items-center min-h-[36px] px-3 sm:px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[10px] sm:text-xs text-emerald-300 uppercase tracking-wider sm:tracking-widest font-mono">
-              Alphabetical by Species (A&ndash;Z)
-            </span>
+        ) : (
+          <div className="mt-3.5 sm:mt-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <Link href="/#venues" className="inline-flex items-center min-h-[38px] px-3.5 py-1.5 rounded-full bg-neutral-900 border border-white/15 text-xs sm:text-sm text-neutral-200 hover:text-white uppercase tracking-wider sm:tracking-widest font-mono transition-colors">
+              &larr; All Venues
+            </Link>
+            {category.alphabetizeBySpecies && (
+              <span className="inline-flex items-center min-h-[38px] px-3.5 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-[11px] sm:text-xs text-emerald-300 uppercase tracking-wider sm:tracking-widest font-mono">
+                Alphabetical by Species (A&ndash;Z)
+              </span>
+            )}
           </div>
         )}
       </section>
 
       {subcategories.length > 0 && (
         <section className="px-0 sm:px-4 md:px-12 max-w-[2400px] mx-auto mb-12 sm:mb-20">
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6">
             {subcategories.map(sub => (
               <Link 
                 key={sub._id}
-                href={`/category/${categorySlug}/${sub.slug.current}`}
-                className="group relative aspect-[4/3] xs:aspect-square overflow-hidden bg-neutral-900 block rounded-sm border border-white/15 hover:border-white/30 transition-colors"
+                href={`${currentPathPrefix}/${sub.slug.current}`}
+                className="group relative aspect-[4/3] sm:aspect-square overflow-hidden bg-neutral-900 block rounded-sm border border-white/15 hover:border-white/35 transition-colors shadow-lg"
               >
                 <div 
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 opacity-85 group-hover:opacity-100"
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
                   style={{ backgroundImage: `url('${sub.imageUrl || ""}')` }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-90 group-hover:opacity-70 transition-opacity duration-500" />
-                <div className="absolute inset-0 flex items-end justify-center p-2.5 sm:p-4 md:p-6 pb-3 sm:pb-6 md:pb-8">
-                  <h3 className="text-xs sm:text-sm md:text-base text-white font-semibold tracking-wide sm:tracking-widest uppercase text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] leading-snug line-clamp-3">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent opacity-90 group-hover:opacity-70 transition-opacity duration-500" />
+                <div className="absolute inset-0 flex items-end justify-center p-4 sm:p-5 md:p-6 pb-4 sm:pb-6 md:pb-8">
+                  <h3 className="text-base sm:text-sm md:text-base text-white font-semibold tracking-wider sm:tracking-widest uppercase text-center drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] leading-snug line-clamp-3">
                     {sub.title}
                   </h3>
                 </div>

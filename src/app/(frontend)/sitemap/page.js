@@ -45,7 +45,11 @@ export default async function SitemapPage() {
       _id, title, "slug": slug.current,
       "subcategories": *[_type == "category" && !(_id in path("drafts.**")) && parentCategory._ref == ^._id] | order(title asc) {
         _id, title, "slug": slug.current,
-        "artworkCount": count(*[_type == "artwork" && !(_id in path("drafts.**")) && references(^._id)])
+        "artworkCount": count(*[_type == "artwork" && !(_id in path("drafts.**")) && references(^._id)]),
+        "subSubcategories": *[_type == "category" && !(_id in path("drafts.**")) && parentCategory._ref == ^._id] | order(title asc) {
+          _id, title, "slug": slug.current,
+          "artworkCount": count(*[_type == "artwork" && !(_id in path("drafts.**")) && references(^._id)])
+        }
       },
       "directArtworks": *[_type == "artwork" && !(_id in path("drafts.**")) && category._ref == ^._id && !defined(subcategory)] | order(_createdAt desc) {
         _id, title, displayTitle, "slug": slug.current, species, location
@@ -257,16 +261,33 @@ export default async function SitemapPage() {
 
                   {/* Subcategories list */}
                   {venue.subcategories?.map((sub) => (
-                    <li key={sub._id}>
+                    <li key={sub._id} className="space-y-1.5">
                       <Link
                         href={`/category/${venue.slug}/${sub.slug}`}
-                        className="text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center group py-1 border-b border-white/5"
+                        className="text-sm sm:text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center gap-2 group py-1 border-b border-white/5"
                       >
-                        <span>{sub.title}</span>
-                        <span className="text-xs font-mono text-neutral-400 group-hover:text-blue-300 transition-colors">
+                        <span className="break-words">{sub.title}</span>
+                        <span className="text-xs font-mono text-neutral-400 group-hover:text-blue-300 transition-colors shrink-0">
                           {sub.artworkCount} {sub.artworkCount === 1 ? 'photo' : 'photos'}
                         </span>
                       </Link>
+                      {sub.subSubcategories?.length > 0 && (
+                        <ul className="pl-3 border-l border-white/10 space-y-1">
+                          {sub.subSubcategories.map((subSub) => (
+                            <li key={subSub._id}>
+                              <Link
+                                href={`/category/${venue.slug}/${sub.slug}/${subSub.slug}`}
+                                className="text-xs sm:text-sm text-neutral-400 hover:text-white transition-colors flex justify-between items-center gap-2 py-0.5"
+                              >
+                                <span className="break-words">↳ {subSub.title}</span>
+                                <span className="text-[11px] font-mono text-neutral-500 shrink-0">
+                                  {subSub.artworkCount} {subSub.artworkCount === 1 ? 'photo' : 'photos'}
+                                </span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   ))}
 
