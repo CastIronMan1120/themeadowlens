@@ -249,16 +249,16 @@ export default async function ArtworkPage({ params }) {
       />
 
       {/* 1. Compact Top Breadcrumb & Page-Turn Navigation Bar */}
-      <nav className="mb-2 sm:mb-3 px-2 sm:px-4 text-[11px] sm:text-xs text-neutral-400 uppercase tracking-wider sm:tracking-widest font-mono flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-y-1">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <span className="mx-1.5 sm:mx-2.5 text-neutral-600">/</span>
+      <nav className="mb-2.5 sm:mb-3 px-1.5 sm:px-4 text-[10px] xs:text-[11px] sm:text-xs text-neutral-400 uppercase tracking-wider sm:tracking-widest font-mono flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-y-1 min-w-0">
+          <Link href="/" className="hover:text-white transition-colors shrink-0">Home</Link>
+          <span className="mx-1.5 sm:mx-2.5 text-neutral-600 shrink-0">/</span>
           {artwork.parentCategorySlug && (
             <>
-              <Link href={`/category/${artwork.parentCategorySlug}`} className="hover:text-white transition-colors">
+              <Link href={`/category/${artwork.parentCategorySlug}`} className="hover:text-white transition-colors truncate max-w-[180px] sm:max-w-none">
                 {artwork.parentCategoryTitle}
               </Link>
-              <span className="mx-1.5 sm:mx-2.5 text-neutral-600">/</span>
+              <span className="mx-1.5 sm:mx-2.5 text-neutral-600 shrink-0">/</span>
             </>
           )}
           {artwork.categorySlug ? (
@@ -269,34 +269,34 @@ export default async function ArtworkPage({ params }) {
                     ? `/category/${artwork.parentCategorySlug}/${artwork.categorySlug}`
                     : `/category/${artwork.categorySlug}`
                 }
-                className="hover:text-white transition-colors"
+                className="hover:text-white transition-colors truncate max-w-[180px] sm:max-w-none"
               >
                 {artwork.categoryTitle}
               </Link>
-              <span className="mx-1.5 sm:mx-2.5 text-neutral-600">/</span>
+              <span className="mx-1.5 sm:mx-2.5 text-neutral-600 shrink-0">/</span>
             </>
           ) : (
             <>
-              <Link href="/" className="hover:text-white transition-colors">Exhibitions</Link>
-              <span className="mx-1.5 sm:mx-2.5 text-neutral-600">/</span>
+              <Link href="/" className="hover:text-white transition-colors shrink-0">Exhibitions</Link>
+              <span className="mx-1.5 sm:mx-2.5 text-neutral-600 shrink-0">/</span>
             </>
           )}
-          <span className="text-white break-words">{cleanTitle}</span>
+          <span className="text-white break-words line-clamp-1 sm:line-clamp-none">{cleanTitle}</span>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          {prevArt && (
+        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto shrink-0">
+          {prevArt ? (
             <Link
               href={`/art/${prevArt.slug}`}
-              className="px-3 py-1 rounded-full bg-neutral-900 border border-white/15 text-neutral-200 hover:text-white hover:border-white/40 transition-colors"
+              className="flex-1 sm:flex-initial text-center min-h-[34px] inline-flex items-center justify-center px-3 py-1 rounded-full bg-neutral-900 border border-white/15 text-neutral-200 hover:text-white hover:border-white/40 transition-colors"
             >
               &larr; Prev Page
             </Link>
-          )}
+          ) : <span />}
           {nextArt && (
             <Link
               href={`/art/${nextArt.slug}`}
-              className="px-3 py-1 rounded-full bg-neutral-900 border border-white/15 text-neutral-200 hover:text-white hover:border-white/40 transition-colors"
+              className="flex-1 sm:flex-initial text-center min-h-[34px] inline-flex items-center justify-center px-3 py-1 rounded-full bg-neutral-900 border border-white/15 text-neutral-200 hover:text-white hover:border-white/40 transition-colors"
             >
               Next Page &rarr;
             </Link>

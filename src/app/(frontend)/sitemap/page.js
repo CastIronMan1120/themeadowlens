@@ -158,39 +158,39 @@ export default async function SitemapPage() {
             </h2>
             <ul className="space-y-3.5">
               <li>
-                <Link href="/" className="text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center">
+                <Link href="/" className="text-sm sm:text-base text-neutral-300 hover:text-white transition-colors flex flex-wrap justify-between items-center gap-2">
                   <span>Home (The Venues)</span>
-                  <span className="text-xs font-mono text-neutral-500">/</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-neutral-500">/</span>
                 </Link>
               </li>
               <li>
-                <Link href="/bird-index" className="text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center">
+                <Link href="/bird-index" className="text-sm sm:text-base text-neutral-300 hover:text-white transition-colors flex flex-wrap justify-between items-center gap-2">
                   <span>Species Index (A–Z Glossary)</span>
-                  <span className="text-xs font-mono text-neutral-500">/bird-index</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-neutral-500">/bird-index</span>
                 </Link>
               </li>
               <li>
-                <Link href="/category/guest-photos" className="text-base text-emerald-300 hover:text-white transition-colors flex justify-between items-center">
+                <Link href="/category/guest-photos" className="text-sm sm:text-base text-emerald-300 hover:text-white transition-colors flex flex-wrap justify-between items-center gap-2">
                   <span>Guest Photos (Invited Showcase)</span>
-                  <span className="text-xs font-mono text-emerald-500/70">/category/guest-photos</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-emerald-500/70">/category/guest-photos</span>
                 </Link>
               </li>
               <li>
-                <Link href="/artist" className="text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center">
+                <Link href="/artist" className="text-sm sm:text-base text-neutral-300 hover:text-white transition-colors flex flex-wrap justify-between items-center gap-2">
                   <span>The Artist</span>
-                  <span className="text-xs font-mono text-neutral-500">/artist</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-neutral-500">/artist</span>
                 </Link>
               </li>
               <li>
-                <Link href="/news" className="text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center">
+                <Link href="/news" className="text-sm sm:text-base text-neutral-300 hover:text-white transition-colors flex flex-wrap justify-between items-center gap-2">
                   <span>What&apos;s New (Dispatches)</span>
-                  <span className="text-xs font-mono text-neutral-500">/news</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-neutral-500">/news</span>
                 </Link>
               </li>
               <li>
-                <Link href="/?inquire=true" className="text-base text-neutral-300 hover:text-white transition-colors flex justify-between items-center">
+                <Link href="/?inquire=true" className="text-sm sm:text-base text-neutral-300 hover:text-white transition-colors flex flex-wrap justify-between items-center gap-2">
                   <span>Inquiries &amp; Comments</span>
-                  <span className="text-xs font-mono text-neutral-500">/?inquire=true</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-neutral-500">/?inquire=true</span>
                 </Link>
               </li>
               <li className="pt-2 border-t border-white/10">
@@ -198,7 +198,7 @@ export default async function SitemapPage() {
                   href="/sitemap.xml"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-neutral-400 hover:text-emerald-300 transition-colors flex justify-between items-center font-mono"
+                  className="text-xs sm:text-sm text-neutral-400 hover:text-emerald-300 transition-colors flex flex-wrap justify-between items-center gap-2 font-mono"
                 >
                   <span>Search Engine XML Sitemap</span>
                   <span>/sitemap.xml ↗</span>
