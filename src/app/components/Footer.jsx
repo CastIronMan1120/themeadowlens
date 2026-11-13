@@ -16,9 +16,9 @@ export default function Footer() {
             <span style={{ color: '#9AB17A' }}>Meadow </span>
             <span style={{ color: '#F7C873' }}>Lens</span>
           </Link>
-          <p className="text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.20em] sm:tracking-[0.23em] mt-1.5 text-neutral-200 leading-[1.18]">
+          <p className="text-[8.5px] xs:text-[10px] sm:text-[11px] font-mono uppercase tracking-[0.08em] xs:tracking-[0.14em] sm:tracking-[0.23em] mt-1.5 text-neutral-200 leading-[1.2] sm:leading-[1.18]">
             <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
-            <span className="block pl-2 text-neutral-400">&mdash; Centered on the New Jersey Meadowlands</span>
+            <span className="block pl-1.5 sm:pl-2 text-neutral-400">&mdash; Centered on the New Jersey Meadowlands</span>
           </p>
           <div className="flex items-center gap-4 mt-2.5">
             <Link href="/#venues" className="text-xs text-white/90 hover:text-[#9AB17A] transition-colors">

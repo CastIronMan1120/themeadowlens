@@ -99,8 +99,8 @@ export default async function Home() {
           </div>
 
           {/* Right Column: Static Photograph with Optional Customizable Welcome Content Overlay (Matched 50/50 Twin 16:9 Rectangle) */}
-          <div className="w-full lg:aspect-[16/9] relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col md:block bg-neutral-950 border border-white/15">
-            <div className="relative w-full aspect-[16/9] md:aspect-auto md:absolute md:inset-0 bg-neutral-950">
+          <div className="w-full aspect-[16/9] relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-neutral-950 border border-white/15">
+            <div className="absolute inset-0 bg-neutral-950">
               <img
                 src={`${rightPanelStaticUrl}?w=1600&q=95&auto=format`}
                 alt="Featured Photography by David McClure — The Meadow Lens"
@@ -108,32 +108,32 @@ export default async function Home() {
               />
             </div>
             
-            {/* Welcome Card: Centered both horizontally & vertically inside the Right Panel 16:9 image */}
+            {/* Welcome Card: Centered both horizontally & vertically inside the Right Panel 16:9 image across mobile, tablet & desktop */}
             {showWelcomeOverlay && (
-              <div className="relative md:absolute md:inset-0 md:flex md:items-center md:justify-center md:p-3.5 lg:p-4 xl:p-5 z-20 pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center p-2.5 sm:p-4 md:p-3.5 lg:p-4 xl:p-5 z-20 pointer-events-none">
                 <div
                   style={{
                     backgroundColor: welcomeOverlayBgRgba,
                     color: welcomeTextColor,
                   }}
-                  className={`pointer-events-auto w-full md:w-[88%] lg:w-[86%] xl:w-[84%] max-h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-4 sm:p-5 md:px-6 md:py-4 xl:px-7 xl:py-5 md:rounded-2xl text-center transition-colors duration-300 ${
-                    welcomeBackdropBlur ? 'md:backdrop-blur-md' : ''
+                  className={`pointer-events-auto w-[92%] sm:w-[88%] md:w-[88%] lg:w-[86%] xl:w-[84%] max-h-[92%] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3.5 py-2.5 sm:p-5 md:px-6 md:py-4 xl:px-7 xl:py-5 rounded-xl sm:rounded-2xl text-center transition-colors duration-300 ${
+                    welcomeBackdropBlur ? 'backdrop-blur-md' : ''
                   } ${
                     welcomeBgOpacity > 5
-                      ? 'border-t md:border border-white/15 shadow-[0_18px_45px_rgba(0,0,0,0.65)]'
+                      ? 'border border-white/15 shadow-[0_18px_45px_rgba(0,0,0,0.65)]'
                       : ''
                   }`}
                 >
                   <h2
                     style={{ color: welcomeTextColor }}
-                    className="text-lg sm:text-xl lg:text-[22px] xl:text-2xl mb-1.5 sm:mb-2 font-light tracking-wide text-center"
+                    className="text-sm xs:text-base sm:text-xl lg:text-[22px] xl:text-2xl mb-1 sm:mb-2 font-light tracking-wide text-center leading-tight"
                   >
                     {welcomeHeadline}
                   </h2>
                   
                   <div
                     style={{ color: welcomeTextColor }}
-                    className="space-y-1.5 sm:space-y-2 text-xs sm:text-[12.5px] xl:text-[13.5px] leading-snug sm:leading-relaxed font-light opacity-95 text-center"
+                    className="space-y-1 sm:space-y-2 text-[10.5px] xs:text-[11px] sm:text-[12.5px] xl:text-[13.5px] leading-snug sm:leading-relaxed font-light opacity-95 text-center"
                   >
                     {homepage?.welcomeText ? (
                       <PortableText value={homepage.welcomeText} />
@@ -146,7 +146,7 @@ export default async function Home() {
                         <p>
                           This gallery is chock-full of those beautiful birds and nature&apos;s surrounding flora and other fauna...
                         </p>
-                        <p className="italic pt-1">
+                        <p className="italic pt-0.5 sm:pt-1">
                           After all, this is &ldquo;The Meadowlands&rdquo;, and I&apos;m &ldquo;The Meadow LENS&rdquo;! ... get it?
                         </p>
                       </>
@@ -214,80 +214,80 @@ export default async function Home() {
         <div className="mt-10 sm:mt-14 pt-8 sm:pt-10 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Link
             href="/category/guest-photos"
-            className="group p-6 sm:p-8 bg-neutral-900/60 border border-emerald-500/20 hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between"
+            className="group p-5 sm:p-8 bg-neutral-900/60 border border-emerald-500/20 hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between"
           >
             <div>
               <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-emerald-400 block mb-2">
                 By Invitation Only
               </span>
-              <h3 className="text-xl text-white font-light tracking-wider uppercase mb-2 group-hover:text-emerald-300 transition-colors">
+              <h3 className="text-lg sm:text-xl text-white font-light tracking-wider uppercase mb-2 group-hover:text-emerald-300 transition-colors">
                 Guest Photos
               </h3>
               <p className="text-neutral-400 text-xs leading-relaxed font-light">
-                Exceptional wildlife & nature photography captured by invited guest artists.
+                Exceptional wildlife &amp; nature photography captured by invited guest artists.
               </p>
             </div>
-            <span className="mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
+            <span className="mt-5 sm:mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
               Enter Showcase &rarr;
             </span>
           </Link>
 
           <Link
             href="/bird-index"
-            className="group p-8 bg-neutral-900/60 border border-white/10 hover:border-white/30 transition-all duration-300 flex flex-col justify-between"
+            className="group p-5 sm:p-8 bg-neutral-900/60 border border-white/10 hover:border-white/30 transition-all duration-300 flex flex-col justify-between"
           >
             <div>
               <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500 block mb-2">
                 A–Z Field Guide
               </span>
-              <h3 className="text-xl text-white font-light tracking-wider uppercase mb-2">
+              <h3 className="text-lg sm:text-xl text-white font-light tracking-wider uppercase mb-2">
                 Species Index
               </h3>
               <p className="text-neutral-400 text-xs leading-relaxed font-light">
                 Browse the complete alphabetical catalog of birds, mammals, flora, and fauna.
               </p>
             </div>
-            <span className="mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
+            <span className="mt-5 sm:mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
               Browse Species &rarr;
             </span>
           </Link>
 
           <Link
             href="/artist"
-            className="group p-8 bg-neutral-900/60 border border-white/10 hover:border-white/30 transition-all duration-300 flex flex-col justify-between"
+            className="group p-5 sm:p-8 bg-neutral-900/60 border border-white/10 hover:border-white/30 transition-all duration-300 flex flex-col justify-between"
           >
             <div>
               <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500 block mb-2">
                 Behind The Lens
               </span>
-              <h3 className="text-xl text-white font-light tracking-wider uppercase mb-2">
+              <h3 className="text-lg sm:text-xl text-white font-light tracking-wider uppercase mb-2">
                 The Artist
               </h3>
               <p className="text-neutral-400 text-xs leading-relaxed font-light">
                 Meet Northern NJ native David McClure and explore the story of The Meadow Lens.
               </p>
             </div>
-            <span className="mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
+            <span className="mt-5 sm:mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
               Read Biography &rarr;
             </span>
           </Link>
 
           <Link
             href="/news"
-            className="group p-8 bg-neutral-900/60 border border-white/10 hover:border-white/30 transition-all duration-300 flex flex-col justify-between"
+            className="group p-5 sm:p-8 bg-neutral-900/60 border border-white/10 hover:border-white/30 transition-all duration-300 flex flex-col justify-between"
           >
             <div>
               <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neutral-500 block mb-2">
                 Gallery Dispatches
               </span>
-              <h3 className="text-xl text-white font-light tracking-wider uppercase mb-2">
+              <h3 className="text-lg sm:text-xl text-white font-light tracking-wider uppercase mb-2">
                 What&apos;s New
               </h3>
               <p className="text-neutral-400 text-xs leading-relaxed font-light">
                 Latest field updates, newly cataloged collections, and exhibition announcements.
               </p>
             </div>
-            <span className="mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
+            <span className="mt-5 sm:mt-6 text-[10px] font-mono uppercase tracking-widest text-white/60 group-hover:text-white">
               View Dispatches &rarr;
             </span>
           </Link>

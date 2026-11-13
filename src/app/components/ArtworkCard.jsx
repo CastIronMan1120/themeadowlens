@@ -108,13 +108,13 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
           <div className="flex items-center gap-2 w-full">
             <Link
               href={artworkUrl}
-              className="flex-1 px-3 py-1.5 bg-white/95 hover:bg-white text-black font-semibold text-[10px] sm:text-[11px] uppercase tracking-widest transition-colors text-center rounded-[2px]"
+              className="flex-1 min-h-[36px] flex items-center justify-center px-3 py-1.5 bg-white/95 hover:bg-white text-black font-semibold text-[10px] sm:text-[11px] uppercase tracking-widest transition-colors text-center rounded-[2px]"
             >
               View &amp; Inquire
             </Link>
             <Link
-              href={artworkUrl}
-              className="flex-1 px-3 py-1.5 border border-white/25 hover:border-white text-neutral-200 hover:text-white font-mono text-[10px] sm:text-[11px] uppercase tracking-wider transition-colors text-center rounded-[2px]"
+              href={`${artworkUrl}?visualize=true`}
+              className="flex-1 min-h-[36px] flex items-center justify-center px-3 py-1.5 border border-white/25 hover:border-white text-neutral-200 hover:text-white font-mono text-[10px] sm:text-[11px] uppercase tracking-wider transition-colors text-center rounded-[2px]"
             >
               Room View
             </Link>
@@ -124,7 +124,7 @@ export default function ArtworkCard({ artwork, fallbackDescription }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="px-2.5 py-1.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] uppercase tracking-wider hover:bg-emerald-900 hover:text-white transition-colors text-center rounded-[2px]"
+                className="min-h-[36px] flex items-center justify-center px-2.5 py-1.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] uppercase tracking-wider hover:bg-emerald-900 hover:text-white transition-colors text-center rounded-[2px]"
               >
                 Artist ↗
               </a>

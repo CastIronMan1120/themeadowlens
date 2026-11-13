@@ -40,22 +40,22 @@ export default function Navigation({ categories }) {
   return (
     <>
       {/* Constant-height layout spacer prevents fixed header compacting from ever altering window.scrollY */}
-      <header className="h-[126px] sm:h-[140px] md:h-[154px] w-full shrink-0 bg-black">
+      <header className="h-[136px] sm:h-[144px] md:h-[154px] w-full shrink-0 bg-black">
         <nav 
           className={`fixed top-0 left-0 w-full z-50 transition-[background-color,padding,box-shadow] duration-300 ${
             scrolled
               ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
-              : 'bg-black pt-3 sm:pt-3.5 md:pt-4 pb-2'
+              : 'bg-black pt-2.5 sm:pt-3.5 md:pt-4 pb-2'
           }`}
         >
-          <div className="max-w-[2100px] mx-auto px-4 sm:px-6 md:px-10 lg:px-14 flex flex-col">
+          <div className="max-w-[2100px] mx-auto px-3.5 sm:px-6 md:px-10 lg:px-14 flex flex-col">
             
             {/* Row 1: Primary Title & Desktop Navigation aligned to the exact visual bottom of the letters */}
-            <div className="flex items-end justify-between gap-4">
+            <div className="flex items-end justify-between gap-2 sm:gap-4">
               {/* Brand Title: "The" (White), "Meadow" (Sage Marsh Green #9AB17A), "Lens" (Dusk Gold #F7C873) */}
-              <Link href="/" className="group relative z-50 min-w-0 shrink-0 pr-2">
+              <Link href="/" className="group relative z-50 min-w-0 shrink-0 pr-1 sm:pr-2">
                 <h1 
-                  className="leading-[1.04] pt-0.5 -mb-[6px] sm:-mb-[8px] md:-mb-[9px] xl:-mb-[11px] whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[26px] xs:text-[30px] sm:text-4xl md:text-[46px] xl:text-[54px]"
+                  className="leading-[1.04] pt-0.5 -mb-[5px] sm:-mb-[8px] md:-mb-[9px] xl:-mb-[11px] whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[24px] xs:text-[28px] sm:text-4xl md:text-[46px] xl:text-[54px]"
                   style={{ fontFamily: 'var(--font-logo)' }}
                 >
                   <span className="text-white">The </span>
@@ -97,7 +97,7 @@ export default function Navigation({ categories }) {
               <button 
                 type="button"
                 aria-label="Open Navigation Menu"
-                className="lg:hidden shrink-0 mb-0.5 px-3.5 py-2 rounded-full bg-black/70 border border-white/20 text-white uppercase tracking-widest text-[11px] font-mono font-semibold drop-shadow-md z-50 flex items-center gap-2 active:scale-95 transition-transform"
+                className="lg:hidden shrink-0 mb-0.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full bg-black/70 border border-white/20 text-white uppercase tracking-widest text-[10px] sm:text-[11px] font-mono font-semibold drop-shadow-md z-50 flex items-center gap-1.5 sm:gap-2 active:scale-95 transition-transform"
                 onClick={() => setMobileMenuOpen(true)}
               >
                 <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,36 +110,36 @@ export default function Navigation({ categories }) {
             {/* Full-width light gray separating line (6pt / 6px) below the page title and right-hand menu */}
             <div
               aria-hidden="true"
-              className="w-full h-[6px] bg-neutral-400/85 mt-2 rounded-[1px]"
+              className="w-full h-[5px] sm:h-[6px] bg-neutral-400/85 mt-1.5 sm:mt-2 rounded-[1px]"
             />
 
             {/* Row 2: Tightened, wider-tracked 2-line Slogan + [Explore The Venues] [Meet David] + Shutter Blade Icon */}
             <div
               className={`transition-[max-height,opacity,margin] duration-300 overflow-hidden ${
-                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-28 opacity-100 mt-1.5'
+                scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-32 opacity-100 mt-1.5'
               }`}
             >
-              <div className="inline-flex flex-col">
+              <div className="inline-flex flex-col max-w-full">
                 <Link
                   href="/"
                   tabIndex={-1}
-                  className="block text-neutral-200 font-mono text-[9px] sm:text-[10.5px] md:text-[11.5px] xl:text-[12.5px] uppercase tracking-[0.20em] sm:tracking-[0.25em] md:tracking-[0.27em] drop-shadow-md leading-[1.15] hover:text-white transition-colors"
+                  className="block text-neutral-200 font-mono text-[8px] xs:text-[9px] sm:text-[10.5px] md:text-[11.5px] xl:text-[12.5px] uppercase tracking-[0.07em] xs:tracking-[0.12em] sm:tracking-[0.25em] md:tracking-[0.27em] drop-shadow-md leading-[1.2] sm:leading-[1.15] hover:text-white transition-colors"
                 >
                   <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
-                  <span className="block pl-2 sm:pl-3">&mdash; Centered on the New Jersey Meadowlands</span>
+                  <span className="block pl-1.5 sm:pl-3">&mdash; Centered on the New Jersey Meadowlands</span>
                 </Link>
 
                 {/* Action Buttons + Tiny Shutter Blade Graphic under the Slogan */}
-                <div className="flex items-center gap-4 sm:gap-6 mt-1.5 pl-4 sm:pl-10">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-1.5 pl-1.5 sm:pl-10">
                   <Link
                     href="/#venues"
-                    className="text-white hover:text-[#9AB17A] font-sans text-xs sm:text-sm md:text-[15px] font-medium tracking-wide transition-colors"
+                    className="text-white hover:text-[#9AB17A] font-sans text-[11px] xs:text-xs sm:text-sm md:text-[15px] font-medium tracking-wide transition-colors"
                   >
                     [Explore The Venues]
                   </Link>
                   <Link
                     href="/artist"
-                    className="text-white hover:text-[#F7C873] font-sans text-xs sm:text-sm md:text-[15px] font-medium tracking-wide transition-colors"
+                    className="text-white hover:text-[#F7C873] font-sans text-[11px] xs:text-xs sm:text-sm md:text-[15px] font-medium tracking-wide transition-colors"
                   >
                     [Meet David]
                   </Link>
@@ -147,11 +147,11 @@ export default function Navigation({ categories }) {
                   <span
                     title="The Meadow Lens Aperture"
                     aria-hidden="true"
-                    className="inline-flex items-center justify-center w-5 h-5 sm:w-[22px] sm:h-[22px] rounded-full bg-neutral-800/90 border border-neutral-400/80 shadow-sm shrink-0"
+                    className="inline-flex items-center justify-center w-4 h-4 sm:w-[22px] sm:h-[22px] rounded-full bg-neutral-800/90 border border-neutral-400/80 shadow-sm shrink-0"
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"
+                      className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.8"

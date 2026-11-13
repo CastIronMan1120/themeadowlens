@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { client } from '../../../../sanity/lib/client'
 import { urlForImage } from '../../../../sanity/lib/image'
 import { PortableText } from '@portabletext/react'
@@ -312,14 +313,14 @@ export default async function ArtworkPage({ params }) {
 
         {/* Large Picture-Book Page-Turn Arrows on Left & Right Edges */}
         {prevArt && (
-          <div className="absolute inset-y-0 left-0 flex items-center justify-start pl-2 sm:pl-4 pointer-events-none">
+          <div className="absolute inset-y-0 left-0 flex items-center justify-start pl-1.5 sm:pl-4 pointer-events-none">
             <Link
               href={`/art/${prevArt.slug}`}
               aria-label="Previous Photograph"
               title="Turn to Previous Photograph"
-              className="pointer-events-auto bg-black/65 hover:bg-black/90 text-white p-2.5 sm:p-4 rounded-full border border-white/20 hover:border-white/50 backdrop-blur-md transition-all shadow-2xl opacity-75 group-hover/nav:opacity-100"
+              className="pointer-events-auto bg-black/70 hover:bg-black/90 text-white p-2 sm:p-4 rounded-full border border-white/20 hover:border-white/50 backdrop-blur-md transition-all shadow-2xl opacity-80 group-hover/nav:opacity-100"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-6 h-6 sm:w-8 sm:h-8">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5 sm:w-8 sm:h-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </Link>
@@ -327,14 +328,14 @@ export default async function ArtworkPage({ params }) {
         )}
 
         {nextArt && (
-          <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-2 sm:pr-4 pointer-events-none">
+          <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-1.5 sm:pr-4 pointer-events-none">
             <Link
               href={`/art/${nextArt.slug}`}
               aria-label="Next Photograph"
               title="Turn to Next Photograph"
-              className="pointer-events-auto bg-black/65 hover:bg-black/90 text-white p-2.5 sm:p-4 rounded-full border border-white/20 hover:border-white/50 backdrop-blur-md transition-all shadow-2xl opacity-75 group-hover/nav:opacity-100"
+              className="pointer-events-auto bg-black/70 hover:bg-black/90 text-white p-2 sm:p-4 rounded-full border border-white/20 hover:border-white/50 backdrop-blur-md transition-all shadow-2xl opacity-80 group-hover/nav:opacity-100"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-6 h-6 sm:w-8 sm:h-8">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5 sm:w-8 sm:h-8">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
             </Link>
@@ -343,45 +344,45 @@ export default async function ArtworkPage({ params }) {
       </div>
 
       {/* 3. Immediate Picture-Book Title Plaque (Directly Under the Maximized Photo) */}
-      <section className="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-5 pb-6 text-center text-white">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide break-words">
+      <section className="max-w-5xl mx-auto px-3 sm:px-6 pt-3 sm:pt-5 pb-5 sm:pb-6 text-center text-white">
+        <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-light tracking-wide break-words leading-snug">
           {cleanTitle}
         </h1>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-3">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 mt-2.5 sm:mt-3">
           {artwork.species && (
             <Link
               href={`/species/${encodeURIComponent(artwork.species)}`}
-              className="text-emerald-400 hover:text-emerald-300 text-xs font-mono uppercase tracking-widest border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 rounded transition-colors"
+              className="text-emerald-400 hover:text-emerald-300 text-[11px] sm:text-xs font-mono uppercase tracking-widest border border-emerald-500/30 bg-emerald-950/30 px-2.5 sm:px-3 py-1 rounded transition-colors"
             >
               Species: {artwork.species} ↗
             </Link>
           )}
           {artwork.location && (
-            <p className="text-neutral-400 text-xs sm:text-sm font-mono uppercase tracking-widest">
+            <p className="text-neutral-400 text-[11px] sm:text-sm font-mono uppercase tracking-widest">
               {artwork.location} {artwork.year && `• ${artwork.year}`}
             </p>
           )}
           {artwork.edition && (
-            <p className="text-neutral-500 text-xs font-mono uppercase tracking-widest border border-neutral-700 px-2 py-1 rounded-sm">
+            <p className="text-neutral-500 text-[11px] sm:text-xs font-mono uppercase tracking-widest border border-neutral-700 px-2 py-1 rounded-sm">
               {artwork.edition}
             </p>
           )}
         </div>
 
         {artwork.caption && artwork.caption !== cleanTitle && (
-          <p className="text-neutral-300 text-base sm:text-lg font-light leading-relaxed max-w-3xl mx-auto mt-3">
+          <p className="text-neutral-300 text-sm sm:text-lg font-light leading-relaxed max-w-3xl mx-auto mt-3">
             {artwork.caption}
           </p>
         )}
       </section>
 
       {/* 4. Collector Options, Guest Artist Showcase, Story & Share Bar */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-8 pt-6 border-t border-neutral-900 text-white space-y-8">
+      <section className="max-w-4xl mx-auto px-3.5 sm:px-8 pt-5 sm:pt-6 border-t border-neutral-900 text-white space-y-6 sm:space-y-8">
         {artwork.guestPhotographer && (
-          <div className="p-6 bg-emerald-950/30 border border-emerald-500/40 rounded-lg space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-emerald-400 text-xs font-mono uppercase tracking-widest">
+          <div className="p-4 sm:p-6 bg-emerald-950/30 border border-emerald-500/40 rounded-lg space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-emerald-400 text-[11px] sm:text-xs font-mono uppercase tracking-widest">
                 ★ Curated By Invitation • Featured Guest Photographer
               </p>
               <Link
@@ -391,8 +392,8 @@ export default async function ArtworkPage({ params }) {
                 Guest Showcase &rarr;
               </Link>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-2xl font-light text-white">{artwork.guestPhotographer}</p>
+            <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+              <p className="text-xl sm:text-2xl font-light text-white">{artwork.guestPhotographer}</p>
               {artwork.guestSocialUrl && (
                 <a
                   href={artwork.guestSocialUrl}
@@ -413,32 +414,36 @@ export default async function ArtworkPage({ params }) {
         )}
 
         {artwork.story && (
-          <div className="prose prose-invert prose-p:text-neutral-300 prose-p:font-light prose-p:leading-relaxed prose-lg mx-auto">
+          <div className="prose prose-invert prose-p:text-neutral-300 prose-p:font-light prose-p:leading-relaxed prose-base sm:prose-lg mx-auto">
             <PortableText value={artwork.story} />
           </div>
         )}
 
-        <div>
+        <div className="flex flex-col items-center">
           {isAcquired && (
-            <div className="mb-6 inline-block bg-neutral-900 border border-neutral-800 px-4 py-2 text-xs font-mono uppercase tracking-widest text-neutral-400">
+            <div className="mb-5 inline-block bg-neutral-900 border border-neutral-800 px-4 py-2 text-xs font-mono uppercase tracking-widest text-neutral-400">
               ● Acquired (Private Collection)
             </div>
           )}
           {isReserved && (
-            <div className="mb-6 inline-block bg-amber-950/30 border border-amber-900/50 px-4 py-2 text-xs font-mono uppercase tracking-widest text-amber-500">
+            <div className="mb-5 inline-block bg-amber-950/30 border border-amber-900/50 px-4 py-2 text-xs font-mono uppercase tracking-widest text-amber-500">
               ● Currently Reserved
             </div>
           )}
 
-          <ArtworkOptions
-            inquiryLink={inquiryLink}
-            isReserved={isReserved}
-            isAcquired={isAcquired}
-            imageUrl={urlForImage(artwork.image).width(1600).url()}
-            artworkTitle={cleanTitle}
-          />
+          <div className="w-full flex justify-center">
+            <Suspense fallback={null}>
+              <ArtworkOptions
+                inquiryLink={inquiryLink}
+                isReserved={isReserved}
+                isAcquired={isAcquired}
+                imageUrl={urlForImage(artwork.image).width(1600).url()}
+                artworkTitle={cleanTitle}
+              />
+            </Suspense>
+          </div>
 
-          <div className="mt-8 pt-6 border-t border-neutral-900 flex flex-wrap items-center justify-between gap-4 text-xs font-mono uppercase tracking-widest text-neutral-500">
+          <div className="w-full mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-neutral-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono uppercase tracking-widest text-neutral-500">
             <div className="flex flex-wrap items-center gap-4 sm:gap-6">
               <span>Share:</span>
               <a href={fbShareUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
