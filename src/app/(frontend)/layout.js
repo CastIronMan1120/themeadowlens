@@ -22,9 +22,9 @@ export default async function FrontendLayout({ children }) {
   const categories = await client.fetch(categoriesQuery)
 
   return (
-    <div className={`min-h-screen flex flex-col antialiased ${modernLove.variable}`}>
+    <div className={`min-h-screen w-full max-w-[100vw] overflow-x-hidden flex flex-col antialiased ${modernLove.variable}`}>
       <Navigation categories={categories} />
-      <main className="flex-grow flex flex-col">
+      <main className="flex-grow flex flex-col w-full max-w-[100vw] overflow-x-hidden">
         {children}
       </main>
       <Footer />

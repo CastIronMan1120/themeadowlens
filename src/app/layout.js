@@ -1,6 +1,13 @@
 import { Analytics } from '@vercel/analytics/react';
 import "./globals.css";
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#000000',
+};
+
 export const metadata = {
   metadataBase: new URL('https://themeadowlens.com'),
   title: "The Meadow Lens | NJ Meadowlands Bird, Wildlife & Nature Photography by David McClure",

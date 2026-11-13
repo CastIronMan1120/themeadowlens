@@ -40,22 +40,22 @@ export default function Navigation({ categories }) {
   return (
     <>
       {/* Constant-height layout spacer prevents fixed header compacting from ever altering window.scrollY */}
-      <header className="h-[136px] sm:h-[144px] md:h-[154px] w-full shrink-0 bg-black">
+      <header className="h-[136px] sm:h-[144px] md:h-[154px] w-full max-w-[100vw] overflow-x-hidden shrink-0 bg-black">
         <nav 
-          className={`fixed top-0 left-0 w-full z-50 transition-[background-color,padding,box-shadow] duration-300 ${
+          className={`fixed top-0 left-0 right-0 w-full max-w-[100vw] overflow-x-hidden z-50 transition-[background-color,padding,box-shadow] duration-300 ${
             scrolled
               ? 'bg-black/95 backdrop-blur-xl py-2 md:py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.7)]'
               : 'bg-black pt-2.5 sm:pt-3.5 md:pt-4 pb-2'
           }`}
         >
-          <div className="max-w-[2100px] mx-auto px-3.5 sm:px-6 md:px-10 lg:px-14 flex flex-col">
+          <div className="w-full max-w-[2100px] mx-auto px-3 sm:px-6 md:px-10 lg:px-14 flex flex-col">
             
             {/* Row 1: Primary Title & Desktop Navigation aligned to the exact visual bottom of the letters */}
-            <div className="flex items-end justify-between gap-2 sm:gap-4">
+            <div className="flex items-end justify-between gap-2 sm:gap-4 w-full">
               {/* Brand Title: "The" (White), "Meadow" (Sage Marsh Green #9AB17A), "Lens" (Dusk Gold #F7C873) */}
-              <Link href="/" className="group relative z-50 min-w-0 shrink-0 pr-1 sm:pr-2">
+              <Link href="/" className="group relative z-50 min-w-0 shrink pr-1 sm:pr-2">
                 <h1 
-                  className="leading-[1.04] pt-0.5 -mb-[5px] sm:-mb-[8px] md:-mb-[9px] xl:-mb-[11px] whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[24px] xs:text-[28px] sm:text-4xl md:text-[46px] xl:text-[54px]"
+                  className="leading-[1.04] pt-0.5 -mb-[4px] xs:-mb-[5px] sm:-mb-[8px] md:-mb-[9px] xl:-mb-[11px] whitespace-nowrap tracking-normal font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-opacity duration-200 group-hover:opacity-90 text-[clamp(1.25rem,6.1vw,1.7rem)] sm:text-4xl md:text-[46px] xl:text-[54px]"
                   style={{ fontFamily: 'var(--font-logo)' }}
                 >
                   <span className="text-white">The </span>
@@ -119,14 +119,14 @@ export default function Navigation({ categories }) {
                 scrolled ? 'max-h-0 opacity-0 mt-0' : 'max-h-32 opacity-100 mt-1.5'
               }`}
             >
-              <div className="inline-flex flex-col max-w-full">
+              <div className="flex flex-col w-full max-w-full overflow-hidden">
                 <Link
                   href="/"
                   tabIndex={-1}
-                  className="block text-neutral-200 font-mono text-[8px] xs:text-[9px] sm:text-[10.5px] md:text-[11.5px] xl:text-[12.5px] uppercase tracking-[0.07em] xs:tracking-[0.12em] sm:tracking-[0.25em] md:tracking-[0.27em] drop-shadow-md leading-[1.2] sm:leading-[1.15] hover:text-white transition-colors"
+                  className="block text-neutral-200 font-mono text-[clamp(7.5px,2.2vw,10px)] sm:text-[10.5px] md:text-[11.5px] xl:text-[12.5px] uppercase tracking-[0.04em] xs:tracking-[0.09em] sm:tracking-[0.25em] md:tracking-[0.27em] drop-shadow-md leading-[1.22] sm:leading-[1.15] hover:text-white transition-colors"
                 >
-                  <span className="block">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
-                  <span className="block pl-1.5 sm:pl-3">&mdash; Centered on the New Jersey Meadowlands</span>
+                  <span className="block truncate sm:whitespace-normal">&ldquo;Wow Factor&rdquo; Photography of Birds, Wildlife &amp; Nature</span>
+                  <span className="block pl-1 sm:pl-3 truncate sm:whitespace-normal">&mdash; Centered on the New Jersey Meadowlands</span>
                 </Link>
 
                 {/* Action Buttons + Tiny Shutter Blade Graphic under the Slogan */}

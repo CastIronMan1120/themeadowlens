@@ -99,7 +99,7 @@ export default async function Home() {
           </div>
 
           {/* Right Column: Static Photograph with Optional Customizable Welcome Content Overlay (Matched 50/50 Twin 16:9 Rectangle) */}
-          <div className="w-full aspect-[16/9] relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-neutral-950 border border-white/15">
+          <div className="w-full lg:aspect-[16/9] relative overflow-hidden rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] bg-neutral-950 border border-white/15 min-h-[270px] xs:min-h-[260px] sm:min-h-0 sm:aspect-[16/9]">
             <div className="absolute inset-0 bg-neutral-950">
               <img
                 src={`${rightPanelStaticUrl}?w=1600&q=95&auto=format`}
@@ -108,15 +108,15 @@ export default async function Home() {
               />
             </div>
             
-            {/* Welcome Card: Centered both horizontally & vertically inside the Right Panel 16:9 image across mobile, tablet & desktop */}
+            {/* Welcome Card: Centered both horizontally & vertically inside the Right Panel image across mobile, tablet & desktop */}
             {showWelcomeOverlay && (
-              <div className="absolute inset-0 flex items-center justify-center p-2.5 sm:p-4 md:p-3.5 lg:p-4 xl:p-5 z-20 pointer-events-none">
+              <div className="relative sm:absolute sm:inset-0 flex items-center justify-center p-3 sm:p-4 md:p-3.5 lg:p-4 xl:p-5 z-20 min-h-[270px] xs:min-h-[260px] sm:min-h-0 pointer-events-none">
                 <div
                   style={{
                     backgroundColor: welcomeOverlayBgRgba,
                     color: welcomeTextColor,
                   }}
-                  className={`pointer-events-auto w-[92%] sm:w-[88%] md:w-[88%] lg:w-[86%] xl:w-[84%] max-h-[92%] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-3.5 py-2.5 sm:p-5 md:px-6 md:py-4 xl:px-7 xl:py-5 rounded-xl sm:rounded-2xl text-center transition-colors duration-300 ${
+                  className={`pointer-events-auto w-[94%] sm:w-[88%] md:w-[88%] lg:w-[86%] xl:w-[84%] sm:max-h-[92%] sm:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 py-3.5 sm:p-5 md:px-6 md:py-4 xl:px-7 xl:py-5 rounded-xl sm:rounded-2xl text-center transition-colors duration-300 ${
                     welcomeBackdropBlur ? 'backdrop-blur-md' : ''
                   } ${
                     welcomeBgOpacity > 5
@@ -126,14 +126,14 @@ export default async function Home() {
                 >
                   <h2
                     style={{ color: welcomeTextColor }}
-                    className="text-sm xs:text-base sm:text-xl lg:text-[22px] xl:text-2xl mb-1 sm:mb-2 font-light tracking-wide text-center leading-tight"
+                    className="text-base xs:text-[17px] sm:text-xl lg:text-[22px] xl:text-2xl mb-1.5 sm:mb-2 font-light tracking-wide text-center leading-snug"
                   >
                     {welcomeHeadline}
                   </h2>
                   
                   <div
                     style={{ color: welcomeTextColor }}
-                    className="space-y-1 sm:space-y-2 text-[10.5px] xs:text-[11px] sm:text-[12.5px] xl:text-[13.5px] leading-snug sm:leading-relaxed font-light opacity-95 text-center"
+                    className="space-y-1.5 sm:space-y-2 text-[11.5px] xs:text-xs sm:text-[12.5px] xl:text-[13.5px] leading-snug sm:leading-relaxed font-light opacity-95 text-center"
                   >
                     {homepage?.welcomeText ? (
                       <PortableText value={homepage.welcomeText} />
