@@ -48,13 +48,12 @@ export default async function ArtistPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-16 lg:gap-24 items-center w-full">
           
           {/* Left Column: Portrait */}
-          <div className="w-full max-w-md lg:max-w-none mx-auto aspect-square relative overflow-hidden rounded-md shadow-[0_20px_50px_rgba(255,255,255,0.05)] border border-neutral-900">
+          <div className="w-full max-w-md lg:max-w-none mx-auto aspect-square relative overflow-hidden rounded-md bg-black">
             <img 
               src={imageUrl} 
               alt={name} 
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-[2s]"
+              className="absolute inset-0 w-full h-full object-contain transition-all duration-[2s]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
           </div>
 
           {/* Right Column: Bio */}

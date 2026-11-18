@@ -47,7 +47,7 @@ export function SystemMetrics() {
   }, [fetchMetrics]);
 
   const gbUsed = ((data.storageBytes || 0) / (1024 * 1024 * 1024)).toFixed(2);
-  const gbLimit = 5.0;
+  const gbLimit = 10.0;
   const percentage = Math.min((parseFloat(gbUsed) / gbLimit) * 100, 100);
 
   const analytics = data.analytics || {};
@@ -443,7 +443,7 @@ export function SystemMetrics() {
         }}
       >
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>
-          🗄️ Sanity Cloud Content Inventory &amp; 5GB Storage Allocation
+          🗄️ Sanity Cloud Content Inventory &amp; 10 GB Free Plan Storage Allocation
         </h3>
 
         <div
@@ -497,7 +497,7 @@ export function SystemMetrics() {
           />
         </div>
         <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: '#94a3b8', textAlign: 'right' }}>
-          {percentage.toFixed(1)}% of 5.0 GB Sanity Cloud allocation used ({data.storageCount.toLocaleString()} total image assets)
+          {percentage.toFixed(1)}% of 10.0 GB Sanity Free Plan allocation used ({data.storageCount.toLocaleString()} total image assets)
         </p>
       </div>
     </div>
