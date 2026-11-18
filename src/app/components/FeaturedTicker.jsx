@@ -2,9 +2,12 @@
 import Link from 'next/link'
 
 export default function FeaturedTicker({ artworks, speed = 120, reverse = false }) {
-  if (!artworks || artworks.length === 0) return null
+  const validArtworks = Array.isArray(artworks)
+    ? artworks.filter((art) => art && art._id && art.imageUrl && art.slug?.current)
+    : []
+  if (validArtworks.length === 0) return null
 
-  const doubled = [...artworks, ...artworks, ...artworks]
+  const doubled = [...validArtworks, ...validArtworks, ...validArtworks]
 
   return (
     <div className="w-full border-t border-b border-neutral-800 py-4 sm:py-6 overflow-hidden relative z-30">

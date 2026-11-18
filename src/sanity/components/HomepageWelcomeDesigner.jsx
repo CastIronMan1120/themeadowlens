@@ -1,15 +1,114 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useClient } from 'sanity';
 
-export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
+const NON_BIO_VENUES_SET = new Set([
+  'Wings of Man',
+  'Vistas and Scenery',
+  'Sky & Heavens',
+  'Parks, Trails, Marshes and Pools',
+  'City Skylines',
+  'Moon, Sun, Stars',
+  'Clouds and Rainbows',
+  'Sun, Sunrises and Sunsets',
+  'Video',
+]);
+
+function toTitleCaseSpecies(str) {
+  if (!str) return '';
+  const minor = new Set(['and', 'or', 'of', 'in', 'on', 'at', 'to', 'the', 'a', 'an']);
+  return str
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map((word, idx) => {
+      const lower = word.toLowerCase();
+      if (idx > 0 && minor.has(lower)) return lower;
+      return word
+        .split('-')
+        .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : ''))
+        .join('-');
+    })
+    .join(' ');
+}
+
+function makeTickerArtworkSlug(str) {
+  return (
+    (str || 'artwork')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') +
+    '-' +
+    Math.random().toString(36).substring(2, 6)
+  );
+}
+
+function deriveMetadataForTickerUpload(rawFilename, venueTitle = '', parentVenueTitle = '') {
+  const rawBaseName = (rawFilename || '').replace(/\.[^/.]+$/, '').trim();
+  let cleanCaption = rawBaseName;
+  let fullYear = '';
+
+  const yearPrefixMatch = rawBaseName.match(/^(.+?)\s+(1[89]|2[0-9])-[A-Za-z0-9]/);
+  if (yearPrefixMatch && yearPrefixMatch[1].trim().length > 0) {
+    cleanCaption = yearPrefixMatch[1].replace(/\s+/g, ' ').trim();
+    const yy = parseInt(yearPrefixMatch[2], 10);
+    fullYear = yy >= 70 ? `19${yearPrefixMatch[2]}` : `20${yearPrefixMatch[2]}`;
+  } else {
+    const studyMatch = rawBaseName.match(/^(.+?)\s+-\s+Study/i);
+    if (studyMatch && studyMatch[1].trim().length > 0) {
+      cleanCaption = studyMatch[1].replace(/\s+/g, ' ').trim();
+    } else {
+      cleanCaption =
+        rawBaseName
+          .replace(/\b(?:P|PA|PB|PC|DSC_|IMG_|DMC)\d{4,}.*$/i, '')
+          .replace(/[-_\s]+Edit.*$/i, '')
+          .replace(/[-_\s]+Copy.*$/i, '')
+          .replace(/\s+/g, ' ')
+          .trim() || rawBaseName;
+    }
+  }
+
+  let canonicalSpecies = '';
+  if (!NON_BIO_VENUES_SET.has(venueTitle) && !NON_BIO_VENUES_SET.has(parentVenueTitle)) {
+    let base = cleanCaption
+      .replace(/\s*\([^)]*\)\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    base = base
+      .replace(/\bFinches$/i, 'Finch')
+      .replace(/\bSwallows$/i, 'Swallow')
+      .replace(/\bSandpipers$/i, 'Sandpiper')
+      .replace(/\bGulls$/i, 'Gull')
+      .replace(/\bWarblers$/i, 'Warbler')
+      .replace(/\bSparrows$/i, 'Sparrow')
+      .replace(/\bStarlings$/i, 'Starling')
+      .replace(/\bBlackbirds$/i, 'Blackbird')
+      .replace(/\bHerons$/i, 'Heron')
+      .replace(/\bEgrets$/i, 'Egret')
+      .replace(/\bMergansers$/i, 'Merganser')
+      .replace(/\bGeese$/i, 'Goose')
+      .replace(/\bSwans$/i, 'Swan')
+      .replace(/\bDragonflies$/i, 'Dragonfly')
+      .replace(/\bButterflies$/i, 'Butterfly');
+    canonicalSpecies = toTitleCaseSpecies(base);
+  }
+
+  return { cleanCaption, canonicalSpecies, year: fullYear };
+}
+
+export function HomepageWelcomeDesigner({ onClose = null, isModal = false, onSaved = null }) {
   const client = useClient({ apiVersion: '2024-01-01' });
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingTicker, setIsUploadingTicker] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [galleryOptions, setGalleryOptions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [gallerySearch, setGallerySearch] = useState('');
+  const [tickerSearch, setTickerSearch] = useState('');
+  const [tickerVenueFilter, setTickerVenueFilter] = useState('');
+  const [tickerUploadVenueId, setTickerUploadVenueId] = useState('');
 
   const [form, setForm] = useState({
     _id: 'homepage',
@@ -28,6 +127,8 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
     welcomeBgOpacity: 75,
     welcomeTextColor: '#F8FAFC',
     welcomeBackdropBlur: true,
+    featuredTickerSpeed: 60,
+    featuredArtworksList: [],
   });
 
   const convertHexToRgba = (hex, opacityPercent = 75) => {
@@ -56,7 +157,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
   const loadHomepageData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const hpDoc = await client.fetch(`*[_id in ["drafts.homepage", "homepage"]] | order(_updatedAt desc)[0]{
+      const hpDocs = await client.fetch(`*[_id in ["drafts.homepage", "homepage"]] | order(_updatedAt desc){
         _id,
         welcomeHeadline,
         welcomeText,
@@ -66,11 +167,31 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
         welcomeBgOpacity,
         welcomeTextColor,
         welcomeBackdropBlur,
+        featuredTickerSpeed,
         "heroImageAssetId": heroImage.asset._ref,
         "heroImageUrl": heroImage.asset->url,
         "rightPanelImageAssetId": coalesce(rightPanelImage.asset._ref, featuredArtworks[0]->image.asset._ref),
-        "rightPanelImageUrl": coalesce(rightPanelImage.asset->url, featuredArtworks[0]->image.asset->url)
+        "rightPanelImageUrl": coalesce(rightPanelImage.asset->url, featuredArtworks[0]->image.asset->url),
+        "featuredItems": featuredArtworks[]{
+          _key,
+          "_id": _ref,
+          "doc": @->{
+            _id,
+            title,
+            displayTitle,
+            species,
+            "slug": slug.current,
+            "fileName": coalesce(fileName, image.asset->originalFilename, title),
+            "imageUrl": image.asset->url,
+            "venueTitle": category->title,
+            "parentVenueTitle": category->parentCategory->title
+          }
+        }
       }`);
+
+      const draftDoc = hpDocs?.find((d) => d._id === 'drafts.homepage');
+      const pubDoc = hpDocs?.find((d) => d._id === 'homepage');
+      const hpDoc = draftDoc || pubDoc;
 
       if (hpDoc) {
         const extractedText = Array.isArray(hpDoc.welcomeText)
@@ -84,48 +205,103 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
               .join('\n\n')
           : '';
 
+        const rawFeatured =
+          Array.isArray(hpDoc.featuredItems) && hpDoc.featuredItems.length > 0
+            ? hpDoc.featuredItems
+            : Array.isArray(pubDoc?.featuredItems)
+            ? pubDoc.featuredItems
+            : [];
+
+        const seenIds = new Set();
+        const resolvedTickerList = [];
+        for (const item of rawFeatured) {
+          const cleanId = (item?.doc?._id || item?._id || '').replace(/^drafts\./, '');
+          if (!cleanId || seenIds.has(cleanId)) continue;
+          seenIds.add(cleanId);
+          resolvedTickerList.push({
+            _id: cleanId,
+            _key: item?._key || cleanId,
+            title: item?.doc?.displayTitle || item?.doc?.title || 'Photograph',
+            species: item?.doc?.species || '',
+            fileName: item?.doc?.fileName || '',
+            imageUrl: item?.doc?.imageUrl || '',
+            venueTitle: item?.doc?.venueTitle || '',
+            parentVenueTitle: item?.doc?.parentVenueTitle || '',
+            slug: item?.doc?.slug || '',
+          });
+        }
+
         setForm({
           _id: 'homepage',
           heroImageAssetId:
             hpDoc.heroImageAssetId ||
+            pubDoc?.heroImageAssetId ||
             'image-eeb19431e524e43391ed803793c9a8f076b20756-1376x768-jpg',
           heroImageUrl:
             hpDoc.heroImageUrl ||
+            pubDoc?.heroImageUrl ||
             'https://cdn.sanity.io/images/h7ncr8cq/production/eeb19431e524e43391ed803793c9a8f076b20756-1376x768.jpg',
           rightPanelImageAssetId:
             hpDoc.rightPanelImageAssetId ||
+            pubDoc?.rightPanelImageAssetId ||
             'image-5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567-jpg',
           rightPanelImageUrl:
             hpDoc.rightPanelImageUrl ||
+            pubDoc?.rightPanelImageUrl ||
             'https://cdn.sanity.io/images/h7ncr8cq/production/5605871a7f1ecad1d40489e4b594c093c0c8bdbe-4756x3567.jpg',
-          rightPanelFit: hpDoc.rightPanelFit || 'cover',
+          rightPanelFit: hpDoc.rightPanelFit || pubDoc?.rightPanelFit || 'cover',
           showWelcomeOverlay: hpDoc.showWelcomeOverlay !== false,
-          welcomeHeadline: hpDoc.welcomeHeadline || 'Welcome to The Meadow Lens',
+          welcomeHeadline:
+            hpDoc.welcomeHeadline || pubDoc?.welcomeHeadline || 'Welcome to The Meadow Lens',
           welcomeBodyText:
             extractedText ||
             "I am David McClure, a fine art photographer with a lifelong passion for capturing the raw, uninterrupted beauty of nature. For years, I have explored the hidden depths of the New Jersey Meadowlands and beyond, waiting for those fleeting moments of perfection.\n\nThis gallery is a curated exhibition of my life's work — from the aggressive grace of birds of prey to the tranquil stillness of untouched vistas. I invite you to step into these digital halls and explore the world through my lens.",
-          welcomeBgColor: hpDoc.welcomeBgColor || '#0B1528',
+          welcomeBgColor: hpDoc.welcomeBgColor || pubDoc?.welcomeBgColor || '#0B1528',
           welcomeBgOpacity:
             typeof hpDoc.welcomeBgOpacity === 'number' && !Number.isNaN(hpDoc.welcomeBgOpacity)
               ? Math.max(0, Math.min(100, hpDoc.welcomeBgOpacity))
               : 75,
-          welcomeTextColor: hpDoc.welcomeTextColor || '#F8FAFC',
+          welcomeTextColor: hpDoc.welcomeTextColor || pubDoc?.welcomeTextColor || '#F8FAFC',
           welcomeBackdropBlur: hpDoc.welcomeBackdropBlur !== false,
+          featuredTickerSpeed:
+            typeof hpDoc.featuredTickerSpeed === 'number' && !Number.isNaN(hpDoc.featuredTickerSpeed)
+              ? Math.max(10, Math.min(300, hpDoc.featuredTickerSpeed))
+              : 60,
+          featuredArtworksList: resolvedTickerList,
         });
       }
 
-      const list = await client.fetch(
-        `*[_type == "artwork" && !(_id in path("drafts.**")) && defined(image.asset)] | order(title asc)[0...350] {
-          _id,
-          title,
-          species,
-          "fileName": coalesce(fileName, image.asset->originalFilename, title),
-          "assetId": image.asset._ref,
-          "imageUrl": image.asset->url,
-          "venueTitle": category->title
-        }`
-      );
+      const [list, rawCats] = await Promise.all([
+        client.fetch(
+          `*[_type == "artwork" && !(_id in path("drafts.**")) && defined(image.asset)] | order(_createdAt desc)[0...2500] {
+            _id,
+            title,
+            displayTitle,
+            species,
+            "slug": slug.current,
+            "fileName": coalesce(fileName, image.asset->originalFilename, title),
+            "assetId": image.asset._ref,
+            "imageUrl": image.asset->url,
+            "categoryId": category._ref,
+            "venueTitle": category->title,
+            "parentVenueTitle": category->parentCategory->title
+          }`
+        ),
+        client.fetch(
+          `*[_type == "category" && !(_id in path("drafts.**")) && !(title in ["Everything"])] | order(title asc) {
+            _id,
+            title,
+            "parentId": parentCategory._ref,
+            "parentTitle": parentCategory->title
+          }`
+        ),
+      ]);
+
       setGalleryOptions(list || []);
+      setCategories(rawCats || []);
+      if (rawCats && rawCats.length > 0) {
+        setTickerUploadVenueId((prev) => prev || rawCats[0]._id);
+      }
     } catch (err) {
       console.error('Error loading HomepageWelcomeDesigner data:', err);
     } finally {
@@ -175,6 +351,172 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
     }
   };
 
+  // --- TICKER ACTIONS: ADD FROM GALLERY, REMOVE, REORDER & UPLOAD NEW PHOTOS DIRECTLY TO TICKER ---
+  const tickerIdSet = useMemo(
+    () => new Set((form.featuredArtworksList || []).map((item) => item._id)),
+    [form.featuredArtworksList]
+  );
+
+  const handleAddGalleryArtworkToTicker = (art) => {
+    if (!art || !art._id) return;
+    const cleanId = art._id.replace(/^drafts\./, '');
+    setForm((prev) => {
+      if ((prev.featuredArtworksList || []).some((x) => x._id === cleanId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        featuredArtworksList: [
+          ...(prev.featuredArtworksList || []),
+          {
+            _id: cleanId,
+            _key: cleanId,
+            title: art.displayTitle || art.title || 'Photograph',
+            species: art.species || '',
+            fileName: art.fileName || '',
+            imageUrl: art.imageUrl || '',
+            venueTitle: art.venueTitle || '',
+            parentVenueTitle: art.parentVenueTitle || '',
+            slug: art.slug || '',
+          },
+        ],
+      };
+    });
+  };
+
+  const handleRemoveFromTicker = (artId) => {
+    setForm((prev) => ({
+      ...prev,
+      featuredArtworksList: (prev.featuredArtworksList || []).filter((x) => x._id !== artId),
+    }));
+  };
+
+  const handleMoveTickerItem = (index, direction) => {
+    setForm((prev) => {
+      const list = [...(prev.featuredArtworksList || [])];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= list.length) return prev;
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+      return { ...prev, featuredArtworksList: list };
+    });
+  };
+
+  const handleUploadNewPhotosToTicker = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const chosenCatId = tickerUploadVenueId || categories[0]?._id || '';
+    if (!chosenCatId) {
+      window.alert('Please select a destination Venue / Sub-Venue for the uploaded ticker photo(s).');
+      return;
+    }
+
+    const venueObj = categories.find((c) => c._id === chosenCatId);
+    const venueTitle = venueObj?.title || 'The Meadowlands';
+    const parentVenueTitle = venueObj?.parentTitle || '';
+
+    setIsUploadingTicker(true);
+    const newlyCreatedItems = [];
+
+    try {
+      for (const file of files) {
+        const { cleanCaption, canonicalSpecies, year } = deriveMetadataForTickerUpload(
+          file.name,
+          venueTitle,
+          parentVenueTitle
+        );
+        const asset = await client.assets.upload('image', file, { filename: file.name });
+        const pubId = crypto.randomUUID
+          ? crypto.randomUUID()
+          : `ticker-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        const slugCurrent = makeTickerArtworkSlug(cleanCaption);
+        const studyMatch = file.name.match(/(?:[A-Za-z0-9_-]*?)(\d{4,})(?:\b|[-_.]|Edit)/i);
+        const studyCode =
+          studyMatch && studyMatch[1]
+            ? studyMatch[1].slice(-4)
+            : pubId.slice(-4).toUpperCase() || '0001';
+        const yearLabel = year ? `${year} ` : '';
+
+        const newArtworkDoc = {
+          _id: pubId,
+          _type: 'artwork',
+          title: cleanCaption,
+          displayTitle: cleanCaption,
+          caption: cleanCaption,
+          species: canonicalSpecies || cleanCaption,
+          location: 'The Meadowlands, New Jersey',
+          ...(year ? { year } : {}),
+          fileName: file.name,
+          slug: { _type: 'slug', current: slugCurrent },
+          image: { _type: 'image', asset: { _type: 'reference', _ref: asset._id } },
+          category: { _type: 'reference', _ref: chosenCatId },
+          size: 'Standard 4:3',
+          roomSetting: 'living-room',
+          status: 'available',
+          seo: {
+            metaTitle:
+              `${cleanCaption} — ${venueTitle} (${yearLabel}Study #${studyCode}) | The Meadow Lens`.slice(
+                0,
+                60
+              ),
+            metaDescription:
+              `Collector fine art photograph "${cleanCaption}" (${yearLabel}${venueTitle} Exhibition, Study #${studyCode}) captured in the New Jersey Meadowlands by David McClure.`.slice(
+                0,
+                160
+              ),
+            keywords: [
+              cleanCaption,
+              canonicalSpecies && `${canonicalSpecies} Photography`,
+              `${cleanCaption} ${venueTitle}`,
+              `${cleanCaption} Study ${studyCode}`,
+              venueTitle,
+              'The Meadowlands',
+              'Atlantic Flyway',
+              'David McClure',
+              'The Meadow Lens',
+            ].filter(Boolean),
+          },
+        };
+
+        await client.createOrReplace(newArtworkDoc);
+
+        const tickerEntry = {
+          _id: pubId,
+          _key: pubId,
+          title: cleanCaption,
+          species: canonicalSpecies || cleanCaption,
+          fileName: file.name,
+          imageUrl: asset.url,
+          venueTitle,
+          parentVenueTitle,
+          slug: slugCurrent,
+          assetId: asset._id,
+          categoryId: chosenCatId,
+        };
+        newlyCreatedItems.push(tickerEntry);
+      }
+
+      if (newlyCreatedItems.length > 0) {
+        setForm((prev) => ({
+          ...prev,
+          featuredArtworksList: [...(prev.featuredArtworksList || []), ...newlyCreatedItems],
+        }));
+        setGalleryOptions((prev) => [...newlyCreatedItems, ...prev]);
+        setSaveMessage(
+          `✓ Uploaded ${newlyCreatedItems.length} photo(s) & added to Ticker! Click "Save & Publish Live" to publish ticker changes.`
+        );
+      }
+    } catch (err) {
+      console.error('Error uploading photo directly to ticker:', err);
+      window.alert('Failed to upload photo to ticker: ' + err.message);
+    } finally {
+      setIsUploadingTicker(false);
+      e.target.value = '';
+    }
+  };
+
   const handleResetDefaults = () => {
     setForm((prev) => ({
       ...prev,
@@ -192,8 +534,15 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
     setIsSaving(true);
     setSaveMessage('');
     try {
-      const existingHp = await client.fetch(`*[_id == "homepage"][0]`);
-      const baseHp = existingHp ? { ...existingHp } : { _id: 'homepage', _type: 'homepage' };
+      const hpDocs = await client.fetch(`*[_id in ["drafts.homepage", "homepage"]]`);
+      const pubHp = hpDocs?.find((d) => d._id === 'homepage');
+      const draftHp = hpDocs?.find((d) => d._id === 'drafts.homepage');
+      const baseHp = {
+        _type: 'homepage',
+        ...(pubHp || {}),
+        ...(draftHp || {}),
+        _id: 'homepage',
+      };
       delete baseHp._rev;
       delete baseHp._updatedAt;
 
@@ -217,6 +566,22 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
       baseHp.welcomeBgOpacity = Math.max(0, Math.min(100, Number(form.welcomeBgOpacity ?? 75)));
       baseHp.welcomeTextColor = form.welcomeTextColor || '#F8FAFC';
       baseHp.welcomeBackdropBlur = Boolean(form.welcomeBackdropBlur);
+      baseHp.featuredTickerSpeed = Math.max(
+        10,
+        Math.min(300, Number(form.featuredTickerSpeed ?? 60))
+      );
+
+      // Persist Featured Ticker Artworks array
+      baseHp.featuredArtworks = (form.featuredArtworksList || [])
+        .filter((item) => item && item._id)
+        .map((item) => {
+          const cleanId = item._id.replace(/^drafts\./, '');
+          return {
+            _key: item._key || cleanId,
+            _type: 'reference',
+            _ref: cleanId,
+          };
+        });
 
       const paragraphs = String(form.welcomeBodyText || '')
         .split(/\n\s*\n/)
@@ -244,9 +609,14 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
       tx.delete('drafts.homepage');
       await tx.commit();
 
-      setSaveMessage('✓ Saved & Published Live to Website!');
+      setSaveMessage('✓ Saved & Published Homepage Panels & Featured Ticker Live to Website!');
+      if (onSaved) {
+        await onSaved();
+      }
       if (isModal && onClose) {
-        window.alert('Saved & Published Homepage Static Panels & Welcome Overlay Settings Live!');
+        window.alert(
+          'Saved & Published Homepage Static Panels, Welcome Overlay & Featured Ticker Live!'
+        );
         onClose();
       }
     } catch (err) {
@@ -257,13 +627,33 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
     }
   };
 
+  const filteredTickerCandidates = useMemo(() => {
+    const q = tickerSearch.trim().toLowerCase();
+    return galleryOptions
+      .filter((opt) => {
+        if (tickerVenueFilter && opt.categoryId !== tickerVenueFilter) return false;
+        if (!q) return true;
+        return (
+          (opt.displayTitle || '').toLowerCase().includes(q) ||
+          (opt.title || '').toLowerCase().includes(q) ||
+          (opt.species || '').toLowerCase().includes(q) ||
+          (opt.fileName || '').toLowerCase().includes(q) ||
+          (opt.venueTitle || '').toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 48);
+  }, [galleryOptions, tickerSearch, tickerVenueFilter]);
+
+  const rootCategories = useMemo(() => categories.filter((c) => !c.parentId), [categories]);
+  const subCategories = useMemo(() => categories.filter((c) => c.parentId), [categories]);
+
   return (
     <div
       style={{
         background: '#ffffff',
         color: '#0f172a',
         padding: isModal ? '0' : '1.5rem 2rem',
-        maxWidth: isModal ? '100%' : '1180px',
+        maxWidth: isModal ? '100%' : '1240px',
         margin: '0 auto',
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
@@ -273,6 +663,8 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
           marginBottom: '1rem',
           borderBottom: '1px solid #e2e8f0',
           paddingBottom: '0.75rem',
@@ -280,13 +672,13 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
       >
         <div>
           <h2 style={{ margin: 0, fontSize: '1.35rem', color: '#0f172a', fontWeight: 800 }}>
-            🏠 Homepage Left & Right Static Panels + Welcome Overlay Designer
+            🏠 Homepage Panels, Welcome Overlay &amp; Featured Ticker Designer
           </h2>
           <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.84rem', color: '#475569' }}>
-            Replace the Left or Right 16:9 static homepage image, toggle the Welcome bio overlay on/off, and customize its background color &amp; transparency.
+            Manage the Left &amp; Right 16:9 static panels, customize the Welcome overlay, and add or upload photographs to the Featured Works Ticker.
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           {saveMessage && (
             <span
               style={{
@@ -304,7 +696,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving || isUploading || isLoading}
+            disabled={isSaving || isUploading || isUploadingTicker || isLoading}
             style={{
               padding: '0.65rem 1.35rem',
               borderRadius: '8px',
@@ -313,7 +705,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
               color: '#ffffff',
               fontWeight: 700,
               fontSize: '0.88rem',
-              cursor: isSaving || isUploading ? 'not-allowed' : 'pointer',
+              cursor: isSaving || isUploading || isUploadingTicker ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 12px rgba(5,150,105,0.25)',
             }}
           >
@@ -337,7 +729,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
         </div>
       </div>
 
-      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {/* 1. REAL-TIME SIDE-BY-SIDE 50/50 LIVE PREVIEW */}
         <div
           style={{
@@ -703,6 +1095,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
                       if (!gallerySearch.trim()) return true;
                       const q = gallerySearch.toLowerCase();
                       return (
+                        (opt.displayTitle || '').toLowerCase().includes(q) ||
                         (opt.title || '').toLowerCase().includes(q) ||
                         (opt.species || '').toLowerCase().includes(q) ||
                         (opt.fileName || '').toLowerCase().includes(q) ||
@@ -712,7 +1105,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
                     .slice(0, 150)
                     .map((opt) => (
                       <option key={opt._id} value={opt.assetId}>
-                        {opt.title} {opt.venueTitle ? `(${opt.venueTitle})` : ''} — {opt.fileName}
+                        {opt.displayTitle || opt.title} {opt.venueTitle ? `(${opt.venueTitle})` : ''} — {opt.fileName}
                       </option>
                     ))}
                 </select>
@@ -1089,6 +1482,591 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
           )}
         </div>
 
+        {/* 4. FEATURED WORKS TICKER MANAGER (ADD FROM GALLERY, REORDER, REMOVE, OR UPLOAD NEW PHOTOS DIRECTLY TO TICKER) */}
+        <div
+          style={{
+            background: '#faf5ff',
+            border: '2px solid #c084fc',
+            borderRadius: '12px',
+            padding: '1.2rem',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              marginBottom: '0.9rem',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#581c87' }}>
+                🎞️ Featured Works Ticker Manager ({form.featuredArtworksList.length}{' '}
+                {form.featuredArtworksList.length === 1 ? 'Photograph' : 'Photographs'} in Ticker)
+              </div>
+              <div style={{ fontSize: '0.79rem', color: '#6b21a8', marginTop: '2px' }}>
+                Add any existing photograph/product from your gallery, upload brand-new photographs directly into the ticker, reorder slides, or remove items.
+              </div>
+            </div>
+
+            {/* Ticker Speed Control */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                background: '#ffffff',
+                border: '1px solid #d8b4fe',
+                borderRadius: '8px',
+                padding: '0.45rem 0.75rem',
+              }}
+            >
+              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#581c87', whiteSpace: 'nowrap' }}>
+                ⏱️ Loop Speed: {form.featuredTickerSpeed || 60}s
+              </label>
+              <input
+                type="range"
+                min="15"
+                max="180"
+                step="5"
+                value={form.featuredTickerSpeed || 60}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    featuredTickerSpeed: Number(e.target.value),
+                  }))
+                }
+                style={{ width: '110px', accentColor: '#7e22ce', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>(Lower = Faster)</span>
+            </div>
+          </div>
+
+          {/* 4A. CURRENT PHOTOS IN THE TICKER */}
+          <div
+            style={{
+              background: '#0f172a',
+              borderRadius: '10px',
+              padding: '0.9rem',
+              marginBottom: '1rem',
+              border: '1px solid #334155',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '0.65rem',
+                color: '#f8fafc',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+              }}
+            >
+              <span>
+                ★ Active Ticker Lineup ({form.featuredArtworksList.length} Photos — Scrolls Left-to-Right on Homepage)
+              </span>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                Use ⬅️ / ➡️ to reorder or ✕ Remove to take a photo off the ticker
+              </span>
+            </div>
+
+            {form.featuredArtworksList.length === 0 ? (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                  border: '1px dashed #475569',
+                  borderRadius: '8px',
+                }}
+              >
+                No photographs are currently in the Featured Works Ticker. Use the Direct Upload box or Gallery Picker below to add photos!
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(195px, 1fr))',
+                  gap: '0.75rem',
+                }}
+              >
+                {form.featuredArtworksList.map((item, idx) => (
+                  <div
+                    key={item._id}
+                    style={{
+                      background: '#1e293b',
+                      border: '1px solid #475569',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'relative',
+                        height: '115px',
+                        background: '#020617',
+                      }}
+                    >
+                      {item.imageUrl ? (
+                        <img
+                          src={`${item.imageUrl}?w=500&fit=max&q=85`}
+                          alt={item.title}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#64748b',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          No Preview
+                        </div>
+                      )}
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '6px',
+                          left: '6px',
+                          background: 'rgba(126, 34, 206, 0.92)',
+                          color: '#ffffff',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          padding: '2px 7px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        #{idx + 1}
+                      </span>
+                      {item.venueTitle && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: '6px',
+                            left: '6px',
+                            right: '6px',
+                            background: 'rgba(0,0,0,0.75)',
+                            color: '#e2e8f0',
+                            fontSize: '0.65rem',
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {item.venueTitle}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ padding: '0.55rem 0.65rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.45rem' }}>
+                      <div>
+                        <div
+                          style={{
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            color: '#f8fafc',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={item.title}
+                        >
+                          {item.title}
+                        </div>
+                        {item.fileName && (
+                          <div
+                            style={{
+                              fontSize: '0.66rem',
+                              color: '#94a3b8',
+                              fontFamily: 'monospace',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={item.fileName}
+                          >
+                            {item.fileName}
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => handleMoveTickerItem(idx, -1)}
+                          style={{
+                            padding: '0.25rem 0.45rem',
+                            borderRadius: '4px',
+                            border: '1px solid #475569',
+                            background: idx === 0 ? '#0f172a' : '#334155',
+                            color: idx === 0 ? '#475569' : '#f8fafc',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                          }}
+                          title="Move earlier in ticker"
+                        >
+                          ⬅️
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === form.featuredArtworksList.length - 1}
+                          onClick={() => handleMoveTickerItem(idx, 1)}
+                          style={{
+                            padding: '0.25rem 0.45rem',
+                            borderRadius: '4px',
+                            border: '1px solid #475569',
+                            background:
+                              idx === form.featuredArtworksList.length - 1 ? '#0f172a' : '#334155',
+                            color:
+                              idx === form.featuredArtworksList.length - 1 ? '#475569' : '#f8fafc',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            cursor:
+                              idx === form.featuredArtworksList.length - 1
+                                ? 'not-allowed'
+                                : 'pointer',
+                          }}
+                          title="Move later in ticker"
+                        >
+                          ➡️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromTicker(item._id)}
+                          style={{
+                            marginLeft: 'auto',
+                            padding: '0.25rem 0.55rem',
+                            borderRadius: '4px',
+                            border: 'none',
+                            background: '#dc2626',
+                            color: '#ffffff',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                          title="Remove from ticker (does not delete photo from venue)"
+                        >
+                          ✕ Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 4B. DIRECT UPLOAD NEW PHOTO(S) FROM COMPUTER STRAIGHT TO THE TICKER */}
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid #d8b4fe',
+              borderRadius: '10px',
+              padding: '0.95rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            <div style={{ flex: '1 1 320px' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#581c87' }}>
+                📤 Upload New Photograph(s) Directly From Computer Into the Ticker
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px' }}>
+                Automatically creates a live Product Page (<code>/art/[slug]</code>) in the selected Venue with auto-derived Species &amp; SEO and adds it directly to the Featured Works Ticker.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <select
+                value={tickerUploadVenueId}
+                onChange={(e) => setTickerUploadVenueId(e.target.value)}
+                style={{
+                  padding: '0.5rem 0.65rem',
+                  borderRadius: '6px',
+                  border: '1px solid #c084fc',
+                  background: '#faf5ff',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: '#3b0764',
+                  minWidth: '220px',
+                }}
+              >
+                <option value="">-- Select Venue for Uploaded Photo --</option>
+                <optgroup label="Root Venues (Main)">
+                  {rootCategories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.title}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Sub-Venues (Subcategories)">
+                  {subCategories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.parentTitle ? `${cat.parentTitle} ▸ ` : ''}
+                      {cat.title}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                id="ticker-direct-photo-upload"
+                onChange={handleUploadNewPhotosToTicker}
+                disabled={isUploadingTicker}
+                style={{ display: 'none' }}
+              />
+              <label
+                htmlFor="ticker-direct-photo-upload"
+                style={{
+                  padding: '0.55rem 1.05rem',
+                  borderRadius: '6px',
+                  background: isUploadingTicker ? '#94a3b8' : '#7e22ce',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  cursor: isUploadingTicker ? 'not-allowed' : 'pointer',
+                  display: 'inline-block',
+                }}
+              >
+                {isUploadingTicker
+                  ? 'Uploading & Adding to Ticker...'
+                  : '📤 Upload New Photo(s) to Ticker'}
+              </label>
+            </div>
+          </div>
+
+          {/* 4C. VISUAL GALLERY PICKER TO ADD EXISTING PHOTOGRAPHS/PRODUCTS TO THE TICKER */}
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid #d8b4fe',
+              borderRadius: '10px',
+              padding: '0.95rem',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.6rem',
+                marginBottom: '0.75rem',
+              }}
+            >
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#581c87' }}>
+                ➕ Add Existing Gallery Photographs / Products to Ticker
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', flex: '1 1 420px', justifyContent: 'flex-end' }}>
+                <select
+                  value={tickerVenueFilter}
+                  onChange={(e) => setTickerVenueFilter(e.target.value)}
+                  style={{
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.78rem',
+                    background: '#f8fafc',
+                    minWidth: '190px',
+                  }}
+                >
+                  <option value="">All Venues &amp; Sub-Venues ({galleryOptions.length})</option>
+                  <optgroup label="Root Venues">
+                    {rootCategories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Sub-Venues">
+                    {subCategories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.parentTitle ? `${cat.parentTitle} ▸ ` : ''}
+                        {cat.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Search gallery by species, title, or filename..."
+                  value={tickerSearch}
+                  onChange={(e) => setTickerSearch(e.target.value)}
+                  style={{
+                    flex: '1 1 220px',
+                    maxWidth: '340px',
+                    padding: '0.45rem 0.65rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.78rem',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))',
+                gap: '0.65rem',
+                maxHeight: '340px',
+                overflowY: 'auto',
+                padding: '0.25rem',
+              }}
+            >
+              {filteredTickerCandidates.map((art) => {
+                const alreadyInTicker = tickerIdSet.has(art._id.replace(/^drafts\./, ''));
+                return (
+                  <div
+                    key={art._id}
+                    style={{
+                      border: alreadyInTicker ? '2px solid #059669' : '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      background: alreadyInTicker ? '#f0fdf4' : '#f8fafc',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ position: 'relative', height: '100px', background: '#0f172a' }}>
+                      {art.imageUrl && (
+                        <img
+                          src={`${art.imageUrl}?w=400&fit=max&q=80`}
+                          alt={art.displayTitle || art.title}
+                          loading="lazy"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      )}
+                      {art.venueTitle && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: '4px',
+                            left: '4px',
+                            right: '4px',
+                            background: 'rgba(0,0,0,0.72)',
+                            color: '#f8fafc',
+                            fontSize: '0.62rem',
+                            padding: '1px 5px',
+                            borderRadius: '3px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {art.venueTitle}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ padding: '0.45rem 0.55rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, justifyContent: 'space-between' }}>
+                      <div>
+                        <div
+                          style={{
+                            fontSize: '0.76rem',
+                            fontWeight: 700,
+                            color: '#0f172a',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={art.displayTitle || art.title}
+                        >
+                          {art.displayTitle || art.title}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: '0.64rem',
+                            color: '#64748b',
+                            fontFamily: 'monospace',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={art.fileName}
+                        >
+                          {art.fileName}
+                        </div>
+                      </div>
+
+                      {alreadyInTicker ? (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromTicker(art._id.replace(/^drafts\./, ''))}
+                          style={{
+                            width: '100%',
+                            padding: '0.32rem 0.5rem',
+                            borderRadius: '5px',
+                            border: '1px solid #059669',
+                            background: '#dcfce7',
+                            color: '#166534',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✓ In Ticker (Click to Remove)
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleAddGalleryArtworkToTicker(art)}
+                          style={{
+                            width: '100%',
+                            padding: '0.32rem 0.5rem',
+                            borderRadius: '5px',
+                            border: 'none',
+                            background: '#7e22ce',
+                            color: '#ffffff',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          + Add to Ticker
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.2rem' }}>
           {onClose && (
             <button
@@ -1109,7 +2087,7 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
           )}
           <button
             type="submit"
-            disabled={isSaving || isUploading || isLoading}
+            disabled={isSaving || isUploading || isUploadingTicker || isLoading}
             style={{
               padding: '0.7rem 1.6rem',
               borderRadius: '8px',
@@ -1117,11 +2095,11 @@ export function HomepageWelcomeDesigner({ onClose = null, isModal = false }) {
               background: '#059669',
               color: '#fff',
               fontWeight: 700,
-              cursor: isSaving || isUploading ? 'not-allowed' : 'pointer',
+              cursor: isSaving || isUploading || isUploadingTicker ? 'not-allowed' : 'pointer',
               fontSize: '0.92rem',
             }}
           >
-            {isSaving ? 'Saving & Publishing...' : '💾 Save & Publish Homepage Panels Live'}
+            {isSaving ? 'Saving & Publishing...' : '💾 Save & Publish Homepage & Ticker Live'}
           </button>
         </div>
       </form>

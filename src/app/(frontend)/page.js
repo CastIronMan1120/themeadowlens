@@ -53,7 +53,7 @@ export default async function Home() {
     welcomeBgOpacity,
     welcomeTextColor,
     welcomeBackdropBlur,
-    "featuredPhotos": featuredArtworks[]->{_id, title, slug, "url": image.asset->url, "imageUrl": image.asset->url},
+    "featuredPhotos": featuredArtworks[]->{_id, title, displayTitle, slug, "url": image.asset->url, "imageUrl": image.asset->url},
     "heroImageUrl": heroImage.asset->url,
     "rightPanelImageUrl": rightPanelImage.asset->url
   }`)

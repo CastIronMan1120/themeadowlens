@@ -210,6 +210,29 @@ const artwork = {
       description: 'Internal reference. This will not be displayed on the gallery front.'
     }
   ],
+  preview: {
+    select: {
+      displayTitle: 'displayTitle',
+      title: 'title',
+      species: 'species',
+      fileName: 'fileName',
+      categoryTitle: 'category.title',
+      media: 'image',
+    },
+    prepare({ displayTitle, title, species, fileName, categoryTitle, media }) {
+      const mainTitle = displayTitle || title || 'Untitled Photograph'
+      const subParts = [
+        categoryTitle ? `Venue: ${categoryTitle}` : null,
+        species && species !== mainTitle ? `Species: ${species}` : null,
+        fileName ? `File: ${fileName}` : null,
+      ].filter(Boolean)
+      return {
+        title: mainTitle,
+        subtitle: subParts.join(' • '),
+        media,
+      }
+    },
+  },
 }
 
 const category = {
@@ -433,4 +456,3 @@ import { homepage } from './schema/homepage'
 
 export const schemaTypes = [
   homepage,seo, artwork, category, artist, news, lead]
-
